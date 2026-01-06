@@ -1,0 +1,13 @@
+# API Keys
+.env.js
+.env
+
+# Node modules
+node_modules/
+
+# Build files
+dist/
+.next/
+
+# OS files
+.DS_Store

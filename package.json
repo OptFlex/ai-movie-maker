@@ -1,0 +1,22 @@
+{
+  "name": "ai-movie-maker",
+  "version": "1.0.0",
+  "description": "AI画像・動画生成を活用したYouTubeチャンネル運営支援アプリ",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "ai",
+    "video",
+    "generation",
+    "veo3",
+    "nanobanana"
+  ],
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

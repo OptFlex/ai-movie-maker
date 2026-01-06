@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI動画生成テスト - Veo3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 環境変数の読み込み -->
+    <script src=".env.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">AI動画生成テスト</h1>
+            <p class="text-gray-600 mt-2">Veo3で画像から動画を生成</p>
+        </header>
+
+        <div class="max-w-3xl mx-auto">
+
+            <!-- Veo3 - 動画生成 -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+                    <h2 class="text-2xl font-bold text-blue-700">🎬 Veo3</h2>
+                    <span class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full">動画生成</span>
+                </div>
+
+                <!-- 画像アップロード -->
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">ベース画像</label>
+                    <input
+                        type="file"
+                        id="veo3-image"
+                        accept="image/*"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                        onchange="previewImage(event)"
+                    >
+                    <div id="veo3-preview" class="mt-3 hidden">
+                        <img id="veo3-preview-img" class="w-full rounded-lg" alt="プレビュー">
+                    </div>
+                </div>
+
+                <!-- プロンプト入力 -->
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">動画生成プロンプト</label>
+                    <textarea
+                        id="veo3-prompt"
+                        class="w-full h-32 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                        placeholder="例: カメラがゆっくりと右にパンしながら、雲が流れる"
+                    ></textarea>
+                </div>
+
+                <!-- 設定 -->
+                <div class="mb-4">
+                    <label class="block text-xs text-gray-600 mb-1">モデル選択</label>
+                    <select id="veo3-model" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" onchange="updateModelInfo()">
+                        <option value="veo-3.1-fast-generate-preview" data-price="0.15" data-audio="true" selected>Veo 3.1 Fast ($0.15/秒) - 高速・コスト効率◎</option>
+                        <option value="veo-3.1-generate-preview" data-price="0.40" data-audio="true">Veo 3.1 Standard ($0.40/秒) - 高品質</option>
+                    </select>
+                    <p class="mt-1 text-xs text-gray-500" id="model-cost-info">8秒動画: $1.20</p>
+                    <p class="mt-1 text-xs text-yellow-600">⚠️ プレビューモデルでは音声の有無を制御できません（常に音声付き）</p>
+                </div>
+
+                <div class="mb-4 grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs text-gray-600 mb-1">動画の長さ</label>
+                        <input type="text" value="8秒（固定）" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-50" disabled>
+                        <input type="hidden" id="veo3-duration" value="8">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-600 mb-1">FPS</label>
+                        <select id="veo3-fps" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                            <option value="24" selected>24fps</option>
+                            <option value="30">30fps</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 生成ボタン -->
+                <button
+                    onclick="generateVideo()"
+                    class="w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-cyan-700 transition mb-4"
+                >
+                    動画を生成する
+                </button>
+
+                <!-- ステータス表示 -->
+                <div id="veo3-status" class="mb-4 hidden">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center gap-3">
+                        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                        <span class="text-sm text-blue-700" id="veo3-status-text">動画を生成中...</span>
+                    </div>
+                </div>
+
+                <!-- 結果表示エリア -->
+                <div class="border-t border-gray-200 pt-4">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-3">生成結果</h3>
+                    <div id="veo3-results" class="min-h-[200px]">
+                        <div class="aspect-video bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-sm">
+                            動画プレビュー
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- API設定（開発用） -->
+        <div class="mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-w-3xl mx-auto">
+            <h3 class="text-sm font-bold text-yellow-800 mb-2">⚙️ API設定（テスト用）</h3>
+            <div class="text-xs">
+                <label class="block text-yellow-700 mb-1">Google AI Studio API Key</label>
+                <input type="password" id="veo3-api-key" class="w-full px-3 py-2 border border-yellow-300 rounded text-sm" placeholder="APIキーを入力">
+                <p class="mt-2 text-yellow-600">
+                    APIキーは <a href="https://aistudio.google.com/" target="_blank" class="underline">Google AI Studio</a> で取得できます
+                </p>
+            </div>
+        </div>
+
+        <!-- 料金表 -->
+        <div class="mt-8 bg-white border border-gray-200 rounded-lg p-6 max-w-3xl mx-auto">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">💰 モデル別料金表</h3>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-gray-200">
+                            <th class="text-left py-2 px-3 font-semibold text-gray-700">モデル</th>
+                            <th class="text-left py-2 px-3 font-semibold text-gray-700">料金/秒</th>
+                            <th class="text-left py-2 px-3 font-semibold text-gray-700">8秒動画</th>
+                            <th class="text-left py-2 px-3 font-semibold text-gray-700">特徴</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-gray-600">
+                        <tr class="border-b border-gray-100">
+                            <td class="py-3 px-3 font-medium">Veo 3.1 Fast ⭐</td>
+                            <td class="py-3 px-3">$0.15</td>
+                            <td class="py-3 px-3 font-semibold text-blue-600">$1.20</td>
+                            <td class="py-3 px-3 text-xs">高速・コスト効率◎（推奨・音声付き）</td>
+                        </tr>
+                        <tr class="border-b border-gray-100">
+                            <td class="py-3 px-3 font-medium">Veo 3.1 Standard</td>
+                            <td class="py-3 px-3">$0.40</td>
+                            <td class="py-3 px-3 font-semibold text-purple-600">$3.20</td>
+                            <td class="py-3 px-3 text-xs">高品質・標準速度（音声付き）</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-4 p-3 bg-gray-50 rounded-lg text-xs text-gray-600">
+                <p class="font-semibold mb-2">📊 コスト例（8秒動画）</p>
+                <ul class="space-y-1 ml-4">
+                    <li>• 10動画（Veo 3.1 Fast）: $12.00</li>
+                    <li>• 100動画（Veo 3.1 Fast）: $120.00</li>
+                    <li>• 10動画（Veo 3.1 Standard）: $32.00</li>
+                </ul>
+            </div>
+
+            <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-700">
+                <p class="font-semibold mb-1">⚠️ 音声制御について</p>
+                <p>現在のプレビューモデル（*-preview）では音声の有無を制御できません。全て音声付きで生成されます。</p>
+            </div>
+
+            <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">
+                <p class="font-semibold mb-1">🔒 レート制限</p>
+                <p>• 10リクエスト/分</p>
+                <p>• 同時生成数: 10-20動画</p>
+                <p>• 1日の上限: なし（従量課金）</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // 環境変数からAPIキーを自動設定
+        window.addEventListener('DOMContentLoaded', function() {
+            if (typeof ENV !== 'undefined') {
+                if (ENV.VEO3_API_KEY) {
+                    document.getElementById('veo3-api-key').value = ENV.VEO3_API_KEY;
+                }
+            }
+        });
+
+        let uploadedImageFile = null;
+
+        // モデル選択時のコスト情報更新
+        function updateModelInfo() {
+            const modelSelect = document.getElementById('veo3-model');
+            const selectedOption = modelSelect.options[modelSelect.selectedIndex];
+            const pricePerSecond = parseFloat(selectedOption.dataset.price);
+            const duration = 8; // 固定8秒
+            const totalCost = (pricePerSecond * duration).toFixed(2);
+
+            document.getElementById('model-cost-info').textContent = `8秒動画: $${totalCost}`;
+        }
+
+        // 画像プレビュー
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                uploadedImageFile = file;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('veo3-preview-img').src = e.target.result;
+                    document.getElementById('veo3-preview').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // ファイルをBase64に変換
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Veo3 - 動画生成（プロキシサーバー経由）
+        async function generateVideo() {
+            const prompt = document.getElementById('veo3-prompt').value;
+            const duration = parseInt(document.getElementById('veo3-duration').value);
+            const fps = parseInt(document.getElementById('veo3-fps').value);
+            const apiKey = document.getElementById('veo3-api-key').value;
+
+            // モデル選択情報を取得
+            const modelSelect = document.getElementById('veo3-model');
+            const selectedOption = modelSelect.options[modelSelect.selectedIndex];
+            const modelName = selectedOption.value;
+            const generateAudio = selectedOption.dataset.audio === 'true';
+
+            if (!uploadedImageFile) {
+                alert('画像をアップロードしてください');
+                return;
+            }
+
+            if (!prompt) {
+                alert('プロンプトを入力してください');
+                return;
+            }
+
+            if (!apiKey) {
+                alert('APIキーを入力してください');
+                return;
+            }
+
+            // ステータス表示
+            document.getElementById('veo3-status').classList.remove('hidden');
+            document.getElementById('veo3-status-text').textContent = '動画を生成中...';
+            document.getElementById('veo3-results').innerHTML = '<div class="text-center text-gray-500">生成中...</div>';
+
+            try {
+                // 画像をBase64に変換
+                const imageBase64 = await fileToBase64(uploadedImageFile);
+
+                console.log('Veo3 API呼び出し:', { prompt, duration, fps, modelName, generateAudio });
+
+                // プロキシサーバーにリクエスト
+                const response = await fetch('http://localhost:3000/generate-video', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        apiKey: apiKey,
+                        prompt: prompt,
+                        imageBase64: imageBase64,
+                        duration: duration,
+                        fps: fps,
+                        modelName: modelName,
+                        generateAudio: generateAudio
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'API Error');
+                }
+
+                const data = await response.json();
+                console.log('Proxy Response:', data);
+
+                if (data.operationName) {
+                    // 操作の完了を待つ
+                    await pollOperationStatus(data.operationName, apiKey);
+                } else {
+                    throw new Error('操作名が取得できませんでした');
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('veo3-status').classList.add('hidden');
+                document.getElementById('veo3-results').innerHTML = `
+                    <div class="text-center text-red-500">
+                        エラー: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // 操作ステータスのポーリング（プロキシサーバー経由）
+        async function pollOperationStatus(operationName, apiKey) {
+            const maxAttempts = 60; // 最大5分（5秒間隔×60回）
+            let attempts = 0;
+
+            const poll = async () => {
+                attempts++;
+                document.getElementById('veo3-status-text').textContent = `動画を生成中... (${attempts}/${maxAttempts})`;
+
+                try {
+                    const response = await fetch('http://localhost:3000/check-operation', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            apiKey: apiKey,
+                            operationName: operationName
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'API Error');
+                    }
+
+                    const data = await response.json();
+                    console.log('Operation Status:', data);
+
+                    if (data.done) {
+                        // 完了
+                        document.getElementById('veo3-status').classList.add('hidden');
+
+                        if (data.error) {
+                            document.getElementById('veo3-results').innerHTML = `
+                                <div class="text-center text-red-500">
+                                    エラー: ${JSON.stringify(data.error)}
+                                </div>
+                            `;
+                        } else if (data.response && data.response.generateVideoResponse && data.response.generateVideoResponse.generatedSamples && data.response.generateVideoResponse.generatedSamples.length > 0) {
+                            const videoUri = data.response.generateVideoResponse.generatedSamples[0].video.uri;
+                            downloadVideoFromUri(videoUri);
+                        } else {
+                            document.getElementById('veo3-results').innerHTML = `
+                                <div class="text-center text-red-500">
+                                    動画データが取得できませんでした
+                                    <pre class="mt-2 text-xs">${JSON.stringify(data, null, 2)}</pre>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        // まだ処理中 - 5秒後に再試行
+                        if (attempts < maxAttempts) {
+                            setTimeout(poll, 5000);
+                        } else {
+                            document.getElementById('veo3-status').classList.add('hidden');
+                            document.getElementById('veo3-results').innerHTML = `
+                                <div class="text-center text-red-500">
+                                    タイムアウト: 動画生成に時間がかかりすぎています
+                                </div>
+                            `;
+                        }
+                    }
+
+                } catch (error) {
+                    console.error('Polling Error:', error);
+                    document.getElementById('veo3-status').classList.add('hidden');
+                    document.getElementById('veo3-results').innerHTML = `
+                        <div class="text-center text-red-500">
+                            エラー: ${error.message}
+                        </div>
+                    `;
+                }
+            };
+
+            poll();
+        }
+
+        // URIから動画をダウンロード
+        async function downloadVideoFromUri(videoUri) {
+            try {
+                document.getElementById('veo3-status-text').textContent = '動画をダウンロード中...';
+
+                const apiKey = document.getElementById('veo3-api-key').value;
+                const response = await fetch(`${videoUri}&key=${apiKey}`);
+
+                if (!response.ok) {
+                    throw new Error('動画のダウンロードに失敗しました');
+                }
+
+                const blob = await response.blob();
+                const base64 = await blobToBase64(blob);
+
+                document.getElementById('veo3-status').classList.add('hidden');
+                displayVideo(base64);
+
+            } catch (error) {
+                console.error('Download Error:', error);
+                document.getElementById('veo3-status').classList.add('hidden');
+                document.getElementById('veo3-results').innerHTML = `
+                    <div class="text-center text-red-500">
+                        動画のダウンロードに失敗しました: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // BlobをBase64に変換
+        function blobToBase64(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        // 動画表示
+        function displayVideo(videoData) {
+            const resultsDiv = document.getElementById('veo3-results');
+            resultsDiv.innerHTML = `
+                <div class="relative group">
+                    <video controls class="w-full rounded-lg" id="generated-video">
+                        <source src="data:video/mp4;base64,${videoData}" type="video/mp4">
+                        お使いのブラウザは動画タグをサポートしていません。
+                    </video>
+                    <button
+                        onclick="downloadVideo('${videoData}')"
+                        class="mt-3 w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-semibold"
+                    >
+                        動画をダウンロード
+                    </button>
+                </div>
+            `;
+        }
+
+        // 動画ダウンロード
+        function downloadVideo(base64Data) {
+            try {
+                const byteCharacters = atob(base64Data);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: 'video/mp4' });
+
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'veo3-video.mp4';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                console.log('動画をダウンロードしました');
+            } catch (error) {
+                console.error('Download Error:', error);
+                alert('動画のダウンロードに失敗しました');
+            }
+        }
+    </script>
+</body>
+</html>

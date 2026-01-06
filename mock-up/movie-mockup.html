@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI動画生成アプリ - モックアップ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* カスタムスクロールバー */
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 h-screen flex flex-col">
+    <!-- ヘッダー -->
+    <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">AI動画生成アプリ</h1>
+            <p class="text-sm text-gray-600 mt-1">
+                <span class="font-medium">チャンネル:</span> テックチャンネル
+                <span class="mx-2">/</span>
+                <span class="font-medium">企画:</span> AIツール紹介動画
+            </p>
+        </div>
+        <div class="flex gap-3">
+            <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">
+                下書き保存
+            </button>
+            <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+                保存
+            </button>
+        </div>
+    </header>
+
+    <!-- 6カラムレイアウト（横スクロール） -->
+    <div class="flex-1 overflow-x-auto overflow-y-hidden custom-scrollbar">
+        <div class="h-full flex gap-6 p-6" style="min-width: max-content;">
+
+            <!-- 1. GPS カラム -->
+            <div class="w-80 bg-white rounded-lg shadow-md p-6 flex flex-col h-full">
+                <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
+                    <h2 class="text-xl font-bold text-gray-900">GPS</h2>
+                    <div id="gps-buttons">
+                        <button onclick="toggleGPSEdit()" class="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition">
+                            編集
+                        </button>
+                    </div>
+                </div>
+                <div class="flex-1 overflow-y-auto space-y-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">ゴール（Goal）</label>
+                        <textarea
+                            id="gps-goal"
+                            class="w-full h-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-gray-50"
+                            placeholder="この動画で達成したい目標を入力..."
+                            disabled
+                        >月間1万再生、新規登録者500人獲得</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">戦略（Plan/Strategy）</label>
+                        <textarea
+                            id="gps-strategy"
+                            class="w-full h-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-gray-50"
+                            placeholder="目標達成のための戦略を入力..."
+                            disabled
+                        >話題のAIツールをわかりやすく解説し、実際の使い方をデモする</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">現在地（Status）</label>
+                        <textarea
+                            id="gps-status"
+                            class="w-full h-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-gray-50"
+                            placeholder="現在の状況を入力..."
+                            disabled
+                        >原稿作成完了、画像生成待ち</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. 構成 カラム -->
+            <div class="w-80 bg-white rounded-lg shadow-md p-6 flex flex-col h-full">
+                <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
+                    <h2 class="text-xl font-bold text-gray-900">構成</h2>
+                    <button onclick="addSection()" class="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition">
+                        + 追加
+                    </button>
+                </div>
+                <div id="sections-list" class="flex-1 overflow-y-auto space-y-2">
+                    <!-- セクションはJavaScriptで動的に生成 -->
+                </div>
+            </div>
+
+            <!-- 3. 原稿 カラム -->
+            <div class="w-96 bg-white rounded-lg shadow-md p-6 flex flex-col h-full">
+                <h2 class="text-xl font-bold text-gray-900 mb-4 pb-3 border-b border-gray-200">原稿編集</h2>
+                <div class="flex-1 overflow-y-auto space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">見出しタイトル</label>
+                        <input
+                            id="section-title"
+                            type="text"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            value="1. イントロダクション"
+                        />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">ナレーション原稿</label>
+                        <textarea
+                            id="narration-script"
+                            class="w-full h-40 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                            placeholder="ナレーション原稿を入力..."
+                        >こんにちは！今日は話題のAIツールについて詳しく解説していきます。このツールを使えば、作業効率が劇的に向上します。</textarea>
+                        <div class="mt-2 flex justify-between items-center">
+                            <span id="char-count" class="text-xs text-gray-500">約45文字</span>
+                            <button class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition font-medium">
+                                Fish Audio で音声生成
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">映像プロンプト</label>
+                        <textarea
+                            id="video-prompt"
+                            class="w-full h-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                            placeholder="映像生成用のプロンプトを入力..."
+                        >明るいスタジオ、モダンなデスク環境、ノートパソコンの画面、プロフェッショナルな雰囲気</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. 音声 カラム -->
+            <div class="w-80 bg-white rounded-lg shadow-md p-6 flex flex-col h-full">
+                <h2 class="text-xl font-bold text-gray-900 mb-4 pb-3 border-b border-gray-200">音声生成</h2>
+                <div class="flex-1 overflow-y-auto space-y-4">
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-sm font-semibold text-gray-700">音声プレビュー</span>
+                            <span id="audio-duration" class="text-xs text-gray-500">00:15</span>
+                        </div>
+                        <div class="flex items-center gap-3 bg-white p-3 rounded-lg border border-gray-200">
+                            <button class="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition">
+                                ▶
+                            </button>
+                            <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div id="audio-progress" class="h-full w-1/3 bg-blue-600 rounded-full"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Fish Audio 設定</label>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">声のスタイル</label>
+                                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    <option>男性・明るい</option>
+                                    <option>女性・落ち着いた</option>
+                                    <option>ニュートラル</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">速度</label>
+                                <input type="range" min="0.5" max="2" step="0.1" value="1" class="w-full">
+                                <div class="flex justify-between text-xs text-gray-500">
+                                    <span>0.5x</span>
+                                    <span>1.0x</span>
+                                    <span>2.0x</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">感情</label>
+                                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    <option>ニュートラル</option>
+                                    <option>明るい</option>
+                                    <option>真剣</option>
+                                    <option>興奮</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2 pt-4">
+                        <button class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                            再生成
+                        </button>
+                        <button class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+                            確定
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. 映像 カラム -->
+            <div class="w-96 bg-white rounded-lg shadow-md p-6 flex flex-col h-full">
+                <h2 class="text-xl font-bold text-gray-900 mb-4 pb-3 border-b border-gray-200">映像生成</h2>
+                <div class="flex-1 overflow-y-auto space-y-4">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <label class="text-sm font-semibold text-gray-700">nanobanana Pro - 画像候補</label>
+                            <button class="px-3 py-1 bg-purple-600 text-white text-xs rounded-lg hover:bg-purple-700 transition">
+                                生成
+                            </button>
+                        </div>
+                        <div id="image-candidates" class="grid grid-cols-2 gap-3">
+                            <!-- 画像候補はJavaScriptで動的に生成 -->
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-semibold text-blue-900">選択中の画像</span>
+                            <span class="text-xs text-blue-700 bg-blue-100 px-2 py-1 rounded">✓ 選択済み</span>
+                        </div>
+                        <div id="selected-image" class="aspect-video bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg mb-3"></div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Veo3 動画化設定</label>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">動画の長さ</label>
+                                <div class="flex items-center gap-2">
+                                    <input
+                                        type="text"
+                                        class="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                                        value="15秒（音声に自動調整）"
+                                        disabled
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">追加プロンプト</label>
+                                <textarea
+                                    class="w-full h-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 resize-none text-sm"
+                                    placeholder="動画生成の追加指示..."
+                                >スムーズなカメラワーク、ゆっくりとしたズームイン</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="w-full px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition font-medium">
+                        Veo3 で動画生成開始
+                    </button>
+                </div>
+            </div>
+
+            <!-- 6. タイムライン カラム -->
+            <div class="w-[600px] bg-white rounded-lg shadow-md p-6 flex flex-col h-full">
+                <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
+                    <h2 class="text-xl font-bold text-gray-900">タイムライン</h2>
+                    <button class="px-4 py-2 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-lg hover:from-green-700 hover:to-blue-700 transition font-medium text-sm">
+                        DaVinci Resolve に送信
+                    </button>
+                </div>
+                <div class="flex-1 overflow-y-auto">
+                    <!-- タイムスケール -->
+                    <div class="mb-4 flex items-center justify-between text-xs text-gray-500 px-2">
+                        <span>00:00</span>
+                        <span>00:30</span>
+                        <span>01:00</span>
+                        <span>01:30</span>
+                        <span>02:00</span>
+                    </div>
+
+                    <!-- トラック -->
+                    <div class="space-y-3">
+                        <!-- 映像トラック -->
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-sm font-semibold text-gray-700 w-16">🎬 映像</span>
+                                <div class="flex-1 h-12 bg-gray-100 rounded relative overflow-hidden">
+                                    <div class="absolute h-full bg-blue-500 rounded" style="left: 0%; width: 20%;"></div>
+                                    <div class="absolute h-full bg-blue-500 rounded" style="left: 22%; width: 18%;"></div>
+                                    <div class="absolute h-full bg-blue-500 rounded" style="left: 42%; width: 25%;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 音声トラック -->
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-sm font-semibold text-gray-700 w-16">🎤 音声</span>
+                                <div class="flex-1 h-12 bg-gray-100 rounded relative overflow-hidden">
+                                    <div class="absolute h-full bg-green-500 rounded" style="left: 0%; width: 20%;"></div>
+                                    <div class="absolute h-full bg-green-500 rounded" style="left: 22%; width: 18%;"></div>
+                                    <div class="absolute h-full bg-green-500 rounded" style="left: 42%; width: 25%;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- BGMトラック -->
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-sm font-semibold text-gray-700 w-16">🎵 BGM</span>
+                                <div class="flex-1 h-10 bg-gray-100 rounded relative overflow-hidden">
+                                    <div class="absolute h-full bg-purple-400 rounded opacity-70" style="left: 0%; width: 70%;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 効果音トラック -->
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-sm font-semibold text-gray-700 w-16">🔊 SFX</span>
+                                <div class="flex-1 h-10 bg-gray-100 rounded relative overflow-hidden">
+                                    <div class="absolute h-full bg-orange-500 rounded" style="left: 8%; width: 2%;"></div>
+                                    <div class="absolute h-full bg-orange-500 rounded" style="left: 28%; width: 2%;"></div>
+                                    <div class="absolute h-full bg-orange-500 rounded" style="left: 55%; width: 2%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- コントロール -->
+                    <div class="mt-6 pt-6 border-t border-gray-200">
+                        <div class="flex gap-2">
+                            <button class="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition text-sm font-medium">
+                                + BGM追加
+                            </button>
+                            <button class="px-4 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition text-sm font-medium">
+                                + 効果音追加
+                            </button>
+                        </div>
+                        <div class="mt-4 bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm text-gray-700 mb-2">
+                                <span class="font-semibold">総尺:</span> 01:32
+                            </div>
+                            <div class="text-sm text-gray-700">
+                                <span class="font-semibold">セクション数:</span> 5個
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // モックアップ用のデータ
+        const mockData = {
+            channel: "テックチャンネル",
+            project: "AIツール紹介動画",
+            gps: {
+                goal: "月間1万再生、新規登録者500人獲得",
+                strategy: "話題のAIツールをわかりやすく解説し、実際の使い方をデモする",
+                status: "原稿作成完了、画像生成待ち"
+            },
+            sections: [
+                {
+                    id: 1,
+                    title: "1. イントロダクション",
+                    narration: "こんにちは！今日は話題のAIツールについて詳しく解説していきます。このツールを使えば、作業効率が劇的に向上します。",
+                    videoPrompt: "明るいスタジオ、モダンなデスク環境、ノートパソコンの画面、プロフェッショナルな雰囲気",
+                    audioDuration: "00:15",
+                    imageColors: [
+                        { from: "blue-400", to: "purple-500" },
+                        { from: "green-400", to: "blue-500" },
+                        { from: "pink-400", to: "orange-500" },
+                        { from: "yellow-400", to: "red-500" }
+                    ]
+                },
+                {
+                    id: 2,
+                    title: "2. AIツールとは",
+                    narration: "AIツールとは、人工知能を活用した様々なサービスやアプリケーションの総称です。近年では業務効率化、クリエイティブ制作、データ分析など幅広い分野で活用されています。",
+                    videoPrompt: "最先端のオフィス、複数のモニター、AIのイメージグラフィック、テクノロジー感のある背景",
+                    audioDuration: "00:22",
+                    imageColors: [
+                        { from: "cyan-400", to: "blue-600" },
+                        { from: "indigo-400", to: "purple-600" },
+                        { from: "teal-400", to: "green-600" },
+                        { from: "violet-400", to: "pink-600" }
+                    ]
+                },
+                {
+                    id: 3,
+                    title: "3. 実際の使い方",
+                    narration: "それでは実際にこのツールを使ってみましょう。まずアカウントを作成し、プロジェクトを新規作成します。インターフェースは直感的で、初心者でも簡単に使いこなせます。",
+                    videoPrompt: "画面キャプチャ、マウスカーソルの動き、実際の操作画面、ステップバイステップのチュートリアル風",
+                    audioDuration: "00:20",
+                    imageColors: [
+                        { from: "emerald-400", to: "teal-500" },
+                        { from: "sky-400", to: "indigo-500" },
+                        { from: "rose-400", to: "pink-500" },
+                        { from: "amber-400", to: "orange-500" }
+                    ]
+                },
+                {
+                    id: 4,
+                    title: "4. メリット・デメリット",
+                    narration: "メリットとしては、時間の大幅な節約と高品質なアウトプットが得られる点です。一方で、完全に自動化できない部分もあり、最終的な調整は人の手が必要になります。",
+                    videoPrompt: "天秤のグラフィック、チェックマークとバツマーク、比較表、バランス感のあるビジュアル",
+                    audioDuration: "00:18",
+                    imageColors: [
+                        { from: "lime-400", to: "green-500" },
+                        { from: "red-400", to: "orange-500" },
+                        { from: "blue-400", to: "cyan-500" },
+                        { from: "purple-400", to: "fuchsia-500" }
+                    ]
+                },
+                {
+                    id: 5,
+                    title: "5. まとめ",
+                    narration: "いかがでしたか？今回はAIツールの基本から活用方法まで紹介しました。ぜひ皆さんも試してみてください。チャンネル登録と高評価もお願いします！",
+                    videoPrompt: "エンディング画面、チャンネルロゴ、登録ボタンのアニメーション、明るく前向きな雰囲気",
+                    audioDuration: "00:17",
+                    imageColors: [
+                        { from: "orange-400", to: "red-500" },
+                        { from: "yellow-400", to: "amber-500" },
+                        { from: "green-400", to: "emerald-500" },
+                        { from: "blue-400", to: "sky-500" }
+                    ]
+                }
+            ]
+        };
+
+        let selectedSectionId = 1;
+        let isGPSEditing = false;
+        let nextSectionId = 6; // 次に追加されるセクションのID
+
+        // ページ読み込み時の初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            renderSections();
+            updateContent(selectedSectionId);
+            loadGPSData();
+        });
+
+        // GPS編集モードの切り替え
+        function toggleGPSEdit() {
+            isGPSEditing = !isGPSEditing;
+            const goal = document.getElementById('gps-goal');
+            const strategy = document.getElementById('gps-strategy');
+            const status = document.getElementById('gps-status');
+            const buttonsDiv = document.getElementById('gps-buttons');
+
+            if (isGPSEditing) {
+                // 編集モードに切り替え
+                goal.disabled = false;
+                strategy.disabled = false;
+                status.disabled = false;
+                goal.classList.remove('bg-gray-50');
+                strategy.classList.remove('bg-gray-50');
+                status.classList.remove('bg-gray-50');
+                goal.classList.add('bg-white');
+                strategy.classList.add('bg-white');
+                status.classList.add('bg-white');
+
+                buttonsDiv.innerHTML = `
+                    <button onclick="saveGPS()" class="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition mr-2">
+                        保存
+                    </button>
+                    <button onclick="cancelGPSEdit()" class="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition">
+                        キャンセル
+                    </button>
+                `;
+            } else {
+                // 表示モードに切り替え
+                goal.disabled = true;
+                strategy.disabled = true;
+                status.disabled = true;
+                goal.classList.remove('bg-white');
+                strategy.classList.remove('bg-white');
+                status.classList.remove('bg-white');
+                goal.classList.add('bg-gray-50');
+                strategy.classList.add('bg-gray-50');
+                status.classList.add('bg-gray-50');
+
+                buttonsDiv.innerHTML = `
+                    <button onclick="toggleGPSEdit()" class="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition">
+                        編集
+                    </button>
+                `;
+            }
+        }
+
+        // GPS保存
+        function saveGPS() {
+            mockData.gps.goal = document.getElementById('gps-goal').value;
+            mockData.gps.strategy = document.getElementById('gps-strategy').value;
+            mockData.gps.status = document.getElementById('gps-status').value;
+            console.log('GPS保存:', mockData.gps);
+            toggleGPSEdit();
+        }
+
+        // GPS編集キャンセル
+        function cancelGPSEdit() {
+            loadGPSData();
+            toggleGPSEdit();
+        }
+
+        // GPSデータを読み込み
+        function loadGPSData() {
+            document.getElementById('gps-goal').value = mockData.gps.goal;
+            document.getElementById('gps-strategy').value = mockData.gps.strategy;
+            document.getElementById('gps-status').value = mockData.gps.status;
+        }
+
+        // セクション追加
+        function addSection() {
+            const newSection = {
+                id: nextSectionId++,
+                title: `${mockData.sections.length + 1}. 新しいセクション`,
+                narration: "",
+                videoPrompt: "",
+                audioDuration: "00:00",
+                imageColors: [
+                    { from: "slate-400", to: "gray-500" },
+                    { from: "zinc-400", to: "stone-500" },
+                    { from: "neutral-400", to: "gray-600" },
+                    { from: "stone-400", to: "slate-600" }
+                ]
+            };
+            mockData.sections.push(newSection);
+            renderSections();
+            selectSection(newSection.id);
+            console.log('セクション追加:', newSection);
+        }
+
+        // セクションリストをレンダリング
+        function renderSections() {
+            const sectionsList = document.getElementById('sections-list');
+            sectionsList.innerHTML = mockData.sections.map(section => {
+                const isSelected = section.id === selectedSectionId;
+                return `
+                    <div
+                        class="section-item p-4 ${isSelected ? 'bg-blue-50 border-l-4 border-blue-500' : 'bg-gray-50 border-l-4 border-gray-300'} rounded hover:bg-${isSelected ? 'blue' : 'gray'}-100 transition"
+                        data-section-id="${section.id}"
+                    >
+                        <div class="flex items-center justify-between">
+                            <span class="font-medium text-gray-900 cursor-pointer flex-1" onclick="selectSection(${section.id})">${section.title}</span>
+                            <button onclick="deleteSection(${section.id}, event)" class="text-red-500 hover:text-red-700 text-xs ml-2">
+                                🗑
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // セクション削除
+        function deleteSection(sectionId, event) {
+            event.stopPropagation(); // 親要素のクリックイベントを防ぐ
+
+            if (mockData.sections.length <= 1) {
+                alert('最低1つのセクションが必要です');
+                return;
+            }
+
+            if (confirm('このセクションを削除しますか？')) {
+                const index = mockData.sections.findIndex(s => s.id === sectionId);
+                mockData.sections.splice(index, 1);
+
+                // 削除したセクションが選択中だった場合、最初のセクションを選択
+                if (selectedSectionId === sectionId) {
+                    selectedSectionId = mockData.sections[0].id;
+                    updateContent(selectedSectionId);
+                }
+
+                renderSections();
+                console.log('セクション削除:', sectionId);
+            }
+        }
+
+        // セクション選択
+        function selectSection(sectionId) {
+            selectedSectionId = sectionId;
+            renderSections();
+            updateContent(sectionId);
+        }
+
+        // コンテンツを更新
+        function updateContent(sectionId) {
+            const section = mockData.sections.find(s => s.id === sectionId);
+            if (!section) return;
+
+            // 3カラム目: 原稿
+            document.getElementById('section-title').value = section.title;
+            document.getElementById('narration-script').value = section.narration;
+            document.getElementById('char-count').textContent = `約${section.narration.length}文字`;
+            document.getElementById('video-prompt').value = section.videoPrompt;
+
+            // 4カラム目: 音声
+            document.getElementById('audio-duration').textContent = section.audioDuration;
+
+            // 5カラム目: 映像 - 画像候補
+            const imageCandidates = document.getElementById('image-candidates');
+            imageCandidates.innerHTML = section.imageColors.map((color, index) => `
+                <div class="relative group cursor-pointer">
+                    <div class="aspect-video bg-gradient-to-br from-${color.from} to-${color.to} rounded-lg"></div>
+                    <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition rounded-lg flex items-center justify-center">
+                        <div class="w-6 h-6 bg-blue-600 rounded-full border-2 border-white opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs">
+                            ✓
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // 選択中の画像
+            const selectedImage = document.getElementById('selected-image');
+            const firstColor = section.imageColors[0];
+            selectedImage.className = `aspect-video bg-gradient-to-br from-${firstColor.from} to-${firstColor.to} rounded-lg mb-3`;
+        }
+
+        console.log("AI動画生成アプリ - モックアップ読み込み完了");
+        console.log("データ:", mockData);
+    </script>
+</body>
+</html>

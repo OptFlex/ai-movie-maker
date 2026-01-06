@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Movie Maker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- 認証チェック前は非表示 -->
+    <div id="app" class="min-h-screen flex flex-col">
+        <!-- ヘッダー -->
+        <header class="bg-white border-b border-gray-200 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="text-3xl">🎬</div>
+                    <h1 class="text-2xl font-bold text-gray-900">AI Movie Maker</h1>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span id="user-email" class="text-sm text-gray-600"></span>
+                    <button id="logout-btn" class="text-sm text-red-600 hover:text-red-700 font-medium transition">
+                        ログアウト
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- メインコンテンツ -->
+        <main class="flex-1 max-w-7xl mx-auto px-4 py-12 w-full">
+            <div class="mb-8 text-center">
+                <h2 class="text-3xl font-bold text-gray-900 mb-3">ツールを選択</h2>
+                <p class="text-gray-600">動画制作に必要なツールが揃っています</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- 絵コンテ作成アプリ -->
+                <a href="./projects.html" class="block bg-white p-8 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 group border-2 border-transparent hover:border-blue-500">
+                    <div class="text-6xl mb-4 text-center transition-transform group-hover:scale-110">📋</div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-3 text-center group-hover:text-blue-600 transition">
+                        絵コンテ作成
+                    </h2>
+                    <p class="text-gray-600 mb-4 text-center text-sm">
+                        動画制作のための絵コンテを作成・管理できます
+                    </p>
+                    <ul class="text-sm text-gray-500 space-y-2">
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-500 mt-0.5">✓</span>
+                            <span>企画・シーン・セリフ管理</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-500 mt-0.5">✓</span>
+                            <span>原稿インポート（YAML/AI解析）</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-500 mt-0.5">✓</span>
+                            <span>画像生成・採用機能</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-500 mt-0.5">✓</span>
+                            <span>データ自動保存</span>
+                        </li>
+                    </ul>
+                    <div class="mt-6 text-center">
+                        <span class="inline-block px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium group-hover:bg-blue-600 group-hover:text-white transition">
+                            開く →
+                        </span>
+                    </div>
+                </a>
+
+                <!-- 画像生成ツール -->
+                <a href="./api-test-image.html" class="block bg-white p-8 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 group border-2 border-transparent hover:border-purple-500">
+                    <div class="text-6xl mb-4 text-center transition-transform group-hover:scale-110">🖼️</div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-3 text-center group-hover:text-purple-600 transition">
+                        画像生成
+                    </h2>
+                    <p class="text-gray-600 mb-4 text-center text-sm">
+                        AI画像生成ツール（Gemini 3 Pro Image）
+                    </p>
+                    <ul class="text-sm text-gray-500 space-y-2">
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-500 mt-0.5">✓</span>
+                            <span>プロンプトから画像生成</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-500 mt-0.5">✓</span>
+                            <span>Nano Banana Pro（高品質）</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-500 mt-0.5">✓</span>
+                            <span>生成履歴表示</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-500 mt-0.5">✓</span>
+                            <span>画像ダウンロード</span>
+                        </li>
+                    </ul>
+                    <div class="mt-6 text-center">
+                        <span class="inline-block px-4 py-2 bg-purple-50 text-purple-600 rounded-lg text-sm font-medium group-hover:bg-purple-600 group-hover:text-white transition">
+                            開く →
+                        </span>
+                    </div>
+                </a>
+
+                <!-- 動画生成ツール -->
+                <a href="./api-test-movie.html" class="block bg-white p-8 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 group border-2 border-transparent hover:border-cyan-500">
+                    <div class="text-6xl mb-4 text-center transition-transform group-hover:scale-110">🎬</div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-3 text-center group-hover:text-cyan-600 transition">
+                        動画生成
+                    </h2>
+                    <p class="text-gray-600 mb-4 text-center text-sm">
+                        AI動画生成ツール（Google Veo 3.1）
+                    </p>
+                    <ul class="text-sm text-gray-500 space-y-2">
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-500 mt-0.5">✓</span>
+                            <span>画像+プロンプトから動画生成</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-500 mt-0.5">✓</span>
+                            <span>モデル選択（Fast/Standard）</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-500 mt-0.5">✓</span>
+                            <span>8秒動画生成（16:9）</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-500 mt-0.5">✓</span>
+                            <span>動画ダウンロード</span>
+                        </li>
+                    </ul>
+                    <div class="mt-6 text-center">
+                        <span class="inline-block px-4 py-2 bg-cyan-50 text-cyan-600 rounded-lg text-sm font-medium group-hover:bg-cyan-600 group-hover:text-white transition">
+                            開く →
+                        </span>
+                    </div>
+                </a>
+            </div>
+        </main>
+
+        <!-- フッター -->
+        <footer class="bg-white border-t border-gray-200 mt-12">
+            <div class="max-w-7xl mx-auto px-4 py-6 text-center text-sm text-gray-500">
+                <p>AI Movie Maker - 動画制作統合ツール</p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // TODO: 認証チェックをここに追加（後で実装）
+        // 現在は認証なしで表示
+        document.getElementById('app').style.display = 'flex';
+
+        // ユーザー情報表示（仮）
+        document.getElementById('user-email').textContent = 'user@example.com';
+
+        // ログアウトボタン（仮）
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            if (confirm('ログアウトしますか？')) {
+                window.location.href = './login.html';
+            }
+        });
+    </script>
+</body>
+</html>

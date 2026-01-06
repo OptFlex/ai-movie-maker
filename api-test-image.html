@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI画像生成テスト - nanobanana Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 環境変数の読み込み -->
+    <script src=".env.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">AI画像生成テスト</h1>
+            <p class="text-gray-600 mt-2">Nano Banana Pro（Gemini 3 Pro Image）で画像生成</p>
+        </header>
+
+        <div class="max-w-3xl mx-auto">
+
+            <!-- nanobanana Pro - 画像生成 -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+                    <h2 class="text-2xl font-bold text-purple-700">🖼️ nanobanana Pro</h2>
+                    <span class="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full">画像生成</span>
+                </div>
+
+                <!-- プロンプト入力 -->
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">画像生成プロンプト</label>
+                    <textarea
+                        id="nanobanana-prompt"
+                        class="w-full h-32 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                        placeholder="例: 未来的な都市の風景、ネオンライト、サイバーパンク、8k、高品質"
+                    ></textarea>
+                </div>
+
+                <!-- 設定 -->
+                <div class="mb-4 grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs text-gray-600 mb-1">生成枚数</label>
+                        <select id="nanobanana-count" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                            <option value="1">1枚</option>
+                            <option value="2">2枚</option>
+                            <option value="4" selected>4枚</option>
+                            <option value="8">8枚</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-600 mb-1">画質</label>
+                        <select id="nanobanana-quality" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                            <option value="standard">標準</option>
+                            <option value="hd" selected>HD</option>
+                            <option value="uhd">UHD</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 生成ボタン -->
+                <button
+                    onclick="generateImages()"
+                    class="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 transition mb-4"
+                >
+                    画像を生成する
+                </button>
+
+                <!-- ステータス表示 -->
+                <div id="nanobanana-status" class="mb-4 hidden">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center gap-3">
+                        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                        <span class="text-sm text-blue-700">画像を生成中...</span>
+                    </div>
+                </div>
+
+                <!-- 結果表示エリア -->
+                <div class="border-t border-gray-200 pt-4">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-3">生成結果</h3>
+                    <div id="nanobanana-results" class="grid grid-cols-2 gap-3 min-h-[200px]">
+                        <div class="aspect-video bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-sm">
+                            画像1
+                        </div>
+                        <div class="aspect-video bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-sm">
+                            画像2
+                        </div>
+                        <div class="aspect-video bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-sm">
+                            画像3
+                        </div>
+                        <div class="aspect-video bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-sm">
+                            画像4
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- API設定（開発用） -->
+        <div class="mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-w-3xl mx-auto">
+            <h3 class="text-sm font-bold text-yellow-800 mb-2">⚙️ API設定（テスト用）</h3>
+            <div class="text-xs">
+                <label class="block text-yellow-700 mb-1">Google AI Studio API Key</label>
+                <input type="password" id="nanobanana-api-key" class="w-full px-3 py-2 border border-yellow-300 rounded text-sm" placeholder="APIキーを入力">
+                <p class="mt-2 text-yellow-600">
+                    APIキーは <a href="https://aistudio.google.com/" target="_blank" class="underline">Google AI Studio</a> で取得できます
+                </p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // 環境変数からAPIキーを自動設定
+        window.addEventListener('DOMContentLoaded', function() {
+            if (typeof ENV !== 'undefined') {
+                if (ENV.NANOBANANA_API_KEY) {
+                    document.getElementById('nanobanana-api-key').value = ENV.NANOBANANA_API_KEY;
+                }
+            }
+        });
+
+        // 生成された画像データを保存
+        let generatedImages = [];
+
+        // nanobanana Pro - 画像生成（実際のAPI）
+        async function generateImages() {
+            const prompt = document.getElementById('nanobanana-prompt').value;
+            const count = parseInt(document.getElementById('nanobanana-count').value);
+            const quality = document.getElementById('nanobanana-quality').value;
+            const apiKey = document.getElementById('nanobanana-api-key').value;
+
+            if (!prompt) {
+                alert('プロンプトを入力してください');
+                return;
+            }
+
+            if (!apiKey) {
+                alert('APIキーを入力してください');
+                return;
+            }
+
+            // ステータス表示
+            document.getElementById('nanobanana-status').classList.remove('hidden');
+            document.getElementById('nanobanana-results').innerHTML = '<div class="col-span-2 text-center text-gray-500">生成中...</div>';
+
+            console.log('nanobanana Pro API呼び出し:', { prompt, count, quality });
+
+            try {
+                // Gemini 3 Pro Image (Nano Banana Pro) で画像生成
+                const modelName = 'gemini-3-pro-image-preview';
+                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+
+                // 複数画像を生成するために、count回リクエストを送る
+                const promises = [];
+                for (let i = 0; i < count; i++) {
+                    promises.push(
+                        fetch(endpoint, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                contents: [{
+                                    parts: [{
+                                        text: prompt
+                                    }]
+                                }],
+                                generationConfig: {
+                                    responseModalities: ["Text", "Image"]
+                                }
+                            })
+                        })
+                    );
+                }
+
+                const responses = await Promise.all(promises);
+
+                // 画像データを保存
+                generatedImages = [];
+
+                // 結果表示
+                document.getElementById('nanobanana-status').classList.add('hidden');
+                const resultsDiv = document.getElementById('nanobanana-results');
+                resultsDiv.innerHTML = '';
+
+                let successCount = 0;
+
+                for (let i = 0; i < responses.length; i++) {
+                    const response = responses[i];
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        console.error(`Image ${i + 1} Error:`, errorData);
+                        continue;
+                    }
+
+                    const data = await response.json();
+                    console.log(`API Response ${i + 1}:`, data);
+
+                    // 画像データを抽出
+                    if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
+                        for (const part of data.candidates[0].content.parts) {
+                            if (part.inlineData && part.inlineData.data) {
+                                const imageData = part.inlineData.data;
+                                generatedImages.push(imageData);
+
+                                resultsDiv.innerHTML += `
+                                    <div class="relative group cursor-pointer">
+                                        <img id="nanobanana-img-${successCount}" src="data:image/png;base64,${imageData}" class="aspect-video rounded-lg object-cover" alt="生成画像 ${successCount + 1}">
+                                        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition rounded-lg flex items-center justify-center">
+                                            <button onclick="downloadImage(${successCount})" class="opacity-0 group-hover:opacity-100 px-3 py-1 bg-white text-gray-800 rounded-lg text-xs font-semibold hover:bg-gray-100">
+                                                ダウンロード
+                                            </button>
+                                        </div>
+                                    </div>
+                                `;
+                                successCount++;
+                            }
+                        }
+                    }
+                }
+
+                if (successCount === 0) {
+                    resultsDiv.innerHTML = '<div class="col-span-2 text-center text-red-500">画像の生成に失敗しました</div>';
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('nanobanana-status').classList.add('hidden');
+                document.getElementById('nanobanana-results').innerHTML = `
+                    <div class="col-span-2 text-center text-red-500">
+                        エラー: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // 画像ダウンロード機能
+        function downloadImage(index) {
+            if (generatedImages[index]) {
+                // 実際のAPI経由で取得した画像データを使用
+                const base64Data = generatedImages[index];
+                const byteCharacters = atob(base64Data);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: 'image/png' });
+
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `nanobanana-image-${index + 1}.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                console.log(`画像 ${index + 1} をダウンロードしました`);
+            } else {
+                alert('画像データがありません。先に画像を生成してください。');
+            }
+        }
+    </script>
+</body>
+</html>
