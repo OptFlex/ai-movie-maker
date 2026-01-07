@@ -364,9 +364,18 @@
                                     エラー: ${JSON.stringify(data.error)}
                                 </div>
                             `;
-                        } else if (data.response && data.response.generateVideoResponse && data.response.generateVideoResponse.generatedSamples && data.response.generateVideoResponse.generatedSamples.length > 0) {
+                        } else if (data.videoBase64) {
+                            // Edge Functionが動画をダウンロード済み
+                            displayVideo(data.videoBase64);
+                        } else if (data.response?.generateVideoResponse?.generatedSamples?.[0]?.video?.uri) {
+                            // 動画URIのみの場合（バックアップ）
                             const videoUri = data.response.generateVideoResponse.generatedSamples[0].video.uri;
-                            downloadVideoFromUri(videoUri);
+                            document.getElementById('veo3-results').innerHTML = `
+                                <div class="text-center text-yellow-600">
+                                    動画生成完了しましたが、ダウンロードに失敗しました。<br>
+                                    <small>動画URI: <a href="${videoUri}" target="_blank" class="underline">${videoUri}</a></small>
+                                </div>
+                            `;
                         } else {
                             document.getElementById('veo3-results').innerHTML = `
                                 <div class="text-center text-red-500">

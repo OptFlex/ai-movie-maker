@@ -74,6 +74,37 @@ Deno.serve(async (req) => {
     const result = await response.json()
     console.log('操作ステータス取得成功:', result.done ? '完了' : '処理中')
 
+    // 完了していて、動画URIがある場合は動画をダウンロード
+    if (result.done && result.response?.generateVideoResponse?.generatedSamples?.[0]?.video?.uri) {
+      const videoUri = result.response.generateVideoResponse.generatedSamples[0].video.uri
+      console.log('動画をダウンロード中:', videoUri)
+
+      try {
+        // APIキーを使って動画をダウンロード
+        const videoResponse = await fetch(videoUri, {
+          headers: {
+            'x-goog-api-key': VEO3_API_KEY
+          }
+        })
+
+        if (videoResponse.ok) {
+          // 動画データをBase64に変換
+          const videoBlob = await videoResponse.arrayBuffer()
+          const base64Video = btoa(
+            new Uint8Array(videoBlob).reduce((data, byte) => data + String.fromCharCode(byte), '')
+          )
+
+          // 結果に動画データを追加
+          result.videoBase64 = base64Video
+          console.log('動画ダウンロード成功:', base64Video.length, '文字')
+        } else {
+          console.error('動画ダウンロード失敗:', videoResponse.status)
+        }
+      } catch (downloadError) {
+        console.error('動画ダウンロードエラー:', downloadError)
+      }
+    }
+
     // 結果を返す
     return new Response(
       JSON.stringify(result),
