@@ -271,11 +271,11 @@
         const SUPABASE_URL = 'https://sdrpysyhoqnrpixwnhfy.supabase.co'
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkcnB5c3lob3FucnBpeHduaGZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2ODYwMDMsImV4cCI6MjA4MzI2MjAwM30.UK9f1aP_49c49KlIHRekvb3nmK5pInR3kMW-mwILzkI'
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
         // 認証チェック
         async function checkAuth() {
-            const { data: { session } } = await supabase.auth.getSession()
+            const { data: { session } } = await supabaseClient.auth.getSession()
 
             if (!session) {
                 // 未ログインならlogin.htmlへリダイレクト
