@@ -65,7 +65,8 @@ Deno.serve(async (req) => {
     // 画像がある場合は追加（空文字列でない場合のみ）
     if (imageBase64 && imageBase64.trim() !== '') {
       requestBody.instances[0].image = {
-        bytesBase64Encoded: imageBase64
+        bytesBase64Encoded: imageBase64,
+        mimeType: mimeType || 'image/jpeg'
       }
     }
 
