@@ -93,6 +93,31 @@
 
         </div>
 
+        <!-- 画像プレビューモーダル -->
+        <div id="image-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4" onclick="closeModal(event)">
+            <div class="relative max-w-6xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
+                <!-- 閉じるボタン -->
+                <button onclick="closeModal()" class="absolute top-4 right-4 z-10 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition">
+                    <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+
+                <!-- 画像表示エリア -->
+                <div class="flex flex-col items-center p-8">
+                    <img id="modal-image" src="" alt="プレビュー" class="max-w-full max-h-[70vh] rounded-lg shadow-lg object-contain mb-6">
+
+                    <!-- ダウンロードボタン -->
+                    <button onclick="downloadModalImage()" class="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        この画像をダウンロード
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Edge Functions経由で安全に実行 -->
         <div class="mt-8 bg-green-50 border border-green-200 rounded-lg p-4 max-w-3xl mx-auto">
             <h3 class="text-sm font-bold text-green-800 mb-2">🔐 セキュリティ</h3>
@@ -206,12 +231,15 @@
                                 generatedImages.push(imageData);
 
                                 resultsDiv.innerHTML += `
-                                    <div class="relative group cursor-pointer">
+                                    <div class="relative group cursor-pointer" onclick="openModal(${successCount})">
                                         <img id="nanobanana-img-${successCount}" src="data:image/png;base64,${imageData}" class="aspect-video rounded-lg object-cover" alt="生成画像 ${successCount + 1}">
-                                        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition rounded-lg flex items-center justify-center">
-                                            <button onclick="downloadImage(${successCount})" class="opacity-0 group-hover:opacity-100 px-3 py-1 bg-white text-gray-800 rounded-lg text-xs font-semibold hover:bg-gray-100">
-                                                ダウンロード
-                                            </button>
+                                        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition rounded-lg flex items-center justify-center">
+                                            <div class="opacity-0 group-hover:opacity-100 text-white text-sm font-semibold flex items-center gap-2">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path>
+                                                </svg>
+                                                クリックして拡大
+                                            </div>
                                         </div>
                                     </div>
                                 `;
@@ -261,6 +289,31 @@
                 console.log(`画像 ${index + 1} をダウンロードしました`);
             } else {
                 alert('画像データがありません。先に画像を生成してください。');
+            }
+        }
+
+        // モーダル用の変数
+        let currentModalImageIndex = null;
+
+        // モーダルを開く
+        function openModal(index) {
+            currentModalImageIndex = index;
+            const imageData = generatedImages[index];
+            document.getElementById('modal-image').src = `data:image/png;base64,${imageData}`;
+            document.getElementById('image-modal').classList.remove('hidden');
+        }
+
+        // モーダルを閉じる
+        function closeModal(event) {
+            if (event && event.target !== event.currentTarget) return;
+            document.getElementById('image-modal').classList.add('hidden');
+            currentModalImageIndex = null;
+        }
+
+        // モーダルの画像をダウンロード
+        function downloadModalImage() {
+            if (currentModalImageIndex !== null) {
+                downloadImage(currentModalImageIndex);
             }
         }
     </script>
