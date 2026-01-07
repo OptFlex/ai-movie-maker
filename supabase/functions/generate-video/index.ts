@@ -43,10 +43,9 @@ Deno.serve(async (req) => {
       )
     }
 
-    // モデル選択（fast or standard）
-    const model = modelType === 'standard'
-      ? 'veo-3.1-generate-preview'
-      : 'veo-3.1-fast-generate-preview'
+    // モデル選択（現在はveo-3.1-generate-previewのみ利用可能）
+    // TODO: veo-3.1-fast-generate-previewが利用可能になったら戻す
+    const model = 'veo-3.1-generate-preview'
 
     console.log('Veo API呼び出し開始:', model, prompt.substring(0, 50))
 
