@@ -87,7 +87,13 @@
         // Googleログイン処理
         // ========================================
         document.getElementById('google-login-btn').addEventListener('click', async () => {
+            console.log('🔵 ログインボタンがクリックされました')
+            console.log('Supabase URL:', SUPABASE_URL)
+            console.log('Origin:', window.location.origin)
+            console.log('Redirect URL:', `${window.location.origin}/ai-movie-maker/index.html`)
+
             try {
+                console.log('🔵 Supabase OAuth呼び出し開始...')
                 const { data, error } = await supabase.auth.signInWithOAuth({
                     provider: 'google',
                     options: {
@@ -95,14 +101,18 @@
                     }
                 })
 
+                console.log('🔵 OAuth Response:', { data, error })
+
                 if (error) {
-                    console.error('ログインエラー:', error)
+                    console.error('❌ ログインエラー:', error)
                     alert('ログインに失敗しました: ' + error.message)
+                } else {
+                    console.log('✅ OAuth処理成功')
                 }
                 // 成功時は自動的にGoogleのログイン画面にリダイレクトされます
             } catch (error) {
-                console.error('予期しないエラー:', error)
-                alert('エラーが発生しました')
+                console.error('❌ 予期しないエラー:', error)
+                alert('エラーが発生しました: ' + error.message)
             }
         })
     </script>
