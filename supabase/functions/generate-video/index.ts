@@ -49,40 +49,33 @@ Deno.serve(async (req) => {
 
     console.log('Veo API呼び出し開始:', model, prompt.substring(0, 50))
 
-    // コンテンツ部分を構築（画像がある場合は含める）
-    const parts: any[] = []
+    // Veo API呼び出し（predictLongRunningを使用）
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:predictLongRunning`
 
-    // 画像がある場合は先に追加
-    if (imageBase64) {
-      parts.push({
-        inlineData: {
-          mimeType: mimeType || 'image/jpeg',
-          data: imageBase64
-        }
-      })
+    // リクエストボディの構築
+    const requestBody: any = {
+      instances: [{
+        prompt: prompt
+      }],
+      parameters: {
+        aspectRatio: '16:9'
+      }
     }
 
-    // プロンプトを追加
-    parts.push({ text: prompt })
-
-    // Veo API呼び出し
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${VEO3_API_KEY}`
+    // 画像がある場合は追加
+    if (imageBase64) {
+      requestBody.instances[0].image = {
+        bytesBase64Encoded: imageBase64
+      }
+    }
 
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-goog-api-key': VEO3_API_KEY
       },
-      body: JSON.stringify({
-        contents: [{
-          parts: parts
-        }],
-        generationConfig: {
-          temperature: 1.0,
-          topK: 40,
-          topP: 0.95,
-        }
-      })
+      body: JSON.stringify(requestBody)
     })
 
     if (!response.ok) {
@@ -101,9 +94,10 @@ Deno.serve(async (req) => {
     }
 
     const result = await response.json()
-    console.log('Veo API呼び出し成功')
+    console.log('Veo API呼び出し成功:', result)
 
-    // 結果を返す
+    // predictLongRunningはoperationオブジェクトを返す
+    // フロントエンドではoperation.nameを使ってポーリングする
     return new Response(
       JSON.stringify(result),
       {

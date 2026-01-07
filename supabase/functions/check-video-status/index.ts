@@ -46,12 +46,13 @@ Deno.serve(async (req) => {
     console.log('操作ステータス確認:', operationName)
 
     // Veo Operations API呼び出し
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${operationName}?key=${VEO3_API_KEY}`
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${operationName}`
 
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'x-goog-api-key': VEO3_API_KEY
       }
     })
 
