@@ -383,7 +383,7 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 
 [functions.generate-image]
 enabled = true
-verify_jwt = true
+verify_jwt = false
 import_map = "./functions/generate-image/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
@@ -392,9 +392,15 @@ entrypoint = "./functions/generate-image/index.ts"
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/generate-image/*.html" ]
 
+[functions.generate-video]
+enabled = true
+verify_jwt = false
+import_map = "./functions/generate-video/deno.json"
+entrypoint = "./functions/generate-video/index.ts"
+
 [functions.check-video-status]
 enabled = true
-verify_jwt = true
+verify_jwt = false
 import_map = "./functions/check-video-status/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
