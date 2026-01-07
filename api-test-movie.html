@@ -186,6 +186,16 @@
             }
         }
 
+        // 認証状態の変化を監視（OAuth callbackを処理）
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_OUT' || !session) {
+                // ログアウト時または未ログイン時
+                if (!window.location.pathname.includes('login.html')) {
+                    window.location.href = './login.html'
+                }
+            }
+        })
+
         // ページ読み込み時に認証チェックを実行
         checkAuth()
 

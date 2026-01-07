@@ -177,6 +177,22 @@
             document.getElementById('user-email').textContent = user.email || 'ユーザー'
         }
 
+        // 認証状態の変化を監視（OAuth callbackを処理）
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            console.log('Auth state changed:', event, session)
+
+            if (event === 'SIGNED_IN' && session) {
+                // ログイン成功時
+                document.getElementById('app').style.display = 'flex'
+                document.getElementById('user-email').textContent = session.user.email || 'ユーザー'
+            } else if (event === 'SIGNED_OUT' || !session) {
+                // ログアウト時または未ログイン時
+                if (!window.location.pathname.includes('login.html')) {
+                    window.location.href = './login.html'
+                }
+            }
+        })
+
         // ページ読み込み時に認証チェック
         checkAuth()
 
