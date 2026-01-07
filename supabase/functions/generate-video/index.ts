@@ -62,8 +62,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 画像がある場合は追加
-    if (imageBase64) {
+    // 画像がある場合は追加（空文字列でない場合のみ）
+    if (imageBase64 && imageBase64.trim() !== '') {
       requestBody.instances[0].image = {
         bytesBase64Encoded: imageBase64
       }
@@ -81,10 +81,13 @@ Deno.serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text()
       console.error('Veo APIエラー:', response.status, errorText)
+      console.error('リクエストURL:', apiUrl)
+      console.error('リクエストボディ:', JSON.stringify(requestBody, null, 2))
       return new Response(
         JSON.stringify({
           error: 'Veo API呼び出しに失敗しました',
-          details: errorText
+          details: errorText,
+          status: response.status
         }),
         {
           status: response.status,
