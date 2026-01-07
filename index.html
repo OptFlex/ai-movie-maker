@@ -145,20 +145,56 @@
         </footer>
     </div>
 
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script>
-        // TODO: 認証チェックをここに追加（後で実装）
-        // 現在は認証なしで表示
-        document.getElementById('app').style.display = 'flex';
+        // ========================================
+        // Supabase設定
+        // ========================================
+        const SUPABASE_URL = 'https://sdrpysyhoqnrpixwnhfy.supabase.co'
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkcnB5c3lob3FucnBpeHduaGZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2ODYwMDMsImV4cCI6MjA4MzI2MjAwM30.UK9f1aP_49c49KlIHRekvb3nmK5pInR3kMW-mwILzkI'
 
-        // ユーザー情報表示（仮）
-        document.getElementById('user-email').textContent = 'user@example.com';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-        // ログアウトボタン（仮）
-        document.getElementById('logout-btn').addEventListener('click', () => {
-            if (confirm('ログアウトしますか？')) {
-                window.location.href = './login.html';
+        // ========================================
+        // 認証チェック
+        // ========================================
+        async function checkAuth() {
+            const { data: { session } } = await supabase.auth.getSession()
+
+            if (!session) {
+                // 未ログインならlogin.htmlへリダイレクト
+                window.location.href = './login.html'
+                return
             }
-        });
+
+            // ログイン済みなら画面を表示
+            document.getElementById('app').style.display = 'flex'
+
+            // ユーザー情報表示
+            const user = session.user
+            document.getElementById('user-email').textContent = user.email || 'ユーザー'
+        }
+
+        // ページ読み込み時に認証チェック
+        checkAuth()
+
+        // ========================================
+        // ログアウト処理
+        // ========================================
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            if (confirm('ログアウトしますか？')) {
+                const { error } = await supabase.auth.signOut()
+
+                if (error) {
+                    console.error('ログアウトエラー:', error)
+                    alert('ログアウトに失敗しました')
+                } else {
+                    window.location.href = './login.html'
+                }
+            }
+        })
     </script>
 </body>
 </html>

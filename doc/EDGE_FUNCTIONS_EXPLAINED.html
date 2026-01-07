@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edge Functions の仕組み - 図解</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen py-12">
+    <div class="max-w-6xl mx-auto px-6">
+        <!-- ヘッダー -->
+        <header class="mb-12 text-center">
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">🔐 Edge Functions の仕組み</h1>
+            <p class="text-lg text-gray-600">APIキーを安全に隠してGitHub Pagesで公開する方法</p>
+        </header>
+
+        <!-- 問題点 -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8">❌ 問題：現在の危険な状態</h2>
+
+            <div class="bg-red-50 border-4 border-red-500 rounded-xl p-8">
+                <h3 class="text-2xl font-bold text-red-700 mb-6">APIキーが露出してしまう</h3>
+
+                <div class="space-y-4">
+                    <!-- ブラウザ -->
+                    <div class="flex items-center gap-4">
+                        <div class="w-48 bg-blue-100 border-2 border-blue-500 rounded-lg p-4 text-center">
+                            <div class="text-3xl mb-2">🌐</div>
+                            <div class="font-bold text-blue-900">ブラウザ</div>
+                            <div class="text-xs text-blue-700">ユーザーのPC</div>
+                        </div>
+                        <div class="text-2xl text-red-600">→</div>
+                        <div class="flex-1 bg-white border-2 border-gray-300 rounded-lg p-3">
+                            <code class="text-sm text-gray-800">api-test-image.html</code>
+                        </div>
+                    </div>
+
+                    <!-- .env.js -->
+                    <div class="flex items-center gap-4">
+                        <div class="w-48 bg-red-100 border-2 border-red-500 rounded-lg p-4 text-center">
+                            <div class="text-3xl mb-2">🔑</div>
+                            <div class="font-bold text-red-900">.env.js</div>
+                            <div class="text-xs text-red-700">APIキーが書いてある</div>
+                        </div>
+                        <div class="text-2xl text-red-600">→</div>
+                        <div class="flex-1 bg-white border-2 border-gray-300 rounded-lg p-3">
+                            <code class="text-sm text-gray-800">const API_KEY = "AIzaSy..."</code>
+                            <div class="text-xs text-red-600 mt-1">⚠️ これが露出すると危険！</div>
+                        </div>
+                    </div>
+
+                    <!-- Gemini API -->
+                    <div class="flex items-center gap-4">
+                        <div class="w-48 bg-orange-100 border-2 border-orange-500 rounded-lg p-4 text-center">
+                            <div class="text-3xl mb-2">🤖</div>
+                            <div class="font-bold text-orange-900">Gemini API</div>
+                            <div class="text-xs text-orange-700">画像生成</div>
+                        </div>
+                        <div class="text-2xl text-red-600">→</div>
+                        <div class="flex-1 bg-white border-2 border-gray-300 rounded-lg p-3">
+                            <div class="text-sm text-gray-800">画像が生成される</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 bg-white border-2 border-red-400 rounded-lg p-4">
+                    <h4 class="font-bold text-red-900 mb-2">⚠️ 何が問題？</h4>
+                    <ul class="text-sm text-red-800 space-y-2">
+                        <li class="flex items-start gap-2">
+                            <span class="text-red-600">✗</span>
+                            <span><strong>.env.js をGitHubに公開できない</strong>（APIキーが見える）</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-red-600">✗</span>
+                            <span><strong>公開すると誰でもAPIキーを盗める</strong>（開発者ツールで見える）</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-red-600">✗</span>
+                            <span><strong>盗まれると高額請求される</strong>（悪用されて大量生成）</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-red-600">✗</span>
+                            <span><strong>api-test-image.html が公開できない</strong>（.env.jsがないと動かない）</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 解決策 -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8">✅ 解決策：Edge Functions を使う</h2>
+
+            <div class="bg-green-50 border-4 border-green-500 rounded-xl p-8">
+                <h3 class="text-2xl font-bold text-green-700 mb-6">APIキーをサーバー側で隠す</h3>
+
+                <div class="space-y-4">
+                    <!-- ブラウザ -->
+                    <div class="flex items-center gap-4">
+                        <div class="w-48 bg-blue-100 border-2 border-blue-500 rounded-lg p-4 text-center">
+                            <div class="text-3xl mb-2">🌐</div>
+                            <div class="font-bold text-blue-900">ブラウザ</div>
+                            <div class="text-xs text-blue-700">ユーザーのPC</div>
+                        </div>
+                        <div class="text-2xl text-green-600">→</div>
+                        <div class="flex-1 bg-white border-2 border-gray-300 rounded-lg p-3">
+                            <code class="text-sm text-gray-800">api-test-image.html</code>
+                            <div class="text-xs text-green-600 mt-1">✓ GitHub Pagesで公開できる！</div>
+                        </div>
+                    </div>
+
+                    <!-- Edge Function呼び出し -->
+                    <div class="flex items-center gap-4">
+                        <div class="w-48 bg-purple-100 border-2 border-purple-500 rounded-lg p-4 text-center">
+                            <div class="text-3xl mb-2">📡</div>
+                            <div class="font-bold text-purple-900">Edge Function</div>
+                            <div class="text-xs text-purple-700">呼び出し</div>
+                        </div>
+                        <div class="text-2xl text-green-600">→</div>
+                        <div class="flex-1 bg-white border-2 border-gray-300 rounded-lg p-3">
+                            <code class="text-sm text-gray-800">POST https://xxx.supabase.co/functions/v1/generate-image</code>
+                            <div class="text-xs text-gray-600 mt-1">プロンプトだけ送る（APIキーは送らない）</div>
+                        </div>
+                    </div>
+
+                    <!-- Supabase Edge Function -->
+                    <div class="flex items-center gap-4">
+                        <div class="w-48 bg-purple-100 border-2 border-purple-500 rounded-lg p-4 text-center">
+                            <div class="text-3xl mb-2">⚡</div>
+                            <div class="font-bold text-purple-900">Edge Function</div>
+                            <div class="text-xs text-purple-700">Supabaseサーバー</div>
+                        </div>
+                        <div class="text-2xl text-green-600">→</div>
+                        <div class="flex-1 bg-white border-2 border-gray-300 rounded-lg p-3">
+                            <code class="text-sm text-gray-800">supabase/functions/generate-image/index.ts</code>
+                            <div class="text-xs text-green-600 mt-1">✓ サーバー側で動く（ブラウザから見えない）</div>
+                        </div>
+                    </div>
+
+                    <!-- 環境変数からAPIキー取得 -->
+                    <div class="flex items-center gap-4">
+                        <div class="w-48 bg-green-100 border-2 border-green-500 rounded-lg p-4 text-center">
+                            <div class="text-3xl mb-2">🔐</div>
+                            <div class="font-bold text-green-900">環境変数</div>
+                            <div class="text-xs text-green-700">暗号化された保管庫</div>
+                        </div>
+                        <div class="text-2xl text-green-600">→</div>
+                        <div class="flex-1 bg-white border-2 border-gray-300 rounded-lg p-3">
+                            <code class="text-sm text-gray-800">GEMINI_API_KEY = "AIzaSy..."</code>
+                            <div class="text-xs text-green-600 mt-1">✓ サーバー内だけで取得（外部から見えない）</div>
+                        </div>
+                    </div>
+
+                    <!-- Gemini API -->
+                    <div class="flex items-center gap-4">
+                        <div class="w-48 bg-orange-100 border-2 border-orange-500 rounded-lg p-4 text-center">
+                            <div class="text-3xl mb-2">🤖</div>
+                            <div class="font-bold text-orange-900">Gemini API</div>
+                            <div class="text-xs text-orange-700">画像生成</div>
+                        </div>
+                        <div class="text-2xl text-green-600">→</div>
+                        <div class="flex-1 bg-white border-2 border-gray-300 rounded-lg p-3">
+                            <div class="text-sm text-gray-800">画像が生成される</div>
+                        </div>
+                    </div>
+
+                    <!-- ブラウザに返す -->
+                    <div class="flex items-center gap-4">
+                        <div class="w-48 bg-blue-100 border-2 border-blue-500 rounded-lg p-4 text-center">
+                            <div class="text-3xl mb-2">🖼️</div>
+                            <div class="font-bold text-blue-900">ブラウザ</div>
+                            <div class="text-xs text-blue-700">画像表示</div>
+                        </div>
+                        <div class="text-2xl text-green-600">←</div>
+                        <div class="flex-1 bg-white border-2 border-gray-300 rounded-lg p-3">
+                            <div class="text-sm text-gray-800">画像データが返される</div>
+                            <div class="text-xs text-green-600 mt-1">✓ APIキーは一切含まれない</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 bg-white border-2 border-green-400 rounded-lg p-4">
+                    <h4 class="font-bold text-green-900 mb-2">✨ メリット</h4>
+                    <ul class="text-sm text-green-800 space-y-2">
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-600">✓</span>
+                            <span><strong>APIキーは外部から見えない</strong>（Supabaseサーバー内だけ）</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-600">✓</span>
+                            <span><strong>api-test-image.html をGitHub Pagesで公開できる</strong></span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-600">✓</span>
+                            <span><strong>誰がアクセスしてもAPIキーは盗めない</strong></span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-600">✓</span>
+                            <span><strong>安全に運用できる</strong></span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ファイルの役割 -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8">📁 各ファイルの役割</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- api-test-image.html -->
+                <div class="bg-white rounded-xl shadow-lg p-6 border-2 border-blue-500">
+                    <div class="text-center mb-4">
+                        <div class="text-5xl mb-2">🌐</div>
+                        <h3 class="text-xl font-bold text-blue-900">api-test-image.html</h3>
+                    </div>
+                    <div class="space-y-3">
+                        <div>
+                            <div class="text-sm font-semibold text-gray-700 mb-1">実行場所</div>
+                            <div class="bg-blue-50 px-3 py-2 rounded text-sm text-blue-900">ブラウザ（ユーザーのPC）</div>
+                        </div>
+                        <div>
+                            <div class="text-sm font-semibold text-gray-700 mb-1">役割</div>
+                            <ul class="text-sm text-gray-600 space-y-1">
+                                <li>• ユーザーが見る画面</li>
+                                <li>• ボタンをクリック</li>
+                                <li>• Edge Functionを呼び出す</li>
+                                <li>• 結果を表示</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <div class="text-sm font-semibold text-gray-700 mb-1">公開</div>
+                            <div class="bg-green-50 px-3 py-2 rounded text-sm text-green-900">✓ GitHub Pagesで公開</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- index.ts -->
+                <div class="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-500">
+                    <div class="text-center mb-4">
+                        <div class="text-5xl mb-2">⚡</div>
+                        <h3 class="text-xl font-bold text-purple-900">index.ts</h3>
+                        <div class="text-xs text-purple-700">generate-image/index.ts</div>
+                    </div>
+                    <div class="space-y-3">
+                        <div>
+                            <div class="text-sm font-semibold text-gray-700 mb-1">実行場所</div>
+                            <div class="bg-purple-50 px-3 py-2 rounded text-sm text-purple-900">Supabaseサーバー</div>
+                        </div>
+                        <div>
+                            <div class="text-sm font-semibold text-gray-700 mb-1">役割</div>
+                            <ul class="text-sm text-gray-600 space-y-1">
+                                <li>• プロンプトを受け取る</li>
+                                <li>• 環境変数からAPIキー取得</li>
+                                <li>• Gemini APIを呼び出す</li>
+                                <li>• 結果を返す</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <div class="text-sm font-semibold text-gray-700 mb-1">公開</div>
+                            <div class="bg-orange-50 px-3 py-2 rounded text-sm text-orange-900">△ Supabaseにデプロイ</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 環境変数 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 border-2 border-green-500">
+                    <div class="text-center mb-4">
+                        <div class="text-5xl mb-2">🔐</div>
+                        <h3 class="text-xl font-bold text-green-900">環境変数</h3>
+                        <div class="text-xs text-green-700">GEMINI_API_KEY</div>
+                    </div>
+                    <div class="space-y-3">
+                        <div>
+                            <div class="text-sm font-semibold text-gray-700 mb-1">保存場所</div>
+                            <div class="bg-green-50 px-3 py-2 rounded text-sm text-green-900">Supabaseサーバー（暗号化）</div>
+                        </div>
+                        <div>
+                            <div class="text-sm font-semibold text-gray-700 mb-1">役割</div>
+                            <ul class="text-sm text-gray-600 space-y-1">
+                                <li>• APIキーを安全に保管</li>
+                                <li>• Edge Functionだけが読める</li>
+                                <li>• ブラウザからは見えない</li>
+                                <li>• GitHubにも含まれない</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <div class="text-sm font-semibold text-gray-700 mb-1">設定方法</div>
+                            <div class="bg-gray-50 px-3 py-2 rounded text-xs text-gray-700">
+                                <code>supabase secrets set GEMINI_API_KEY=...</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- コード例 -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8">💻 実際のコード</h2>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- ブラウザ側 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 border-2 border-blue-500">
+                    <h3 class="text-xl font-bold text-blue-900 mb-4">🌐 ブラウザ側（api-test-image.html）</h3>
+                    <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                        <pre class="text-green-400 text-sm"><code>// ボタンをクリックしたら
+async function generateImage() {
+  const prompt = "a cute cat"
+
+  // Edge Functionを呼び出す
+  const response = await fetch(
+    'https://xxx.supabase.co/functions/v1/generate-image',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ prompt })
+      // ⚠️ APIキーは送らない！
+    }
+  )
+
+  const result = await response.json()
+  // 画像を表示
+  displayImage(result)
+}</code></pre>
+                    </div>
+                    <div class="mt-4 text-sm text-gray-600">
+                        <p class="font-semibold mb-2">ポイント：</p>
+                        <ul class="space-y-1">
+                            <li>• プロンプトだけ送る</li>
+                            <li>• APIキーは一切含まない</li>
+                            <li>• GitHub Pagesで公開できる</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- サーバー側 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-500">
+                    <h3 class="text-xl font-bold text-purple-900 mb-4">⚡ サーバー側（index.ts）</h3>
+                    <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                        <pre class="text-green-400 text-sm"><code>Deno.serve(async (req) => {
+  // プロンプトを受け取る
+  const { prompt } = await req.json()
+
+  // 環境変数からAPIキーを取得
+  // ✓ サーバー内だけで取得
+  const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
+
+  // Gemini APIを呼び出す
+  const response = await fetch(
+    'https://gemini-api...',
+    {
+      headers: {
+        'Authorization': `Bearer ${GEMINI_API_KEY}`
+      },
+      body: JSON.stringify({ prompt })
+    }
+  )
+
+  const result = await response.json()
+
+  // 結果を返す
+  return new Response(JSON.stringify(result))
+})</code></pre>
+                    </div>
+                    <div class="mt-4 text-sm text-gray-600">
+                        <p class="font-semibold mb-2">ポイント：</p>
+                        <ul class="space-y-1">
+                            <li>• 環境変数からAPIキー取得</li>
+                            <li>• Gemini APIを呼び出す</li>
+                            <li>• ブラウザから見えない</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 今やっていること -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8">🚀 今やっていること</h2>
+
+            <div class="bg-blue-50 border-4 border-blue-500 rounded-xl p-8">
+                <h3 class="text-2xl font-bold text-blue-700 mb-6">環境変数を設定している</h3>
+
+                <div class="space-y-4">
+                    <div class="bg-white rounded-lg p-6 border-2 border-blue-300">
+                        <div class="font-bold text-gray-900 mb-3">ターミナルで実行：</div>
+                        <code class="bg-gray-900 text-green-400 px-4 py-3 rounded block text-sm">
+                            supabase secrets set GEMINI_API_KEY=AIzaSyCc4kFgaorX1MgGAqaT9kd2dkspP5_uv_U
+                        </code>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <div class="text-4xl">↓</div>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-6 border-2 border-green-300">
+                        <div class="font-bold text-gray-900 mb-3">これにより：</div>
+                        <div class="bg-green-50 rounded-lg p-4">
+                            <div class="text-center mb-3">
+                                <div class="text-4xl mb-2">🔐</div>
+                                <div class="font-bold text-green-900">Supabaseサーバー内（暗号化）</div>
+                            </div>
+                            <div class="bg-white border-2 border-green-400 rounded p-3">
+                                <code class="text-sm text-gray-800">GEMINI_API_KEY = "AIzaSy..."</code>
+                                <div class="text-xs text-green-600 mt-2">✓ 安全に保存される</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <div class="text-4xl">↓</div>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-6 border-2 border-purple-300">
+                        <div class="font-bold text-gray-900 mb-3">Edge Function（index.ts）から読み取れる：</div>
+                        <code class="bg-gray-900 text-green-400 px-4 py-3 rounded block text-sm">
+                            const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
+                        </code>
+                        <div class="text-xs text-purple-600 mt-2">✓ サーバー内だけで取得できる</div>
+                    </div>
+                </div>
+
+                <div class="mt-6 bg-white border-2 border-blue-400 rounded-lg p-4">
+                    <h4 class="font-bold text-blue-900 mb-2">📌 結果</h4>
+                    <ul class="text-sm text-blue-800 space-y-2">
+                        <li class="flex items-start gap-2">
+                            <span class="text-blue-600">✓</span>
+                            <span>.env.js のAPIキーが Supabaseサーバーに移動</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-blue-600">✓</span>
+                            <span>.env.js をGitHubに公開しなくてOK</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-blue-600">✓</span>
+                            <span>api-test-image.html を安全に公開できる</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-blue-600">✓</span>
+                            <span>APIキーは誰にも盗まれない</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- まとめ -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8">📝 まとめ</h2>
+
+            <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-8 border-2 border-blue-300">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white rounded-lg p-6 shadow">
+                        <div class="text-center mb-3">
+                            <div class="text-4xl mb-2">1️⃣</div>
+                            <div class="font-bold text-gray-900">Edge Function作成</div>
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            <code class="bg-gray-100 px-2 py-1 rounded block mb-2">supabase functions new generate-image</code>
+                            <div>→ index.ts ファイルが作成される</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-6 shadow">
+                        <div class="text-center mb-3">
+                            <div class="text-4xl mb-2">2️⃣</div>
+                            <div class="font-bold text-gray-900">APIキー設定</div>
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            <code class="bg-gray-100 px-2 py-1 rounded block mb-2">supabase secrets set GEMINI_API_KEY=...</code>
+                            <div>→ 環境変数に安全保存</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-6 shadow">
+                        <div class="text-center mb-3">
+                            <div class="text-4xl mb-2">3️⃣</div>
+                            <div class="font-bold text-gray-900">デプロイ</div>
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            <code class="bg-gray-100 px-2 py-1 rounded block mb-2">supabase functions deploy</code>
+                            <div>→ Supabaseで動作開始</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 bg-white rounded-lg p-6">
+                    <h4 class="font-bold text-gray-900 text-center mb-4 text-xl">🎉 完成後の動作</h4>
+                    <div class="text-center text-gray-700">
+                        <div class="text-lg mb-2">ユーザーがブラウザで api-test-image.html にアクセス</div>
+                        <div class="text-3xl my-3">↓</div>
+                        <div class="text-lg mb-2">「画像を生成」ボタンをクリック</div>
+                        <div class="text-3xl my-3">↓</div>
+                        <div class="text-lg mb-2">Edge Function（サーバー）が画像生成</div>
+                        <div class="text-3xl my-3">↓</div>
+                        <div class="text-lg font-bold text-green-600">画像が表示される！</div>
+                        <div class="text-sm text-gray-500 mt-3">（APIキーは一切露出しない）</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- フッター -->
+        <footer class="text-center text-gray-500 text-sm py-8 border-t border-gray-200">
+            <p>AI Movie Maker - Edge Functions 仕組み解説</p>
+            <p class="mt-2">最終更新: 2026-01-07</p>
+        </footer>
+    </div>
+</body>
+</html>

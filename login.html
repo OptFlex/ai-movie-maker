@@ -56,17 +56,55 @@
         </div>
     </div>
 
-    <script>
-        // TODO: Supabase認証をここに追加（後で実装）
-        // 現在は仮のログイン処理
-        document.getElementById('google-login-btn').addEventListener('click', () => {
-            // 仮のログイン処理（すぐにトップページへ）
-            alert('ログイン処理（仮）\n※実際の認証は後で実装します');
-            window.location.href = './index.html';
-        });
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-        // もし既にログイン済みの場合はトップページへリダイレクト
-        // TODO: Supabaseのセッションチェックをここに追加
+    <script>
+        // ========================================
+        // Supabase設定
+        // ========================================
+        const SUPABASE_URL = 'https://sdrpysyhoqnrpixwnhfy.supabase.co'
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkcnB5c3lob3FucnBpeHduaGZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2ODYwMDMsImV4cCI6MjA4MzI2MjAwM30.UK9f1aP_49c49KlIHRekvb3nmK5pInR3kMW-mwILzkI'
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+        // ========================================
+        // ページ読み込み時：既にログイン済みかチェック
+        // ========================================
+        async function checkSession() {
+            const { data: { session } } = await supabase.auth.getSession()
+
+            if (session) {
+                // 既にログイン済みならindex.htmlへリダイレクト
+                window.location.href = './index.html'
+            }
+        }
+
+        // ページ読み込み時に実行
+        checkSession()
+
+        // ========================================
+        // Googleログイン処理
+        // ========================================
+        document.getElementById('google-login-btn').addEventListener('click', async () => {
+            try {
+                const { data, error } = await supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                        redirectTo: `${window.location.origin}/ai-movie-maker/index.html`
+                    }
+                })
+
+                if (error) {
+                    console.error('ログインエラー:', error)
+                    alert('ログインに失敗しました: ' + error.message)
+                }
+                // 成功時は自動的にGoogleのログイン画面にリダイレクトされます
+            } catch (error) {
+                console.error('予期しないエラー:', error)
+                alert('エラーが発生しました')
+            }
+        })
     </script>
 </body>
 </html>

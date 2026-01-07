@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base64とは - 図解</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen py-12">
+    <div class="max-w-6xl mx-auto px-6">
+        <!-- ヘッダー -->
+        <header class="mb-12 text-center">
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">🔤 Base64とは？</h1>
+            <p class="text-lg text-gray-600">画像をテキストに変換する仕組み</p>
+        </header>
+
+        <!-- Base64の基本 -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8">📚 Base64とは</h2>
+
+            <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+                <div class="text-center mb-6">
+                    <div class="text-6xl mb-4">🖼️ → 🔤</div>
+                    <h3 class="text-2xl font-bold text-gray-900">画像データをテキストに変換する方法</h3>
+                </div>
+
+                <div class="bg-blue-50 border-2 border-blue-300 rounded-lg p-6">
+                    <h4 class="font-bold text-blue-900 mb-3 text-lg">簡単に言うと：</h4>
+                    <p class="text-blue-800 text-lg">
+                        <strong>バイナリデータ（0と1の羅列）を、アルファベットと数字だけの文字列に変換する技術</strong>
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- なぜBase64が必要か -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8">🤔 なぜBase64が必要なのか？</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 問題 -->
+                <div class="bg-red-50 border-4 border-red-500 rounded-xl p-6">
+                    <h3 class="text-xl font-bold text-red-900 mb-4">❌ 問題：画像はバイナリデータ</h3>
+                    <div class="space-y-4">
+                        <div class="bg-white rounded-lg p-4">
+                            <div class="text-sm font-semibold text-gray-700 mb-2">画像ファイル（PNG）の中身：</div>
+                            <div class="bg-gray-900 rounded p-3 overflow-x-auto">
+                                <code class="text-green-400 text-xs">10001001 01010000 01001110 01000111
+00001101 00001010 00011010 00001010
+...</code>
+                            </div>
+                            <div class="text-xs text-gray-600 mt-2">→ 0と1の羅列（バイナリ）</div>
+                        </div>
+
+                        <div class="bg-red-100 rounded-lg p-4">
+                            <h4 class="font-bold text-red-900 mb-2">問題点：</h4>
+                            <ul class="text-sm text-red-800 space-y-2">
+                                <li>• JSONに入れられない（文字列じゃない）</li>
+                                <li>• メールで送れない（テキストじゃない）</li>
+                                <li>• HTMLに直接埋め込めない</li>
+                                <li>• コピペできない</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 解決策 -->
+                <div class="bg-green-50 border-4 border-green-500 rounded-xl p-6">
+                    <h3 class="text-xl font-bold text-green-900 mb-4">✅ 解決策：Base64でテキスト化</h3>
+                    <div class="space-y-4">
+                        <div class="bg-white rounded-lg p-4">
+                            <div class="text-sm font-semibold text-gray-700 mb-2">Base64エンコード後：</div>
+                            <div class="bg-gray-900 rounded p-3 overflow-x-auto">
+                                <code class="text-green-400 text-xs">iVBORw0KGgoAAAANSUhEUgAA
+ABQAAAAUCAYAAACNiR0NAAAA
+...</code>
+                            </div>
+                            <div class="text-xs text-gray-600 mt-2">→ アルファベット・数字・記号だけ</div>
+                        </div>
+
+                        <div class="bg-green-100 rounded-lg p-4">
+                            <h4 class="font-bold text-green-900 mb-2">メリット：</h4>
+                            <ul class="text-sm text-green-800 space-y-2">
+                                <li>✓ JSONに入れられる</li>
+                                <li>✓ メールで送れる</li>
+                                <li>✓ HTMLに埋め込める</li>
+                                <li>✓ コピペできる</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Base64の仕組み -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8">⚙️ Base64の仕組み（超簡略版）</h2>
+
+            <div class="bg-white rounded-xl shadow-lg p-8">
+                <div class="space-y-8">
+                    <!-- ステップ1 -->
+                    <div class="border-b border-gray-200 pb-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">1</div>
+                            <h3 class="text-xl font-bold text-gray-900">元の画像データ（バイナリ）</h3>
+                        </div>
+                        <div class="bg-gray-900 rounded-lg p-4">
+                            <div class="text-green-400 text-sm mb-2">8ビット × 3バイト = 24ビット</div>
+                            <code class="text-green-400 text-xs">11010001 01101110 10101100</code>
+                        </div>
+                        <div class="text-sm text-gray-600 mt-2">→ 画像の一部分（3バイト）</div>
+                    </div>
+
+                    <!-- ステップ2 -->
+                    <div class="border-b border-gray-200 pb-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold">2</div>
+                            <h3 class="text-xl font-bold text-gray-900">6ビットずつに分割</h3>
+                        </div>
+                        <div class="bg-gray-900 rounded-lg p-4">
+                            <div class="text-purple-400 text-sm mb-2">24ビット ÷ 6ビット = 4グループ</div>
+                            <div class="space-y-1">
+                                <code class="text-purple-400 text-xs block">110100 | 010110 | 111010 | 1100</code>
+                                <code class="text-gray-500 text-xs block">  ↓       ↓       ↓       ↓</code>
+                                <code class="text-purple-400 text-xs block">  52      22      58      12</code>
+                            </div>
+                        </div>
+                        <div class="text-sm text-gray-600 mt-2">→ 6ビットずつ4つのグループに分ける</div>
+                    </div>
+
+                    <!-- ステップ3 -->
+                    <div>
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center font-bold">3</div>
+                            <h3 class="text-xl font-bold text-gray-900">Base64文字に変換</h3>
+                        </div>
+                        <div class="bg-gray-900 rounded-lg p-4 mb-4">
+                            <div class="text-green-400 text-sm mb-2">数値 → Base64文字</div>
+                            <div class="space-y-1">
+                                <code class="text-green-400 text-xs block">52 → 0</code>
+                                <code class="text-green-400 text-xs block">22 → W</code>
+                                <code class="text-green-400 text-xs block">58 → 6</code>
+                                <code class="text-green-400 text-xs block">12 → M</code>
+                            </div>
+                        </div>
+                        <div class="bg-green-100 border-2 border-green-400 rounded-lg p-4">
+                            <div class="font-bold text-green-900 mb-2">結果：</div>
+                            <div class="text-2xl font-bold text-green-800 text-center">0W6M</div>
+                            <div class="text-sm text-gray-600 text-center mt-2">→ 3バイトが4文字になった！</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Base64文字セット -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8">🔤 Base64で使える文字（全64種類）</h2>
+
+            <div class="bg-white rounded-xl shadow-lg p-8">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <!-- A-Z -->
+                    <div class="bg-blue-50 rounded-lg p-4">
+                        <h3 class="font-bold text-blue-900 mb-3">大文字（A-Z）</h3>
+                        <div class="bg-white rounded p-3 text-center">
+                            <code class="text-sm text-gray-800">A B C D E F G H I J<br>K L M N O P Q R S T<br>U V W X Y Z</code>
+                        </div>
+                        <div class="text-xs text-blue-700 mt-2 text-center">26文字</div>
+                    </div>
+
+                    <!-- a-z -->
+                    <div class="bg-green-50 rounded-lg p-4">
+                        <h3 class="font-bold text-green-900 mb-3">小文字（a-z）</h3>
+                        <div class="bg-white rounded p-3 text-center">
+                            <code class="text-sm text-gray-800">a b c d e f g h i j<br>k l m n o p q r s t<br>u v w x y z</code>
+                        </div>
+                        <div class="text-xs text-green-700 mt-2 text-center">26文字</div>
+                    </div>
+
+                    <!-- 0-9 -->
+                    <div class="bg-purple-50 rounded-lg p-4">
+                        <h3 class="font-bold text-purple-900 mb-3">数字（0-9）</h3>
+                        <div class="bg-white rounded p-3 text-center">
+                            <code class="text-sm text-gray-800">0 1 2 3 4 5<br>6 7 8 9</code>
+                        </div>
+                        <div class="text-xs text-purple-700 mt-2 text-center">10文字</div>
+                    </div>
+
+                    <!-- +, / -->
+                    <div class="bg-orange-50 rounded-lg p-4">
+                        <h3 class="font-bold text-orange-900 mb-3">記号</h3>
+                        <div class="bg-white rounded p-3 text-center">
+                            <code class="text-sm text-gray-800">+ /</code>
+                        </div>
+                        <div class="text-xs text-orange-700 mt-2 text-center">2文字</div>
+                    </div>
+                </div>
+
+                <div class="mt-6 bg-gray-100 rounded-lg p-4 text-center">
+                    <div class="text-lg font-bold text-gray-900">26 + 26 + 10 + 2 = <span class="text-blue-600">64文字</span></div>
+                    <div class="text-sm text-gray-600 mt-2">だから「Base<strong>64</strong>」</div>
+                </div>
+
+                <div class="mt-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
+                    <div class="text-sm text-yellow-800">
+                        <strong>補足：</strong> パディング用に <code class="bg-yellow-100 px-2 py-1 rounded">=</code> も使われます
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 実際の例 -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8">📸 実際の例</h2>
+
+            <div class="bg-white rounded-xl shadow-lg p-8">
+                <h3 class="text-xl font-bold text-gray-900 mb-6 text-center">小さな画像（16×16ピクセル）をBase64化</h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- 元の画像 -->
+                    <div>
+                        <h4 class="font-bold text-gray-900 mb-3">元の画像ファイル</h4>
+                        <div class="bg-gray-100 rounded-lg p-6 text-center mb-4">
+                            <div class="w-32 h-32 mx-auto bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg mb-3"></div>
+                            <div class="text-sm text-gray-600">16×16ピクセルの画像</div>
+                        </div>
+                        <div class="bg-gray-900 rounded-lg p-4">
+                            <div class="text-green-400 text-xs mb-2">ファイルサイズ：</div>
+                            <code class="text-green-400 text-sm">約 500バイト</code>
+                        </div>
+                    </div>
+
+                    <!-- Base64化後 -->
+                    <div>
+                        <h4 class="font-bold text-gray-900 mb-3">Base64エンコード後</h4>
+                        <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto mb-4" style="height: 220px;">
+                            <code class="text-green-400 text-xs">iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA
+BmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwY
+AAAAB3RJTUUH5QEHBwcQFqZ3JQAAAB1pVFh0Q29tbWVudAAA
+AAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAA6UlEQVQ4y62T
+zQrCMBCEv6ZqvXjx4ks/9KkE0YMXwYP4/w+hN0G8efHgwYNe
+RKS0SdM0TdM0...</code>
+                        </div>
+                        <div class="bg-gray-900 rounded-lg p-4">
+                            <div class="text-green-400 text-xs mb-2">データサイズ：</div>
+                            <code class="text-green-400 text-sm">約 667バイト（約1.33倍）</code>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 bg-blue-50 border-2 border-blue-300 rounded-lg p-4">
+                    <h4 class="font-bold text-blue-900 mb-2">💡 ポイント</h4>
+                    <ul class="text-sm text-blue-800 space-y-1">
+                        <li>• Base64化すると、サイズが<strong>約1.33倍</strong>になる</li>
+                        <li>• でも、テキストとして扱えるメリットが大きい</li>
+                        <li>• HTTPで簡単に送受信できる</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- AI Movie Makerでの使われ方 -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8">🎬 AI Movie Makerでの使われ方</h2>
+
+            <div class="space-y-6">
+                <!-- ステップ1 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 border-l-8 border-orange-500">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-12 h-12 bg-orange-500 text-white rounded-full flex items-center justify-center font-bold">
+                            1
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold text-gray-900 mb-3">Gemini APIが画像を生成</h3>
+                            <div class="bg-orange-50 rounded-lg p-4">
+                                <div class="text-sm text-orange-800">
+                                    Gemini APIは画像を<strong>Base64形式</strong>で返す
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ステップ2 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 border-l-8 border-purple-500">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-12 h-12 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold">
+                            2
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold text-gray-900 mb-3">Edge FunctionがBase64データを受け取る</h3>
+                            <div class="bg-gray-900 rounded-lg p-4">
+                                <pre class="text-green-400 text-xs overflow-x-auto"><code>{
+  "candidates": [{
+    "content": {
+      "parts": [{
+        "inlineData": {
+          "mimeType": "image/png",
+          "data": "iVBORw0KGgoAAAANSUhE..."  ← Base64!
+        }
+      }]
+    }
+  }]
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ステップ3 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 border-l-8 border-blue-500">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-12 h-12 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">
+                            3
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold text-gray-900 mb-3">Edge FunctionがBase64データをそのまま返す</h3>
+                            <div class="bg-gray-900 rounded-lg p-4">
+                                <pre class="text-green-400 text-xs"><code>return new Response(
+  JSON.stringify(result),  // Base64が含まれる
+  { headers: { 'Content-Type': 'application/json' } }
+)</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ステップ4 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 border-l-8 border-green-500">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-12 h-12 bg-green-500 text-white rounded-full flex items-center justify-center font-bold">
+                            4
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold text-gray-900 mb-3">ブラウザがBase64をデコードして表示</h3>
+                            <div class="bg-gray-900 rounded-lg p-4 mb-4">
+                                <pre class="text-green-400 text-xs"><code>// JavaScriptでBase64を画像に変換
+const imageData = result.candidates[0].content.parts[0].inlineData.data
+
+// img要素に設定
+const img = document.createElement('img')
+img.src = `data:image/png;base64,${imageData}`
+// ↑ ブラウザが自動でBase64をデコードして画像表示</code></pre>
+                            </div>
+                            <div class="bg-green-50 rounded-lg p-4">
+                                <div class="text-center">
+                                    <div class="w-32 h-32 mx-auto bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg mb-3"></div>
+                                    <div class="text-sm text-green-800 font-bold">画像が表示される！</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Data URL形式 -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8">🔗 Data URL形式</h2>
+
+            <div class="bg-white rounded-xl shadow-lg p-8">
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">HTMLでBase64画像を直接埋め込む方法</h3>
+                    <div class="bg-gray-900 rounded-lg p-4">
+                        <pre class="text-green-400 text-sm overflow-x-auto"><code>&lt;img src="data:image/png;base64,iVBORw0KGgoAAAANSUhE..." &gt;</code></pre>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-blue-50 rounded-lg p-4">
+                        <div class="font-bold text-blue-900 mb-2">data:</div>
+                        <div class="text-sm text-blue-800">Data URL の開始</div>
+                    </div>
+                    <div class="bg-purple-50 rounded-lg p-4">
+                        <div class="font-bold text-purple-900 mb-2">image/png;base64,</div>
+                        <div class="text-sm text-purple-800">画像形式とエンコード方式</div>
+                    </div>
+                    <div class="bg-green-50 rounded-lg p-4">
+                        <div class="font-bold text-green-900 mb-2">iVBORw0KGgo...</div>
+                        <div class="text-sm text-green-800">Base64エンコードされた画像データ</div>
+                    </div>
+                </div>
+
+                <div class="mt-6 bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
+                    <h4 class="font-bold text-yellow-900 mb-2">💡 メリット</h4>
+                    <ul class="text-sm text-yellow-800 space-y-1">
+                        <li>• 画像ファイルを別途アップロードしなくてOK</li>
+                        <li>• HTMLに直接埋め込める</li>
+                        <li>• HTTPリクエストが1回で済む</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- メリット・デメリット -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8">⚖️ Base64のメリット・デメリット</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- メリット -->
+                <div class="bg-green-50 border-4 border-green-500 rounded-xl p-6">
+                    <h3 class="text-2xl font-bold text-green-900 mb-4">✅ メリット</h3>
+                    <ul class="space-y-3 text-sm text-green-800">
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-600 mt-0.5">✓</span>
+                            <span><strong>テキストとして扱える</strong><br>JSON、XML、HTMLに埋め込める</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-600 mt-0.5">✓</span>
+                            <span><strong>ファイル不要</strong><br>画像を別途アップロードしなくてOK</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-600 mt-0.5">✓</span>
+                            <span><strong>簡単に送受信</strong><br>HTTP/HTTPS で簡単にやりとり</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-600 mt-0.5">✓</span>
+                            <span><strong>URLに埋め込める</strong><br>data:image/png;base64,...</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-600 mt-0.5">✓</span>
+                            <span><strong>コピペできる</strong><br>テキストなので簡単にコピー可能</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- デメリット -->
+                <div class="bg-red-50 border-4 border-red-500 rounded-xl p-6">
+                    <h3 class="text-2xl font-bold text-red-900 mb-4">❌ デメリット</h3>
+                    <ul class="space-y-3 text-sm text-red-800">
+                        <li class="flex items-start gap-2">
+                            <span class="text-red-600 mt-0.5">✗</span>
+                            <span><strong>サイズが約1.33倍</strong><br>元のファイルより大きくなる</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-red-600 mt-0.5">✗</span>
+                            <span><strong>エンコード/デコードが必要</strong><br>変換処理に時間がかかる</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-red-600 mt-0.5">✗</span>
+                            <span><strong>キャッシュが効かない</strong><br>ブラウザがキャッシュしにくい</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-red-600 mt-0.5">✗</span>
+                            <span><strong>大きな画像には不向き</strong><br>数MBの画像には使わない方が良い</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-red-600 mt-0.5">✗</span>
+                            <span><strong>人間が読めない</strong><br>デバッグしにくい</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- いつBase64を使うべきか -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8">🎯 いつBase64を使うべきか？</h2>
+
+            <div class="bg-white rounded-xl shadow-lg p-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- 使うべき -->
+                    <div class="bg-green-50 rounded-lg p-6">
+                        <h3 class="text-xl font-bold text-green-900 mb-4">✅ Base64を使うべき場合</h3>
+                        <ul class="text-sm text-green-800 space-y-2">
+                            <li>• 小さな画像（アイコン、サムネイル）</li>
+                            <li>• APIのレスポンスで画像を返す</li>
+                            <li>• メールに画像を埋め込む</li>
+                            <li>• 一時的な画像（すぐ削除される）</li>
+                            <li>• JSONで画像を扱いたい</li>
+                        </ul>
+                        <div class="mt-4 bg-white rounded p-3 border-2 border-green-300">
+                            <div class="font-bold text-green-900 mb-1">AI Movie Makerの場合：</div>
+                            <div class="text-xs text-green-800">
+                                Gemini APIから一時的に画像を受け取って表示するだけなので、Base64が最適！
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 使わないべき -->
+                    <div class="bg-red-50 rounded-lg p-6">
+                        <h3 class="text-xl font-bold text-red-900 mb-4">❌ Base64を使わないべき場合</h3>
+                        <ul class="text-sm text-red-800 space-y-2">
+                            <li>• 大きな画像（数MB以上）</li>
+                            <li>• ファイルとして保存したい</li>
+                            <li>• キャッシュが重要</li>
+                            <li>• 同じ画像を何度も使う</li>
+                            <li>• SEO対策が必要な画像</li>
+                        </ul>
+                        <div class="mt-4 bg-white rounded p-3 border-2 border-red-300">
+                            <div class="font-bold text-red-900 mb-1">代わりに：</div>
+                            <div class="text-xs text-red-800">
+                                画像ファイルをサーバーに保存して、URLで参照する<br>
+                                <code class="bg-gray-100 px-2 py-1 rounded">&lt;img src="/images/cat.png"&gt;</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- まとめ -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">📝 まとめ</h2>
+
+            <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-8 border-2 border-blue-300">
+                <div class="space-y-6">
+                    <div class="bg-white rounded-lg p-6 shadow">
+                        <h3 class="text-xl font-bold text-gray-900 mb-3">Base64とは</h3>
+                        <p class="text-gray-700">
+                            バイナリデータ（画像など）を、アルファベット・数字・記号だけの<strong>テキスト形式</strong>に変換する技術
+                        </p>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-6 shadow">
+                        <h3 class="text-xl font-bold text-gray-900 mb-3">なぜ必要？</h3>
+                        <p class="text-gray-700">
+                            JSONやHTMLなど、<strong>テキストしか扱えない場所</strong>で画像を使いたいから
+                        </p>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-6 shadow">
+                        <h3 class="text-xl font-bold text-gray-900 mb-3">AI Movie Makerでの使われ方</h3>
+                        <p class="text-gray-700">
+                            Gemini APIから返される画像データは<strong>Base64形式</strong>。これをブラウザで受け取って、そのまま表示している
+                        </p>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-6 shadow">
+                        <h3 class="text-xl font-bold text-gray-900 mb-3">覚えておくべきこと</h3>
+                        <ul class="text-gray-700 space-y-2">
+                            <li class="flex items-start gap-2">
+                                <span class="text-blue-600 mt-0.5">•</span>
+                                <span>Base64は画像を<strong>テキスト化</strong>する技術</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-blue-600 mt-0.5">•</span>
+                                <span>サイズは<strong>約1.33倍</strong>になる</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-blue-600 mt-0.5">•</span>
+                                <span>小さな画像や一時的な画像に最適</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-blue-600 mt-0.5">•</span>
+                                <span>ブラウザが自動でデコードして表示してくれる</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- フッター -->
+        <footer class="text-center text-gray-500 text-sm py-8 border-t border-gray-200">
+            <p>AI Movie Maker - Base64 解説</p>
+            <p class="mt-2">最終更新: 2026-01-07</p>
+        </footer>
+    </div>
+</body>
+</html>

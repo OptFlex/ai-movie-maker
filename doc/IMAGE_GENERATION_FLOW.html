@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>画像生成の流れ - 詳細図解</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen py-12">
+    <div class="max-w-6xl mx-auto px-6">
+        <!-- ヘッダー -->
+        <header class="mb-12 text-center">
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">🎨 画像生成の流れ</h1>
+            <p class="text-lg text-gray-600">ユーザーがプロンプトを入力してから画像が表示されるまで</p>
+        </header>
+
+        <!-- ステップバイステップ -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">📊 全体の流れ（10ステップ）</h2>
+
+            <div class="space-y-6">
+                <!-- ステップ1 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 border-l-8 border-blue-500">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-12 h-12 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold text-xl">
+                            1
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">ユーザーがブラウザでアクセス</h3>
+                            <div class="bg-gray-50 rounded-lg p-4 mb-3">
+                                <code class="text-sm text-blue-600">https://mutouryou.github.io/ai-movie-maker/api-test-image.html</code>
+                            </div>
+                            <div class="text-sm text-gray-700">
+                                <p class="mb-2"><strong>場所：</strong>ユーザーのブラウザ（Chrome、Safari等）</p>
+                                <p class="mb-2"><strong>動作：</strong>GitHub PagesからHTMLファイルがダウンロードされる</p>
+                                <p><strong>表示：</strong>画像生成フォームが表示される</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ステップ2 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 border-l-8 border-green-500">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-12 h-12 bg-green-500 text-white rounded-full flex items-center justify-center font-bold text-xl">
+                            2
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">ユーザーがプロンプトを入力</h3>
+                            <div class="bg-gray-50 rounded-lg p-4 mb-3">
+                                <div class="text-sm text-gray-600 mb-2">入力例：</div>
+                                <div class="bg-white border-2 border-gray-300 rounded p-3">
+                                    <p class="text-gray-800">"a cute cat sitting on a table, studio lighting, high quality"</p>
+                                </div>
+                            </div>
+                            <div class="text-sm text-gray-700">
+                                <p class="mb-2"><strong>場所：</strong>ユーザーのブラウザ</p>
+                                <p class="mb-2"><strong>動作：</strong>テキストエリアに入力</p>
+                                <p><strong>データ：</strong>まだブラウザ内にあるだけ（送信されていない）</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ステップ3 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 border-l-8 border-purple-500">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-12 h-12 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold text-xl">
+                            3
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">「画像を生成する」ボタンをクリック</h3>
+                            <div class="bg-gray-50 rounded-lg p-4 mb-3">
+                                <button class="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg">
+                                    画像を生成する
+                                </button>
+                            </div>
+                            <div class="text-sm text-gray-700">
+                                <p class="mb-2"><strong>場所：</strong>ユーザーのブラウザ</p>
+                                <p class="mb-2"><strong>動作：</strong>JavaScriptの <code class="bg-gray-200 px-2 py-1 rounded">generateImages()</code> 関数が実行される</p>
+                                <p><strong>次：</strong>Edge Functionへのリクエスト準備</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ステップ4 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 border-l-8 border-orange-500">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-12 h-12 bg-orange-500 text-white rounded-full flex items-center justify-center font-bold text-xl">
+                            4
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">JavaScriptがEdge Functionを呼び出す</h3>
+                            <div class="bg-gray-900 rounded-lg p-4 mb-3 overflow-x-auto">
+                                <pre class="text-green-400 text-sm"><code>// ブラウザで実行されるJavaScript
+const prompt = "a cute cat..."
+
+fetch('https://sdrpysyhoqnrpixwnhfy.supabase.co/functions/v1/generate-image', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'apikey': 'eyJhbGc...' // Supabase公開キー
+  },
+  body: JSON.stringify({ prompt })
+  // ⚠️ 注目：APIキーは送らない！プロンプトだけ！
+})</code></pre>
+                            </div>
+                            <div class="text-sm text-gray-700">
+                                <p class="mb-2"><strong>場所：</strong>ユーザーのブラウザ</p>
+                                <p class="mb-2"><strong>送信先：</strong>Supabase Edge Function</p>
+                                <p class="mb-2"><strong>送信内容：</strong></p>
+                                <ul class="list-disc list-inside ml-4 space-y-1">
+                                    <li>✅ プロンプト（"a cute cat..."）</li>
+                                    <li>❌ Gemini APIキー（送らない！）</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ステップ5 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 border-l-8 border-pink-500">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-12 h-12 bg-pink-500 text-white rounded-full flex items-center justify-center font-bold text-xl">
+                            5
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">Edge Functionがリクエストを受け取る</h3>
+                            <div class="bg-purple-50 rounded-lg p-4 mb-3 border-2 border-purple-300">
+                                <div class="text-center mb-3">
+                                    <div class="text-3xl mb-2">⚡</div>
+                                    <div class="font-bold text-purple-900">Supabaseサーバー</div>
+                                    <div class="text-xs text-purple-700">世界中のどこかのデータセンター</div>
+                                </div>
+                                <div class="bg-white rounded p-3">
+                                    <code class="text-sm text-gray-800">supabase/functions/generate-image/index.ts</code>
+                                </div>
+                            </div>
+                            <div class="text-sm text-gray-700">
+                                <p class="mb-2"><strong>場所：</strong>Supabaseサーバー（Deno環境）</p>
+                                <p class="mb-2"><strong>受け取ったデータ：</strong></p>
+                                <div class="bg-gray-100 rounded p-2 text-xs">
+                                    <code>{ "prompt": "a cute cat..." }</code>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ステップ6 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 border-l-8 border-red-500">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-12 h-12 bg-red-500 text-white rounded-full flex items-center justify-center font-bold text-xl">
+                            6
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">環境変数からAPIキーを取得</h3>
+                            <div class="bg-gray-900 rounded-lg p-4 mb-3 overflow-x-auto">
+                                <pre class="text-green-400 text-sm"><code>// index.ts（Supabaseサーバーで実行）
+Deno.serve(async (req) => {
+  // プロンプトを受け取る
+  const { prompt } = await req.json()
+
+  // 🔐 環境変数からAPIキーを取得（重要！）
+  const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
+  // → "AIzaSyCc4kFgaorX1MgGAqaT9kd2dkspP5_uv_U"
+
+  console.log('APIキー取得成功')
+})</code></pre>
+                            </div>
+                            <div class="text-sm text-gray-700">
+                                <p class="mb-2"><strong>場所：</strong>Supabaseサーバー内</p>
+                                <p class="mb-2"><strong>取得元：</strong>暗号化された環境変数ストレージ</p>
+                                <p class="mb-2"><strong>重要ポイント：</strong></p>
+                                <div class="bg-green-50 border-2 border-green-300 rounded p-3">
+                                    <ul class="space-y-1">
+                                        <li>✅ APIキーはサーバー内だけに存在</li>
+                                        <li>✅ ブラウザには一切送られない</li>
+                                        <li>✅ 開発者ツールでも見えない</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ステップ7 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 border-l-8 border-yellow-500">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-12 h-12 bg-yellow-500 text-white rounded-full flex items-center justify-center font-bold text-xl">
+                            7
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">Edge FunctionがGemini APIを呼び出す</h3>
+                            <div class="bg-gray-900 rounded-lg p-4 mb-3 overflow-x-auto">
+                                <pre class="text-green-400 text-sm"><code>// Gemini API呼び出し
+const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent?key=${GEMINI_API_KEY}`
+
+const response = await fetch(apiUrl, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    contents: [{
+      parts: [{ text: prompt }]  // "a cute cat..."
+    }]
+  })
+})
+
+console.log('Gemini API呼び出し完了')</code></pre>
+                            </div>
+                            <div class="text-sm text-gray-700">
+                                <p class="mb-2"><strong>場所：</strong>Supabaseサーバー → Gemini API</p>
+                                <p class="mb-2"><strong>送信内容：</strong></p>
+                                <ul class="list-disc list-inside ml-4 space-y-1">
+                                    <li>APIキー（URLパラメータ）</li>
+                                    <li>プロンプト（"a cute cat..."）</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ステップ8 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 border-l-8 border-indigo-500">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-12 h-12 bg-indigo-500 text-white rounded-full flex items-center justify-center font-bold text-xl">
+                            8
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">Gemini APIが画像を生成</h3>
+                            <div class="bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg p-6 mb-3 text-center">
+                                <div class="text-5xl mb-3">🤖</div>
+                                <div class="font-bold text-purple-900 mb-2">Google Gemini API</div>
+                                <div class="text-sm text-purple-700">AIが画像を生成中...</div>
+                                <div class="mt-4 text-6xl">🎨</div>
+                            </div>
+                            <div class="text-sm text-gray-700">
+                                <p class="mb-2"><strong>場所：</strong>GoogleのAIサーバー</p>
+                                <p class="mb-2"><strong>処理時間：</strong>数秒〜数十秒</p>
+                                <p class="mb-2"><strong>生成結果：</strong>Base64エンコードされた画像データ</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ステップ9 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 border-l-8 border-teal-500">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-12 h-12 bg-teal-500 text-white rounded-full flex items-center justify-center font-bold text-xl">
+                            9
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">Edge Functionが結果をブラウザに返す</h3>
+                            <div class="bg-gray-900 rounded-lg p-4 mb-3 overflow-x-auto">
+                                <pre class="text-green-400 text-sm"><code>// Gemini APIからの応答を取得
+const result = await response.json()
+
+// ブラウザに返す
+return new Response(
+  JSON.stringify(result),
+  {
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*'  // CORS対応
+    }
+  }
+)</code></pre>
+                            </div>
+                            <div class="text-sm text-gray-700">
+                                <p class="mb-2"><strong>返されるデータ：</strong></p>
+                                <div class="bg-gray-100 rounded p-3 text-xs overflow-x-auto">
+                                    <pre>{
+  "candidates": [{
+    "content": {
+      "parts": [{
+        "inlineData": {
+          "data": "iVBORw0KGgoAAAANSUhE..."  // 画像のBase64データ
+        }
+      }]
+    }
+  }]
+}</pre>
+                                </div>
+                                <p class="mt-2"><strong>重要：</strong>APIキーは含まれていない！</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ステップ10 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 border-l-8 border-green-600">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-12 h-12 bg-green-600 text-white rounded-full flex items-center justify-center font-bold text-xl">
+                            10
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">ブラウザに画像が表示される</h3>
+                            <div class="bg-gray-50 rounded-lg p-4 mb-3">
+                                <div class="aspect-video bg-gradient-to-br from-gray-700 to-gray-900 rounded-lg flex items-center justify-center">
+                                    <div class="text-center text-white">
+                                        <div class="text-6xl mb-3">🐱</div>
+                                        <div class="text-sm">生成された画像が表示される</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-gray-900 rounded-lg p-4 mb-3 overflow-x-auto">
+                                <pre class="text-green-400 text-sm"><code>// ブラウザのJavaScript
+const data = await response.json()
+
+// 画像データを抽出
+const imageData = data.candidates[0].content.parts[0].inlineData.data
+
+// img要素に表示
+const img = document.createElement('img')
+img.src = `data:image/png;base64,${imageData}`
+document.getElementById('results').appendChild(img)</code></pre>
+                            </div>
+                            <div class="text-sm text-gray-700">
+                                <p class="mb-2"><strong>場所：</strong>ユーザーのブラウザ</p>
+                                <p class="mb-2"><strong>表示：</strong>生成された猫の画像</p>
+                                <p><strong>完了！</strong>ユーザーは画像を見ることができる</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- データの流れ -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">📡 データの流れ（簡略版）</h2>
+
+            <div class="bg-white rounded-xl shadow-lg p-8">
+                <div class="space-y-6">
+                    <div class="flex items-center gap-4">
+                        <div class="w-48 bg-blue-100 border-2 border-blue-500 rounded-lg p-4 text-center">
+                            <div class="text-3xl mb-2">🌐</div>
+                            <div class="font-bold text-blue-900">ブラウザ</div>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-sm font-semibold text-gray-700 mb-1">送信：</div>
+                            <div class="bg-blue-50 px-3 py-2 rounded text-sm">
+                                <code>{ "prompt": "a cute cat..." }</code>
+                            </div>
+                        </div>
+                        <div class="text-3xl text-blue-600">→</div>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <div class="w-48 bg-purple-100 border-2 border-purple-500 rounded-lg p-4 text-center">
+                            <div class="text-3xl mb-2">⚡</div>
+                            <div class="font-bold text-purple-900">Edge Function</div>
+                            <div class="text-xs text-purple-700">Supabaseサーバー</div>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-sm font-semibold text-gray-700 mb-1">処理：</div>
+                            <div class="bg-purple-50 px-3 py-2 rounded text-sm space-y-1">
+                                <div>1. プロンプト受け取り</div>
+                                <div>2. 環境変数からAPIキー取得</div>
+                                <div>3. Gemini API呼び出し</div>
+                            </div>
+                        </div>
+                        <div class="text-3xl text-purple-600">→</div>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <div class="w-48 bg-orange-100 border-2 border-orange-500 rounded-lg p-4 text-center">
+                            <div class="text-3xl mb-2">🤖</div>
+                            <div class="font-bold text-orange-900">Gemini API</div>
+                            <div class="text-xs text-orange-700">Google AIサーバー</div>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-sm font-semibold text-gray-700 mb-1">処理：</div>
+                            <div class="bg-orange-50 px-3 py-2 rounded text-sm">
+                                AI画像生成（数秒）
+                            </div>
+                        </div>
+                        <div class="text-3xl text-orange-600">→</div>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <div class="w-48 bg-purple-100 border-2 border-purple-500 rounded-lg p-4 text-center">
+                            <div class="text-3xl mb-2">⚡</div>
+                            <div class="font-bold text-purple-900">Edge Function</div>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-sm font-semibold text-gray-700 mb-1">受信：</div>
+                            <div class="bg-purple-50 px-3 py-2 rounded text-sm">
+                                画像データ（Base64）
+                            </div>
+                        </div>
+                        <div class="text-3xl text-purple-600">→</div>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <div class="w-48 bg-blue-100 border-2 border-blue-500 rounded-lg p-4 text-center">
+                            <div class="text-3xl mb-2">🌐</div>
+                            <div class="font-bold text-blue-900">ブラウザ</div>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-sm font-semibold text-gray-700 mb-1">表示：</div>
+                            <div class="bg-green-50 border-2 border-green-400 px-3 py-2 rounded text-sm font-bold text-green-900">
+                                🖼️ 画像が表示される！
+                            </div>
+                        </div>
+                        <div class="text-3xl text-green-600">✓</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 重要ポイント -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">💡 重要ポイント</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- APIキーの扱い -->
+                <div class="bg-green-50 border-4 border-green-500 rounded-xl p-6">
+                    <h3 class="text-xl font-bold text-green-900 mb-4">✅ APIキーは安全</h3>
+                    <ul class="space-y-3 text-sm text-green-800">
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-600 mt-0.5">✓</span>
+                            <span><strong>ブラウザには送られない</strong><br>開発者ツールでも見えない</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-600 mt-0.5">✓</span>
+                            <span><strong>サーバー内だけで使用</strong><br>Edge Function内で取得・使用</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-600 mt-0.5">✓</span>
+                            <span><strong>GitHub Pagesに含まれない</strong><br>.gitignoreで保護</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-600 mt-0.5">✓</span>
+                            <span><strong>誰にも盗まれない</strong><br>Supabaseサーバー内で暗号化保存</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- プロンプトの扱い -->
+                <div class="bg-blue-50 border-4 border-blue-500 rounded-xl p-6">
+                    <h3 class="text-xl font-bold text-blue-900 mb-4">📝 プロンプトの流れ</h3>
+                    <ul class="space-y-3 text-sm text-blue-800">
+                        <li class="flex items-start gap-2">
+                            <span class="text-blue-600 mt-0.5">1.</span>
+                            <span><strong>ブラウザで入力</strong><br>"a cute cat..."</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-blue-600 mt-0.5">2.</span>
+                            <span><strong>Edge Functionへ送信</strong><br>HTTPSで暗号化</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-blue-600 mt-0.5">3.</span>
+                            <span><strong>Edge Functionで受信</strong><br>サーバー側で処理</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-blue-600 mt-0.5">4.</span>
+                            <span><strong>Gemini APIへ送信</strong><br>APIキーと一緒に送る</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 画像データの扱い -->
+                <div class="bg-purple-50 border-4 border-purple-500 rounded-xl p-6">
+                    <h3 class="text-xl font-bold text-purple-900 mb-4">🖼️ 画像データの流れ</h3>
+                    <ul class="space-y-3 text-sm text-purple-800">
+                        <li class="flex items-start gap-2">
+                            <span class="text-purple-600 mt-0.5">1.</span>
+                            <span><strong>Gemini APIが生成</strong><br>AIが画像を作成</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-purple-600 mt-0.5">2.</span>
+                            <span><strong>Base64エンコード</strong><br>テキスト形式に変換</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-purple-600 mt-0.5">3.</span>
+                            <span><strong>Edge Functionが受信</strong><br>サーバーで一時保持</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-purple-600 mt-0.5">4.</span>
+                            <span><strong>ブラウザに返す</strong><br>JSON形式で送信</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- セキュリティ -->
+                <div class="bg-red-50 border-4 border-red-500 rounded-xl p-6">
+                    <h3 class="text-xl font-bold text-red-900 mb-4">🔐 セキュリティ</h3>
+                    <ul class="space-y-3 text-sm text-red-800">
+                        <li class="flex items-start gap-2">
+                            <span class="text-red-600 mt-0.5">🔒</span>
+                            <span><strong>HTTPS通信</strong><br>全ての通信が暗号化</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-red-600 mt-0.5">🔒</span>
+                            <span><strong>CORS設定</strong><br>許可されたドメインのみアクセス可</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-red-600 mt-0.5">🔒</span>
+                            <span><strong>環境変数暗号化</strong><br>APIキーは暗号化保存</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-red-600 mt-0.5">🔒</span>
+                            <span><strong>アクセスログ</strong><br>Supabaseで監視可能</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- フッター -->
+        <footer class="text-center text-gray-500 text-sm py-8 border-t border-gray-200">
+            <p>AI Movie Maker - 画像生成フロー解説</p>
+            <p class="mt-2">最終更新: 2026-01-07</p>
+        </footer>
+    </div>
+</body>
+</html>
