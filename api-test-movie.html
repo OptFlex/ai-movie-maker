@@ -175,6 +175,20 @@
 
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
+        // 認証チェック
+        async function checkAuth() {
+            const { data: { session } } = await supabase.auth.getSession()
+
+            if (!session) {
+                // 未ログインならlogin.htmlへリダイレクト
+                window.location.href = './login.html'
+                return
+            }
+        }
+
+        // ページ読み込み時に認証チェックを実行
+        checkAuth()
+
         let uploadedImageFile = null;
 
         // モデル選択時のコスト情報更新
