@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>システムフロー＆Proプラン料金詳細 - 2026年1月8日</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .arrow {
+            position: relative;
+        }
+        .arrow::after {
+            content: '→';
+            font-size: 2rem;
+            color: #3b82f6;
+        }
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .animate-pulse-slow {
+            animation: pulse-slow 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-8">
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">🔄 システムフロー＆Proプラン料金詳細</h1>
+            <p class="text-gray-600">DB + Storage アーキテクチャの全体像 - 2026年1月8日作成</p>
+        </header>
+
+        <!-- Part 1: Supabase Proプラン料金の詳細 -->
+        <section class="bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-3xl font-bold mb-6 text-center">💰 Supabase Proプラン料金詳細</h2>
+
+            <div class="bg-white text-gray-900 rounded-lg p-6 mb-6">
+                <div class="text-center mb-6">
+                    <div class="text-5xl font-bold text-blue-600 mb-2">$25 / 月</div>
+                    <div class="text-xl text-gray-600">+ 従量課金</div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Database Storage -->
+                    <div class="bg-blue-50 border-2 border-blue-500 rounded-lg p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-4xl">🗄️</span>
+                            <div>
+                                <h3 class="text-xl font-bold text-blue-800">Database Storage</h3>
+                                <p class="text-xs text-gray-600">テーブルデータ（メタデータ）</p>
+                            </div>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="bg-white p-3 rounded">
+                                <div class="text-sm text-gray-600">含まれる容量</div>
+                                <div class="text-2xl font-bold text-blue-700">8 GB</div>
+                            </div>
+                            <div class="bg-white p-3 rounded">
+                                <div class="text-sm text-gray-600">超過料金</div>
+                                <div class="text-xl font-bold text-orange-600">$0.125 / GB</div>
+                            </div>
+                            <div class="text-xs text-gray-600 mt-2">
+                                ✅ 画像履歴のメタデータは<br>
+                                100万件でも約200MBなので余裕
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- File Storage -->
+                    <div class="bg-green-50 border-2 border-green-500 rounded-lg p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-4xl">📦</span>
+                            <div>
+                                <h3 class="text-xl font-bold text-green-800">File Storage</h3>
+                                <p class="text-xs text-gray-600">画像・動画ファイル本体</p>
+                            </div>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="bg-white p-3 rounded">
+                                <div class="text-sm text-gray-600">含まれる容量</div>
+                                <div class="text-2xl font-bold text-green-700">100 GB</div>
+                            </div>
+                            <div class="bg-white p-3 rounded">
+                                <div class="text-sm text-gray-600">超過料金</div>
+                                <div class="text-xl font-bold text-orange-600">$0.021 / GB</div>
+                            </div>
+                            <div class="text-xs text-gray-600 mt-2">
+                                ✅ 画像200,000枚 or<br>
+                                動画10,000本 保存可能
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 料金シミュレーション例 -->
+            <div class="bg-white bg-opacity-20 rounded-lg p-6">
+                <h3 class="text-xl font-bold mb-4 text-center">💡 実際の料金例</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white text-gray-900 rounded-lg p-4">
+                        <div class="font-bold text-center mb-2">通常利用</div>
+                        <div class="text-xs space-y-1">
+                            <div>DB: 2GB（8GB以内）</div>
+                            <div>Storage: 50GB（100GB以内）</div>
+                        </div>
+                        <div class="text-center mt-3 text-2xl font-bold text-green-600">
+                            $25/月
+                        </div>
+                        <div class="text-xs text-center text-gray-600">超過なし</div>
+                    </div>
+
+                    <div class="bg-white text-gray-900 rounded-lg p-4">
+                        <div class="font-bold text-center mb-2">中規模利用</div>
+                        <div class="text-xs space-y-1">
+                            <div>DB: 10GB（+2GB超過）</div>
+                            <div>Storage: 80GB（100GB以内）</div>
+                        </div>
+                        <div class="text-center mt-3 text-2xl font-bold text-yellow-600">
+                            $25.25/月
+                        </div>
+                        <div class="text-xs text-center text-gray-600">DB超過: +$0.25</div>
+                    </div>
+
+                    <div class="bg-white text-gray-900 rounded-lg p-4">
+                        <div class="font-bold text-center mb-2">大規模利用</div>
+                        <div class="text-xs space-y-1">
+                            <div>DB: 12GB（+4GB超過）</div>
+                            <div>Storage: 150GB（+50GB超過）</div>
+                        </div>
+                        <div class="text-center mt-3 text-2xl font-bold text-orange-600">
+                            $26.55/月
+                        </div>
+                        <div class="text-xs text-center text-gray-600">超過: +$1.55</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-6 text-sm opacity-90">
+                💡 ほとんどの場合、基本料金$25/月で十分です！
+            </div>
+        </section>
+
+        <!-- Part 2: システムフロー全体図 -->
+        <section class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-3xl font-bold text-gray-900 mb-6 text-center">🔄 システムフロー全体図（DB + Storage アーキテクチャ）</h2>
+
+            <!-- フロー1: 画像生成の流れ -->
+            <div class="mb-12">
+                <h3 class="text-2xl font-bold text-purple-700 mb-6 flex items-center gap-2">
+                    <span>📷</span> 画像生成の流れ
+                </h3>
+
+                <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-8">
+                    <div class="flex flex-col gap-6">
+                        <!-- ステップ1: ユーザー操作 -->
+                        <div class="flex items-center gap-4">
+                            <div class="flex-shrink-0 w-12 h-12 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold text-xl">
+                                1
+                            </div>
+                            <div class="flex-1 bg-white rounded-lg p-4 shadow-md border-2 border-purple-300">
+                                <div class="flex items-center gap-4">
+                                    <span class="text-4xl">🖥️</span>
+                                    <div class="flex-1">
+                                        <div class="font-bold text-lg">ユーザーがブラウザで操作</div>
+                                        <div class="text-sm text-gray-600 mt-1">
+                                            api-test-image.html で「画像を生成する」ボタンをクリック<br>
+                                            プロンプト: "未来的な都市の風景、ネオンライト"
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center text-3xl text-blue-500">⬇️</div>
+
+                        <!-- ステップ2: Edge Function呼び出し -->
+                        <div class="flex items-center gap-4">
+                            <div class="flex-shrink-0 w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xl">
+                                2
+                            </div>
+                            <div class="flex-1 bg-white rounded-lg p-4 shadow-md border-2 border-blue-300">
+                                <div class="flex items-center gap-4">
+                                    <span class="text-4xl">⚡</span>
+                                    <div class="flex-1">
+                                        <div class="font-bold text-lg">Supabase Edge Function 呼び出し</div>
+                                        <div class="text-sm text-gray-600 mt-1">
+                                            <code class="bg-gray-100 px-2 py-1 rounded">POST /functions/v1/generate-image</code><br>
+                                            フロントエンドから Edge Function にリクエスト
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center text-3xl text-blue-500">⬇️</div>
+
+                        <!-- ステップ3: Google Gemini API呼び出し -->
+                        <div class="flex items-center gap-4">
+                            <div class="flex-shrink-0 w-12 h-12 bg-green-600 text-white rounded-full flex items-center justify-center font-bold text-xl">
+                                3
+                            </div>
+                            <div class="flex-1 bg-white rounded-lg p-4 shadow-md border-2 border-green-300">
+                                <div class="flex items-center gap-4">
+                                    <span class="text-4xl">🤖</span>
+                                    <div class="flex-1">
+                                        <div class="font-bold text-lg">Google Gemini API で画像生成</div>
+                                        <div class="text-sm text-gray-600 mt-1">
+                                            Edge Function が API キーを使って Google API を呼び出し<br>
+                                            画像データ（Base64）を取得
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center text-3xl text-blue-500">⬇️</div>
+
+                        <!-- ステップ4: フロントエンドに返却 -->
+                        <div class="flex items-center gap-4">
+                            <div class="flex-shrink-0 w-12 h-12 bg-yellow-600 text-white rounded-full flex items-center justify-center font-bold text-xl">
+                                4
+                            </div>
+                            <div class="flex-1 bg-white rounded-lg p-4 shadow-md border-2 border-yellow-300">
+                                <div class="flex items-center gap-4">
+                                    <span class="text-4xl">📤</span>
+                                    <div class="flex-1">
+                                        <div class="font-bold text-lg">フロントエンドに返却</div>
+                                        <div class="text-sm text-gray-600 mt-1">
+                                            Edge Function → ブラウザへ画像データ（Base64）を返す<br>
+                                            ブラウザで画像をプレビュー表示
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center text-3xl text-green-500">⬇️ 保存する場合</div>
+
+                        <!-- ステップ5: Storageに保存 -->
+                        <div class="flex items-center gap-4">
+                            <div class="flex-shrink-0 w-12 h-12 bg-pink-600 text-white rounded-full flex items-center justify-center font-bold text-xl">
+                                5
+                            </div>
+                            <div class="flex-1 bg-white rounded-lg p-4 shadow-md border-2 border-pink-300">
+                                <div class="flex items-center gap-4">
+                                    <span class="text-4xl">📦</span>
+                                    <div class="flex-1">
+                                        <div class="font-bold text-lg">Supabase Storage に画像を保存</div>
+                                        <div class="text-sm text-gray-600 mt-1">
+                                            <code class="bg-gray-100 px-2 py-1 rounded">storage.from('generated-images').upload()</code><br>
+                                            パス例: <code>user_abc123/20260108_123456.png</code><br>
+                                            → 公開URL取得可能
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center text-3xl text-green-500">⬇️</div>
+
+                        <!-- ステップ6: DBにメタデータ保存 -->
+                        <div class="flex items-center gap-4">
+                            <div class="flex-shrink-0 w-12 h-12 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold text-xl">
+                                6
+                            </div>
+                            <div class="flex-1 bg-white rounded-lg p-4 shadow-md border-2 border-indigo-300">
+                                <div class="flex items-center gap-4">
+                                    <span class="text-4xl">🗄️</span>
+                                    <div class="flex-1">
+                                        <div class="font-bold text-lg">Supabase DB にメタデータ保存</div>
+                                        <div class="text-sm text-gray-600 mt-1">
+                                            <code class="bg-gray-100 px-2 py-1 rounded">supabase.from('generated_images').insert()</code><br>
+                                            保存内容: プロンプト、Storage パス、品質、作成日時など
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center">
+                            <div class="inline-block bg-green-500 text-white px-6 py-3 rounded-lg font-bold text-lg">
+                                ✅ 完了！
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- フロー2: 履歴表示の流れ -->
+            <div class="mb-12">
+                <h3 class="text-2xl font-bold text-blue-700 mb-6 flex items-center gap-2">
+                    <span>📜</span> 履歴表示の流れ
+                </h3>
+
+                <div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-8">
+                    <div class="flex flex-col gap-6">
+                        <!-- ステップ1: ユーザーが履歴ページを開く -->
+                        <div class="flex items-center gap-4">
+                            <div class="flex-shrink-0 w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xl">
+                                1
+                            </div>
+                            <div class="flex-1 bg-white rounded-lg p-4 shadow-md border-2 border-blue-300">
+                                <div class="flex items-center gap-4">
+                                    <span class="text-4xl">🖥️</span>
+                                    <div class="flex-1">
+                                        <div class="font-bold text-lg">ユーザーが履歴ページを開く</div>
+                                        <div class="text-sm text-gray-600 mt-1">
+                                            history.html（仮）を開く
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center text-3xl text-blue-500">⬇️</div>
+
+                        <!-- ステップ2: DBからメタデータ取得 -->
+                        <div class="flex items-center gap-4">
+                            <div class="flex-shrink-0 w-12 h-12 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold text-xl">
+                                2
+                            </div>
+                            <div class="flex-1 bg-white rounded-lg p-4 shadow-md border-2 border-indigo-300">
+                                <div class="flex items-center gap-4">
+                                    <span class="text-4xl">🗄️</span>
+                                    <div class="flex-1">
+                                        <div class="font-bold text-lg">Supabase DB からメタデータ取得</div>
+                                        <div class="text-sm text-gray-600 mt-1">
+                                            <code class="bg-gray-100 px-2 py-1 rounded">supabase.from('generated_images').select('*')</code><br>
+                                            → 画像一覧（プロンプト、Storage パス、日時）を取得<br>
+                                            <strong class="text-green-600">高速！</strong>（画像本体は含まれない）
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center text-3xl text-blue-500">⬇️</div>
+
+                        <!-- ステップ3: Storage URL を構築 -->
+                        <div class="flex items-center gap-4">
+                            <div class="flex-shrink-0 w-12 h-12 bg-green-600 text-white rounded-full flex items-center justify-center font-bold text-xl">
+                                3
+                            </div>
+                            <div class="flex-1 bg-white rounded-lg p-4 shadow-md border-2 border-green-300">
+                                <div class="flex items-center gap-4">
+                                    <span class="text-4xl">📦</span>
+                                    <div class="flex-1">
+                                        <div class="font-bold text-lg">Storage の公開 URL を構築</div>
+                                        <div class="text-sm text-gray-600 mt-1">
+                                            <code class="bg-gray-100 px-2 py-1 rounded">storage.getPublicUrl(path)</code><br>
+                                            各画像の Storage パスから公開 URL を生成
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center text-3xl text-blue-500">⬇️</div>
+
+                        <!-- ステップ4: サムネイル一覧表示 -->
+                        <div class="flex items-center gap-4">
+                            <div class="flex-shrink-0 w-12 h-12 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold text-xl">
+                                4
+                            </div>
+                            <div class="flex-1 bg-white rounded-lg p-4 shadow-md border-2 border-purple-300">
+                                <div class="flex items-center gap-4">
+                                    <span class="text-4xl">🖼️</span>
+                                    <div class="flex-1">
+                                        <div class="font-bold text-lg">サムネイル一覧を表示</div>
+                                        <div class="text-sm text-gray-600 mt-1">
+                                            <code>&lt;img src="公開URL"&gt;</code> で画像を表示<br>
+                                            ブラウザが Storage から画像を自動ダウンロード<br>
+                                            <strong class="text-green-600">CDN経由で高速配信！</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center">
+                            <div class="inline-block bg-blue-500 text-white px-6 py-3 rounded-lg font-bold text-lg">
+                                ✅ 履歴表示完了！
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- データ構造の詳細 -->
+            <div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                    <span>📋</span> データ構造の詳細
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Supabase DB テーブル構造 -->
+                    <div class="bg-indigo-50 border-2 border-indigo-500 rounded-lg p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-4xl">🗄️</span>
+                            <h4 class="text-xl font-bold text-indigo-800">Supabase DB テーブル</h4>
+                        </div>
+                        <div class="bg-white rounded p-4 font-mono text-sm">
+                            <div class="font-bold text-indigo-700 mb-2">generated_images</div>
+                            <div class="space-y-1 text-xs">
+                                <div class="flex">
+                                    <span class="w-32 text-gray-600">id:</span>
+                                    <span class="text-blue-600">uuid (PK)</span>
+                                </div>
+                                <div class="flex">
+                                    <span class="w-32 text-gray-600">user_id:</span>
+                                    <span class="text-blue-600">uuid (FK)</span>
+                                </div>
+                                <div class="flex">
+                                    <span class="w-32 text-gray-600">prompt:</span>
+                                    <span class="text-blue-600">text</span>
+                                </div>
+                                <div class="flex bg-yellow-100 p-1 rounded">
+                                    <span class="w-32 text-gray-600">storage_path:</span>
+                                    <span class="text-green-600 font-bold">text</span>
+                                </div>
+                                <div class="flex">
+                                    <span class="w-32 text-gray-600">quality:</span>
+                                    <span class="text-blue-600">text</span>
+                                </div>
+                                <div class="flex">
+                                    <span class="w-32 text-gray-600">type:</span>
+                                    <span class="text-blue-600">text</span>
+                                </div>
+                                <div class="flex">
+                                    <span class="w-32 text-gray-600">created_at:</span>
+                                    <span class="text-blue-600">timestamp</span>
+                                </div>
+                            </div>
+                            <div class="mt-3 text-xs text-gray-600">
+                                💾 サイズ: 約200 bytes/レコード<br>
+                                ✅ 画像本体は含まれない（軽量！）
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Supabase Storage 構造 -->
+                    <div class="bg-green-50 border-2 border-green-500 rounded-lg p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-4xl">📦</span>
+                            <h4 class="text-xl font-bold text-green-800">Supabase Storage</h4>
+                        </div>
+                        <div class="bg-white rounded p-4 font-mono text-sm">
+                            <div class="font-bold text-green-700 mb-2">バケット: generated-images</div>
+                            <div class="space-y-2 text-xs">
+                                <div class="bg-gray-100 p-2 rounded">
+                                    <div class="text-gray-600">パス構造:</div>
+                                    <div class="ml-2 mt-1">
+                                        <div>user_abc123/</div>
+                                        <div class="ml-4">├─ 20260108_123456.png</div>
+                                        <div class="ml-4">├─ 20260108_123457.png</div>
+                                        <div class="ml-4">└─ 20260108_123458.mp4</div>
+                                    </div>
+                                </div>
+                                <div class="bg-gray-100 p-2 rounded">
+                                    <div class="text-gray-600">公開URL例:</div>
+                                    <div class="text-xs break-all mt-1 text-blue-600">
+                                        https://sdrpysyhoqnrpixwnhfy.supabase.co/storage/v1/object/public/generated-images/user_abc123/20260108_123456.png
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3 text-xs text-gray-600">
+                                💾 サイズ: 500KB - 5MB/画像<br>
+                                ✅ CDN経由で高速配信
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Part 3: なぜDB + Storageが効率的なのか -->
+        <section class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-3xl font-bold text-gray-900 mb-6 text-center">💡 なぜ DB + Storage が効率的なのか？</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- DBのみの場合（非効率） -->
+                <div class="bg-red-50 border-2 border-red-500 rounded-lg p-6">
+                    <h3 class="text-xl font-bold text-red-800 mb-4 flex items-center gap-2">
+                        <span>❌</span> DBのみの場合（非効率）
+                    </h3>
+
+                    <div class="space-y-4">
+                        <div class="bg-white rounded p-4">
+                            <div class="font-bold text-gray-800 mb-2">履歴表示のクエリ</div>
+                            <div class="text-sm text-gray-600">
+                                <code class="bg-red-100 px-2 py-1 rounded text-xs">SELECT * FROM generated_images LIMIT 100</code>
+                            </div>
+                            <div class="mt-2 text-xs">
+                                <div class="text-red-600 font-bold">⚠️ 問題点:</div>
+                                <ul class="ml-4 mt-1 space-y-1">
+                                    <li>• 画像Base64（500KB）× 100枚 = <strong class="text-red-600">50MB転送</strong></li>
+                                    <li>• クエリが遅い（数秒かかる）</li>
+                                    <li>• ブラウザのメモリを大量消費</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded p-4">
+                            <div class="font-bold text-gray-800 mb-2">データ構造</div>
+                            <div class="font-mono text-xs bg-gray-100 p-3 rounded">
+                                <div>id: uuid</div>
+                                <div>user_id: uuid</div>
+                                <div>prompt: text</div>
+                                <div class="text-red-600 font-bold">image_base64: text (500KB!)</div>
+                                <div>created_at: timestamp</div>
+                            </div>
+                            <div class="mt-2 text-xs text-red-600">
+                                💔 1レコードが巨大（500KB）
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DB + Storageの場合（効率的） -->
+                <div class="bg-green-50 border-2 border-green-500 rounded-lg p-6">
+                    <h3 class="text-xl font-bold text-green-800 mb-4 flex items-center gap-2">
+                        <span>✅</span> DB + Storage（効率的）
+                    </h3>
+
+                    <div class="space-y-4">
+                        <div class="bg-white rounded p-4">
+                            <div class="font-bold text-gray-800 mb-2">履歴表示のクエリ</div>
+                            <div class="text-sm text-gray-600">
+                                <code class="bg-green-100 px-2 py-1 rounded text-xs">SELECT * FROM generated_images LIMIT 100</code>
+                            </div>
+                            <div class="mt-2 text-xs">
+                                <div class="text-green-600 font-bold">✅ メリット:</div>
+                                <ul class="ml-4 mt-1 space-y-1">
+                                    <li>• メタデータ（200B）× 100件 = <strong class="text-green-600">20KB転送</strong></li>
+                                    <li>• クエリが高速（0.1秒以下）</li>
+                                    <li>• 画像は必要な時だけ読み込み</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded p-4">
+                            <div class="font-bold text-gray-800 mb-2">データ構造</div>
+                            <div class="font-mono text-xs bg-gray-100 p-3 rounded">
+                                <div>id: uuid</div>
+                                <div>user_id: uuid</div>
+                                <div>prompt: text</div>
+                                <div class="text-green-600 font-bold">storage_path: text (50B!)</div>
+                                <div>created_at: timestamp</div>
+                            </div>
+                            <div class="mt-2 text-xs text-green-600">
+                                💚 1レコードが軽量（200B）
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 速度比較 -->
+            <div class="mt-8 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg p-6">
+                <h3 class="text-xl font-bold mb-4 text-center">⚡ 速度比較（100件の履歴表示）</h3>
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="text-center">
+                        <div class="text-sm mb-2">DBのみ</div>
+                        <div class="text-5xl font-bold mb-2">3-5秒</div>
+                        <div class="text-xs opacity-80">50MB転送</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-sm mb-2">DB + Storage</div>
+                        <div class="text-5xl font-bold mb-2 text-green-300">0.1秒</div>
+                        <div class="text-xs opacity-80">20KB転送</div>
+                    </div>
+                </div>
+                <div class="text-center mt-4 text-sm">
+                    <strong class="text-yellow-300">約30-50倍高速！</strong>
+                </div>
+            </div>
+        </section>
+
+        <!-- まとめ -->
+        <section class="bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-xl shadow-lg p-8">
+            <h2 class="text-3xl font-bold mb-6 text-center">🎯 まとめ</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white bg-opacity-20 rounded-lg p-6">
+                    <h3 class="text-xl font-bold mb-4">💰 Proプラン料金</h3>
+                    <ul class="space-y-2 text-sm">
+                        <li>✅ 基本料金: <strong>$25/月</strong></li>
+                        <li>✅ DB: 8GB含む（超過 $0.125/GB）</li>
+                        <li>✅ Storage: 100GB含む（超過 $0.021/GB）</li>
+                        <li>✅ ほとんどの場合、<strong>$25/月で十分</strong></li>
+                    </ul>
+                </div>
+
+                <div class="bg-white bg-opacity-20 rounded-lg p-6">
+                    <h3 class="text-xl font-bold mb-4">🔄 システムフロー</h3>
+                    <ul class="space-y-2 text-sm">
+                        <li>✅ 画像本体は Storage に保存（CDN配信）</li>
+                        <li>✅ メタデータは DB に保存（高速クエリ）</li>
+                        <li>✅ 履歴表示が超高速（30-50倍）</li>
+                        <li>✅ スケーラブルで将来も安心</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="mt-6 text-center text-lg">
+                <div class="inline-block bg-white text-blue-600 px-8 py-4 rounded-lg font-bold">
+                    DB + Storage アーキテクチャが最適解！
+                </div>
+            </div>
+        </section>
+
+        <!-- フッター -->
+        <footer class="mt-8 text-center text-gray-600 text-sm">
+            <p>AI Movie Maker プロジェクト - 2026年1月8日作成</p>
+        </footer>
+    </div>
+</body>
+</html>

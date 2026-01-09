@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>画像履歴保存アーキテクチャ比較 - 2026年1月8日</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-8">
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">📊 画像履歴保存アーキテクチャ比較</h1>
+            <p class="text-gray-600">Supabase DB + Storage vs DBのみ - 2026年1月8日作成</p>
+        </header>
+
+        <!-- アプローチ1: DB + Storage（推奨） -->
+        <section class="bg-white rounded-xl shadow-lg p-8 mb-8 border-4 border-green-500">
+            <div class="flex items-center gap-3 mb-6">
+                <span class="text-4xl">✅</span>
+                <h2 class="text-3xl font-bold text-green-700">アプローチ1: DB + Storage（推奨）</h2>
+            </div>
+
+            <!-- 図解 -->
+            <div class="bg-gradient-to-br from-green-50 to-blue-50 rounded-lg p-8 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- フロントエンド -->
+                    <div class="bg-white rounded-lg p-6 shadow-md">
+                        <div class="text-center mb-4">
+                            <div class="text-5xl mb-2">🖥️</div>
+                            <h3 class="text-xl font-bold text-gray-800">フロントエンド</h3>
+                        </div>
+                        <div class="space-y-2 text-sm">
+                            <div class="bg-purple-100 p-2 rounded">画像生成リクエスト</div>
+                            <div class="bg-purple-100 p-2 rounded">Base64画像データ受信</div>
+                        </div>
+                    </div>
+
+                    <!-- Supabase DB -->
+                    <div class="bg-white rounded-lg p-6 shadow-md border-2 border-blue-500">
+                        <div class="text-center mb-4">
+                            <div class="text-5xl mb-2">🗄️</div>
+                            <h3 class="text-xl font-bold text-blue-700">Supabase DB</h3>
+                            <p class="text-xs text-gray-600">(メタデータのみ)</p>
+                        </div>
+                        <div class="space-y-1 text-xs bg-gray-50 p-3 rounded font-mono">
+                            <div><strong>id:</strong> uuid</div>
+                            <div><strong>user_id:</strong> uuid</div>
+                            <div><strong>prompt:</strong> text</div>
+                            <div class="text-green-600"><strong>storage_path:</strong> text</div>
+                            <div><strong>quality:</strong> text</div>
+                            <div><strong>created_at:</strong> timestamp</div>
+                        </div>
+                        <div class="mt-3 text-xs text-center text-gray-600">
+                            サイズ: ~200 bytes/レコード
+                        </div>
+                    </div>
+
+                    <!-- Supabase Storage -->
+                    <div class="bg-white rounded-lg p-6 shadow-md border-2 border-green-500">
+                        <div class="text-center mb-4">
+                            <div class="text-5xl mb-2">📦</div>
+                            <h3 class="text-xl font-bold text-green-700">Supabase Storage</h3>
+                            <p class="text-xs text-gray-600">(画像ファイル本体)</p>
+                        </div>
+                        <div class="space-y-2 text-xs">
+                            <div class="bg-green-50 p-2 rounded">
+                                <strong>バケット:</strong> generated-images
+                            </div>
+                            <div class="bg-green-50 p-2 rounded font-mono">
+                                {user_id}/<br>
+                                　└ 20260108_123456.png
+                            </div>
+                        </div>
+                        <div class="mt-3 text-xs text-center text-gray-600">
+                            サイズ: ~500KB - 5MB/画像
+                        </div>
+                    </div>
+                </div>
+
+                <!-- データフロー -->
+                <div class="mt-8">
+                    <h4 class="font-bold text-center mb-4">📥 保存の流れ</h4>
+                    <div class="flex items-center justify-center gap-4 text-sm">
+                        <div class="bg-purple-500 text-white px-4 py-2 rounded">1. 画像生成</div>
+                        <div class="text-2xl">→</div>
+                        <div class="bg-green-500 text-white px-4 py-2 rounded">2. Storageに保存</div>
+                        <div class="text-2xl">→</div>
+                        <div class="bg-blue-500 text-white px-4 py-2 rounded">3. DBにメタデータ保存</div>
+                        <div class="text-2xl">→</div>
+                        <div class="bg-gray-500 text-white px-4 py-2 rounded">4. URL取得</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- メリット/デメリット -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-green-50 border-2 border-green-300 rounded-lg p-4">
+                    <h4 class="font-bold text-green-800 mb-3 flex items-center gap-2">
+                        <span class="text-2xl">✅</span> メリット
+                    </h4>
+                    <ul class="space-y-2 text-sm">
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-600">•</span>
+                            <span><strong>高速クエリ:</strong> メタデータのみ検索</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-600">•</span>
+                            <span><strong>コスト効率:</strong> Storageは安価</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-600">•</span>
+                            <span><strong>CDN配信:</strong> 画像を高速配信</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-600">•</span>
+                            <span><strong>スケーラブル:</strong> 大量の画像に対応</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-600">•</span>
+                            <span><strong>動画対応:</strong> 将来的に動画も保存可能</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+                    <h4 class="font-bold text-red-800 mb-3 flex items-center gap-2">
+                        <span class="text-2xl">⚠️</span> デメリット
+                    </h4>
+                    <ul class="space-y-2 text-sm">
+                        <li class="flex items-start gap-2">
+                            <span class="text-red-600">•</span>
+                            <span><strong>実装が複雑:</strong> 2つのシステム管理</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-red-600">•</span>
+                            <span><strong>設定が必要:</strong> Storageバケット作成</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-red-600">•</span>
+                            <span><strong>RLS設定:</strong> セキュリティルール2箇所</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- コード例 -->
+            <div class="mt-6">
+                <h4 class="font-bold mb-3">💻 実装コード例</h4>
+                <div class="bg-gray-900 text-green-400 p-4 rounded-lg text-sm font-mono overflow-x-auto">
+<pre>// 1. Storageに画像を保存
+const fileName = `${userId}/${Date.now()}.png`
+const { data: uploadData } = await supabase.storage
+  .from('generated-images')
+  .upload(fileName, base64ToBlob(imageBase64))
+
+// 2. DBにメタデータを保存
+const { data: dbData } = await supabase
+  .from('generated_images')
+  .insert({
+    user_id: userId,
+    prompt: prompt,
+    storage_path: fileName,
+    quality: 'HD'
+  })
+
+// 3. 公開URLを取得
+const { data: { publicUrl } } = supabase.storage
+  .from('generated-images')
+  .getPublicUrl(fileName)</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- アプローチ2: DBのみ -->
+        <section class="bg-white rounded-xl shadow-lg p-8 mb-8 border-4 border-yellow-500">
+            <div class="flex items-center gap-3 mb-6">
+                <span class="text-4xl">⚡</span>
+                <h2 class="text-3xl font-bold text-yellow-700">アプローチ2: DBのみ（シンプル）</h2>
+            </div>
+
+            <!-- 図解 -->
+            <div class="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-lg p-8 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- フロントエンド -->
+                    <div class="bg-white rounded-lg p-6 shadow-md">
+                        <div class="text-center mb-4">
+                            <div class="text-5xl mb-2">🖥️</div>
+                            <h3 class="text-xl font-bold text-gray-800">フロントエンド</h3>
+                        </div>
+                        <div class="space-y-2 text-sm">
+                            <div class="bg-purple-100 p-2 rounded">画像生成リクエスト</div>
+                            <div class="bg-purple-100 p-2 rounded">Base64画像データ受信</div>
+                        </div>
+                    </div>
+
+                    <!-- Supabase DB（全てのデータ） -->
+                    <div class="bg-white rounded-lg p-6 shadow-md border-2 border-yellow-500">
+                        <div class="text-center mb-4">
+                            <div class="text-5xl mb-2">🗄️</div>
+                            <h3 class="text-xl font-bold text-yellow-700">Supabase DB</h3>
+                            <p class="text-xs text-gray-600">(メタデータ + 画像データ)</p>
+                        </div>
+                        <div class="space-y-1 text-xs bg-gray-50 p-3 rounded font-mono">
+                            <div><strong>id:</strong> uuid</div>
+                            <div><strong>user_id:</strong> uuid</div>
+                            <div><strong>prompt:</strong> text</div>
+                            <div class="text-red-600"><strong>image_base64:</strong> text</div>
+                            <div><strong>quality:</strong> text</div>
+                            <div><strong>created_at:</strong> timestamp</div>
+                        </div>
+                        <div class="mt-3 text-xs text-center text-red-600 font-bold">
+                            サイズ: ~700KB - 7MB/レコード
+                        </div>
+                    </div>
+                </div>
+
+                <!-- データフロー -->
+                <div class="mt-8">
+                    <h4 class="font-bold text-center mb-4">📥 保存の流れ</h4>
+                    <div class="flex items-center justify-center gap-4 text-sm">
+                        <div class="bg-purple-500 text-white px-4 py-2 rounded">1. 画像生成</div>
+                        <div class="text-2xl">→</div>
+                        <div class="bg-yellow-500 text-white px-4 py-2 rounded">2. DBに全て保存</div>
+                        <div class="text-2xl">→</div>
+                        <div class="bg-gray-500 text-white px-4 py-2 rounded">3. 完了</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- メリット/デメリット -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-green-50 border-2 border-green-300 rounded-lg p-4">
+                    <h4 class="font-bold text-green-800 mb-3 flex items-center gap-2">
+                        <span class="text-2xl">✅</span> メリット
+                    </h4>
+                    <ul class="space-y-2 text-sm">
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-600">•</span>
+                            <span><strong>シンプル:</strong> 1つのシステムのみ</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-600">•</span>
+                            <span><strong>設定不要:</strong> Storageの設定なし</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-600">•</span>
+                            <span><strong>実装が楽:</strong> コード量が少ない</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+                    <h4 class="font-bold text-red-800 mb-3 flex items-center gap-2">
+                        <span class="text-2xl">⚠️</span> デメリット
+                    </h4>
+                    <ul class="space-y-2 text-sm">
+                        <li class="flex items-start gap-2">
+                            <span class="text-red-600">•</span>
+                            <span><strong>DBサイズ大:</strong> すぐに肥大化</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-red-600">•</span>
+                            <span><strong>クエリ遅い:</strong> 大きなデータ転送</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-red-600">•</span>
+                            <span><strong>コスト高:</strong> DB容量課金</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-red-600">•</span>
+                            <span><strong>CDNなし:</strong> 画像配信が遅い</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-red-600">•</span>
+                            <span><strong>動画不可:</strong> 大きなファイル不向き</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- コード例 -->
+            <div class="mt-6">
+                <h4 class="font-bold mb-3">💻 実装コード例</h4>
+                <div class="bg-gray-900 text-green-400 p-4 rounded-lg text-sm font-mono overflow-x-auto">
+<pre>// DBに全て保存（シンプル）
+const { data } = await supabase
+  .from('generated_images')
+  .insert({
+    user_id: userId,
+    prompt: prompt,
+    image_base64: imageBase64,  // Base64をそのまま保存
+    quality: 'HD'
+  })</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 比較表 -->
+        <section class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-3xl font-bold text-gray-900 mb-6 text-center">📊 詳細比較表</h2>
+
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-gray-800 text-white">
+                            <th class="border border-gray-600 p-3 text-left">項目</th>
+                            <th class="border border-gray-600 p-3 text-center bg-green-700">DB + Storage（推奨）</th>
+                            <th class="border border-gray-600 p-3 text-center bg-yellow-700">DBのみ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm">
+                        <tr>
+                            <td class="border border-gray-300 p-3 font-bold bg-gray-100">実装の複雑さ</td>
+                            <td class="border border-gray-300 p-3 text-center bg-yellow-50">⭐⭐⭐ (やや複雑)</td>
+                            <td class="border border-gray-300 p-3 text-center bg-green-50">⭐⭐⭐⭐⭐ (シンプル)</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-gray-300 p-3 font-bold bg-gray-100">クエリ速度</td>
+                            <td class="border border-gray-300 p-3 text-center bg-green-50">⭐⭐⭐⭐⭐ (高速)</td>
+                            <td class="border border-gray-300 p-3 text-center bg-red-50">⭐⭐ (遅い)</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-gray-300 p-3 font-bold bg-gray-100">画像配信速度</td>
+                            <td class="border border-gray-300 p-3 text-center bg-green-50">⭐⭐⭐⭐⭐ (CDN)</td>
+                            <td class="border border-gray-300 p-3 text-center bg-red-50">⭐⭐ (遅い)</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-gray-300 p-3 font-bold bg-gray-100">コスト効率</td>
+                            <td class="border border-gray-300 p-3 text-center bg-green-50">⭐⭐⭐⭐⭐ (安い)</td>
+                            <td class="border border-gray-300 p-3 text-center bg-red-50">⭐⭐ (高い)</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-gray-300 p-3 font-bold bg-gray-100">スケーラビリティ</td>
+                            <td class="border border-gray-300 p-3 text-center bg-green-50">⭐⭐⭐⭐⭐ (優秀)</td>
+                            <td class="border border-gray-300 p-3 text-center bg-red-50">⭐⭐ (限界あり)</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-gray-300 p-3 font-bold bg-gray-100">動画対応</td>
+                            <td class="border border-gray-300 p-3 text-center bg-green-50">⭐⭐⭐⭐⭐ (可能)</td>
+                            <td class="border border-gray-300 p-3 text-center bg-red-50">⭐ (不向き)</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-gray-300 p-3 font-bold bg-gray-100">100枚保存時のDBサイズ</td>
+                            <td class="border border-gray-300 p-3 text-center bg-green-50">~20 KB</td>
+                            <td class="border border-gray-300 p-3 text-center bg-red-50">~70 - 700 MB</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-gray-300 p-3 font-bold bg-gray-100">1000枚保存時のDBサイズ</td>
+                            <td class="border border-gray-300 p-3 text-center bg-green-50">~200 KB</td>
+                            <td class="border border-gray-300 p-3 text-center bg-red-50">~700 MB - 7 GB</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 料金比較 -->
+        <section class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-3xl font-bold text-gray-900 mb-6 text-center">💰 料金比較 (Supabase無料枠)</h2>
+
+            <div class="grid grid-cols-2 gap-6">
+                <div class="bg-green-50 border-2 border-green-500 rounded-lg p-6">
+                    <h3 class="font-bold text-green-800 text-xl mb-4 text-center">DB + Storage</h3>
+                    <div class="space-y-3 text-sm">
+                        <div class="bg-white p-3 rounded">
+                            <div class="font-bold">DB容量制限</div>
+                            <div class="text-gray-600">500 MB（メタデータのみなので余裕）</div>
+                        </div>
+                        <div class="bg-white p-3 rounded">
+                            <div class="font-bold">Storage容量制限</div>
+                            <div class="text-gray-600">1 GB（画像約200-2000枚）</div>
+                        </div>
+                        <div class="bg-green-100 p-3 rounded font-bold text-center text-green-800">
+                            実質: 1000枚以上保存可能 ✅
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-yellow-50 border-2 border-yellow-500 rounded-lg p-6">
+                    <h3 class="font-bold text-yellow-800 text-xl mb-4 text-center">DBのみ</h3>
+                    <div class="space-y-3 text-sm">
+                        <div class="bg-white p-3 rounded">
+                            <div class="font-bold">DB容量制限</div>
+                            <div class="text-gray-600">500 MB（全て保存）</div>
+                        </div>
+                        <div class="bg-white p-3 rounded">
+                            <div class="font-bold">Storage容量制限</div>
+                            <div class="text-gray-600">使用しない</div>
+                        </div>
+                        <div class="bg-red-100 p-3 rounded font-bold text-center text-red-800">
+                            実質: 70-700枚で上限 ⚠️
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 結論 -->
+        <section class="bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-xl shadow-lg p-8">
+            <h2 class="text-3xl font-bold mb-4 text-center">🎯 結論</h2>
+            <div class="bg-white bg-opacity-20 rounded-lg p-6 mb-4">
+                <p class="text-xl mb-4 text-center font-bold">
+                    将来性とコストを考えると「DB + Storage」が圧倒的におすすめ！
+                </p>
+                <ul class="space-y-2">
+                    <li class="flex items-start gap-2">
+                        <span class="text-2xl">✅</span>
+                        <span>100枚以上保存する予定なら、DB + Storage一択</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-2xl">✅</span>
+                        <span>将来的に動画も保存するなら、必須</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-2xl">✅</span>
+                        <span>CDN配信で高速表示</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-2xl">⚡</span>
+                        <span>プロトタイプやテストなら、DBのみでもOK</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="text-center text-sm opacity-90">
+                実装が少し複雑になりますが、長期的なメリットが大きいです
+            </div>
+        </section>
+
+        <!-- フッター -->
+        <footer class="mt-8 text-center text-gray-600 text-sm">
+            <p>AI Movie Maker プロジェクト - 2026年1月8日作成</p>
+        </footer>
+    </div>
+</body>
+</html>

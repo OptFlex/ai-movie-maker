@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>料金シミュレーター - AI Movie Maker - 2026年1月8日</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-8">
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">💰 料金シミュレーター</h1>
+            <p class="text-gray-600">Supabase (DB + Storage) + Google Gemini API - 2026年1月8日作成</p>
+        </header>
+
+        <!-- 料金体系 -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Supabase料金 -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="text-4xl">🗄️</span>
+                    <h2 class="text-2xl font-bold text-blue-700">Supabase</h2>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="bg-green-50 border-2 border-green-500 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="font-bold text-green-800">無料プラン</h3>
+                            <span class="text-2xl font-bold text-green-600">$0/月</span>
+                        </div>
+                        <ul class="text-sm space-y-1 text-gray-700">
+                            <li>✅ DB容量: 500 MB</li>
+                            <li>✅ Storage容量: 1 GB</li>
+                            <li>✅ 転送量: 2 GB/月</li>
+                            <li class="text-green-600 font-bold mt-2">→ 画像約2,000枚 or 動画約100本</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-blue-50 border-2 border-blue-500 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="font-bold text-blue-800">Proプラン</h3>
+                            <span class="text-2xl font-bold text-blue-600">$25/月</span>
+                        </div>
+                        <ul class="text-sm space-y-1 text-gray-700">
+                            <li>✅ DB容量: 8 GB (+$0.125/GB)</li>
+                            <li>✅ Storage容量: 100 GB (+$0.021/GB)</li>
+                            <li>✅ 転送量: 250 GB/月 (+$0.09/GB)</li>
+                            <li class="text-blue-600 font-bold mt-2">→ 画像約200,000枚 or 動画約10,000本</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Google Gemini API料金 -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="text-4xl">🤖</span>
+                    <h2 class="text-2xl font-bold text-purple-700">Google Gemini API</h2>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="bg-purple-50 border-2 border-purple-500 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="font-bold text-purple-800">画像生成</h3>
+                            <span class="text-xs bg-purple-200 px-2 py-1 rounded">Nano Banana Pro</span>
+                        </div>
+                        <ul class="text-sm space-y-1 text-gray-700">
+                            <li>📷 標準: <span class="font-bold text-green-600">$0</span>（現在無料？）</li>
+                            <li>📷 HD: <span class="font-bold text-green-600">$0</span>（現在無料？）</li>
+                            <li>📷 UHD: <span class="font-bold text-green-600">$0</span>（現在無料？）</li>
+                            <li class="text-green-600 font-bold mt-2">→ 何枚生成しても$0！</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-pink-50 border-2 border-pink-500 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="font-bold text-pink-800">動画生成</h3>
+                            <span class="text-xs bg-pink-200 px-2 py-1 rounded">Veo 3.1</span>
+                        </div>
+                        <ul class="text-sm space-y-1 text-gray-700">
+                            <li>🎬 Veo 3.1: <span class="font-bold text-red-600">$0.40/秒</span></li>
+                            <li class="bg-red-100 p-2 rounded mt-2">
+                                <div class="font-bold text-red-800">8秒動画 = $3.20/本</div>
+                            </li>
+                            <li class="text-gray-600 text-xs mt-2">
+                                ⚠️ コストの大部分はここ！
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- シナリオ別料金 -->
+        <section class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-3xl font-bold text-gray-900 mb-6 text-center">📊 シナリオ別料金シミュレーション</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- シナリオ1: 個人利用 -->
+                <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border-2 border-green-500">
+                    <div class="text-center mb-4">
+                        <div class="text-5xl mb-2">🏠</div>
+                        <h3 class="text-xl font-bold text-green-800">個人利用（軽め）</h3>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 mb-4">
+                        <h4 class="font-bold text-sm text-gray-700 mb-2">月間使用量</h4>
+                        <ul class="text-sm space-y-1">
+                            <li>📷 画像生成: <strong>100枚</strong></li>
+                            <li>🎬 動画生成: <strong>10本</strong>（8秒）</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 mb-4">
+                        <h4 class="font-bold text-sm text-gray-700 mb-2">保存データ量</h4>
+                        <ul class="text-xs space-y-1">
+                            <li>画像: 100枚 × 500KB = <strong>50 MB</strong></li>
+                            <li>動画: 10本 × 10MB = <strong>100 MB</strong></li>
+                            <li class="pt-2 border-t border-gray-300">
+                                合計: <strong class="text-green-600">150 MB</strong>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-green-100 border-2 border-green-500 rounded-lg p-4">
+                        <div class="text-center">
+                            <div class="text-sm text-gray-600 mb-1">月額料金</div>
+                            <div class="text-4xl font-bold text-green-700 mb-2">$32</div>
+                            <div class="text-xs space-y-1 text-left">
+                                <div>Supabase: <strong>$0</strong> 🎉</div>
+                                <div>画像生成: <strong>$0</strong></div>
+                                <div>動画生成: <strong>$32</strong></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 text-center text-xs text-green-700 font-bold">
+                        ✅ 無料プラン内で運用可能！
+                    </div>
+                </div>
+
+                <!-- シナリオ2: 中規模利用 -->
+                <div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-6 border-2 border-blue-500">
+                    <div class="text-center mb-4">
+                        <div class="text-5xl mb-2">🏢</div>
+                        <h3 class="text-xl font-bold text-blue-800">中規模利用</h3>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 mb-4">
+                        <h4 class="font-bold text-sm text-gray-700 mb-2">月間使用量</h4>
+                        <ul class="text-sm space-y-1">
+                            <li>📷 画像生成: <strong>500枚</strong></li>
+                            <li>🎬 動画生成: <strong>50本</strong>（8秒）</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 mb-4">
+                        <h4 class="font-bold text-sm text-gray-700 mb-2">保存データ量</h4>
+                        <ul class="text-xs space-y-1">
+                            <li>画像: 500枚 × 500KB = <strong>250 MB</strong></li>
+                            <li>動画: 50本 × 10MB = <strong>500 MB</strong></li>
+                            <li class="pt-2 border-t border-gray-300">
+                                合計: <strong class="text-blue-600">750 MB</strong>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-blue-100 border-2 border-blue-500 rounded-lg p-4">
+                        <div class="text-center">
+                            <div class="text-sm text-gray-600 mb-1">月額料金</div>
+                            <div class="text-4xl font-bold text-blue-700 mb-2">$160</div>
+                            <div class="text-xs space-y-1 text-left">
+                                <div>Supabase: <strong>$0</strong> 🎉</div>
+                                <div>画像生成: <strong>$0</strong></div>
+                                <div>動画生成: <strong>$160</strong></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 text-center text-xs text-blue-700 font-bold">
+                        ✅ まだ無料プラン内！
+                    </div>
+                </div>
+
+                <!-- シナリオ3: 大規模利用 -->
+                <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border-2 border-purple-500">
+                    <div class="text-center mb-4">
+                        <div class="text-5xl mb-2">🏭</div>
+                        <h3 class="text-xl font-bold text-purple-800">大規模利用</h3>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 mb-4">
+                        <h4 class="font-bold text-sm text-gray-700 mb-2">月間使用量</h4>
+                        <ul class="text-sm space-y-1">
+                            <li>📷 画像生成: <strong>2,000枚</strong></li>
+                            <li>🎬 動画生成: <strong>200本</strong>（8秒）</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 mb-4">
+                        <h4 class="font-bold text-sm text-gray-700 mb-2">保存データ量</h4>
+                        <ul class="text-xs space-y-1">
+                            <li>画像: 2,000枚 × 500KB = <strong>1,000 MB</strong></li>
+                            <li>動画: 200本 × 10MB = <strong>2,000 MB</strong></li>
+                            <li class="pt-2 border-t border-gray-300">
+                                合計: <strong class="text-red-600">3 GB</strong>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-purple-100 border-2 border-purple-500 rounded-lg p-4">
+                        <div class="text-center">
+                            <div class="text-sm text-gray-600 mb-1">月額料金</div>
+                            <div class="text-4xl font-bold text-purple-700 mb-2">$665</div>
+                            <div class="text-xs space-y-1 text-left">
+                                <div>Supabase: <strong>$25</strong> ⚠️</div>
+                                <div>画像生成: <strong>$0</strong></div>
+                                <div>動画生成: <strong>$640</strong></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 text-center text-xs text-red-700 font-bold">
+                        ⚠️ Proプラン必要（1GB超過）
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- コスト内訳の円グラフ -->
+        <section class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-3xl font-bold text-gray-900 mb-6 text-center">📈 コスト内訳（中規模利用の場合）</h2>
+
+            <div class="max-w-2xl mx-auto">
+                <canvas id="costChart" width="400" height="400"></canvas>
+            </div>
+
+            <div class="mt-6 text-center">
+                <div class="inline-block bg-red-50 border-2 border-red-500 rounded-lg p-4">
+                    <p class="text-xl font-bold text-red-800 mb-2">⚠️ 重要なポイント</p>
+                    <p class="text-gray-700">コストのほぼ100%が<strong class="text-red-600">動画生成API</strong>です！</p>
+                    <p class="text-sm text-gray-600 mt-2">Supabaseと画像生成は実質無料で使えます</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 累積コスト（1年間） -->
+        <section class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-3xl font-bold text-gray-900 mb-6 text-center">📅 累積コスト（1年間保存し続ける場合）</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-green-50 border-2 border-green-500 rounded-lg p-6">
+                    <h3 class="font-bold text-green-800 text-center mb-4">個人利用ペース</h3>
+                    <div class="space-y-3 text-sm">
+                        <div class="bg-white p-3 rounded">
+                            <div class="font-bold">月間生成</div>
+                            <div>画像: 100枚 / 動画: 10本</div>
+                        </div>
+                        <div class="bg-white p-3 rounded">
+                            <div class="font-bold">1年後の累積</div>
+                            <div>画像: 1,200枚 (600 MB)</div>
+                            <div>動画: 120本 (1.2 GB)</div>
+                            <div class="text-red-600 font-bold mt-1">合計: 1.8 GB</div>
+                        </div>
+                        <div class="bg-yellow-100 p-3 rounded">
+                            <div class="font-bold text-yellow-800">Supabase</div>
+                            <div class="text-xs">7ヶ月目からProプラン必要</div>
+                        </div>
+                        <div class="bg-green-100 p-3 rounded font-bold text-center text-2xl text-green-800">
+                            年間: $384 - $609
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 border-2 border-blue-500 rounded-lg p-6">
+                    <h3 class="font-bold text-blue-800 text-center mb-4">中規模ペース</h3>
+                    <div class="space-y-3 text-sm">
+                        <div class="bg-white p-3 rounded">
+                            <div class="font-bold">月間生成</div>
+                            <div>画像: 500枚 / 動画: 50本</div>
+                        </div>
+                        <div class="bg-white p-3 rounded">
+                            <div class="font-bold">1年後の累積</div>
+                            <div>画像: 6,000枚 (3 GB)</div>
+                            <div>動画: 600本 (6 GB)</div>
+                            <div class="text-red-600 font-bold mt-1">合計: 9 GB</div>
+                        </div>
+                        <div class="bg-yellow-100 p-3 rounded">
+                            <div class="font-bold text-yellow-800">Supabase</div>
+                            <div class="text-xs">2ヶ月目からProプラン必要</div>
+                        </div>
+                        <div class="bg-blue-100 p-3 rounded font-bold text-center text-2xl text-blue-800">
+                            年間: $2,220
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-purple-50 border-2 border-purple-500 rounded-lg p-6">
+                    <h3 class="font-bold text-purple-800 text-center mb-4">大規模ペース</h3>
+                    <div class="space-y-3 text-sm">
+                        <div class="bg-white p-3 rounded">
+                            <div class="font-bold">月間生成</div>
+                            <div>画像: 2,000枚 / 動画: 200本</div>
+                        </div>
+                        <div class="bg-white p-3 rounded">
+                            <div class="font-bold">1年後の累積</div>
+                            <div>画像: 24,000枚 (12 GB)</div>
+                            <div>動画: 2,400本 (24 GB)</div>
+                            <div class="text-red-600 font-bold mt-1">合計: 36 GB</div>
+                        </div>
+                        <div class="bg-red-100 p-3 rounded">
+                            <div class="font-bold text-red-800">Supabase</div>
+                            <div class="text-xs">最初からProプラン必要</div>
+                        </div>
+                        <div class="bg-purple-100 p-3 rounded font-bold text-center text-2xl text-purple-800">
+                            年間: $7,980
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-yellow-50 border-2 border-yellow-500 rounded-lg p-6">
+                <h4 class="font-bold text-yellow-800 text-center mb-3">💡 重要な注意点</h4>
+                <p class="text-center text-gray-700">
+                    保存し続けるとStorage容量が増えていきます。<br>
+                    定期的に古いデータを削除することで、<strong class="text-yellow-800">無料プランを維持</strong>できます！
+                </p>
+            </div>
+        </section>
+
+        <!-- コスト最適化のヒント -->
+        <section class="bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-3xl font-bold mb-6 text-center">💡 コスト最適化のヒント</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white bg-opacity-20 rounded-lg p-6">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span>🗑️</span> 1. 古いデータの自動削除
+                    </h3>
+                    <ul class="space-y-2 text-sm">
+                        <li>✅ 3ヶ月以上前の画像/動画を自動削除</li>
+                        <li>✅ 「お気に入り」機能で重要なものは残す</li>
+                        <li>✅ Supabase無料プランを永続的に維持</li>
+                    </ul>
+                    <div class="mt-4 bg-green-600 rounded p-3 text-center">
+                        <div class="font-bold">節約額</div>
+                        <div class="text-2xl">$25/月</div>
+                    </div>
+                </div>
+
+                <div class="bg-white bg-opacity-20 rounded-lg p-6">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span>🎯</span> 2. 動画生成を厳選
+                    </h3>
+                    <ul class="space-y-2 text-sm">
+                        <li>✅ 本当に必要な時だけ動画生成</li>
+                        <li>✅ プレビュー機能で確認してから生成</li>
+                        <li>✅ 画像は無料なので好きなだけ生成OK</li>
+                    </ul>
+                    <div class="mt-4 bg-green-600 rounded p-3 text-center">
+                        <div class="font-bold">50本→10本で節約</div>
+                        <div class="text-2xl">$128/月</div>
+                    </div>
+                </div>
+
+                <div class="bg-white bg-opacity-20 rounded-lg p-6">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span>📦</span> 3. 圧縮・最適化
+                    </h3>
+                    <ul class="space-y-2 text-sm">
+                        <li>✅ 画像をWebP形式に変換（50%縮小）</li>
+                        <li>✅ 動画の解像度を下げる（オプション追加）</li>
+                        <li>✅ Storage容量を2倍に伸ばせる</li>
+                    </ul>
+                    <div class="mt-4 bg-green-600 rounded p-3 text-center">
+                        <div class="font-bold">保存可能枚数</div>
+                        <div class="text-2xl">2倍に！</div>
+                    </div>
+                </div>
+
+                <div class="bg-white bg-opacity-20 rounded-lg p-6">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span>⏱️</span> 4. 短い動画を生成
+                    </h3>
+                    <ul class="space-y-2 text-sm">
+                        <li>✅ 8秒 → 5秒で37.5%節約</li>
+                        <li>✅ 用途に合わせた長さを選択</li>
+                        <li>✅ ループ動画なら短くてもOK</li>
+                    </ul>
+                    <div class="mt-4 bg-green-600 rounded p-3 text-center">
+                        <div class="font-bold">5秒動画なら</div>
+                        <div class="text-2xl">$2.00/本</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- まとめ -->
+        <section class="bg-white rounded-xl shadow-lg p-8">
+            <h2 class="text-3xl font-bold text-gray-900 mb-6 text-center">🎯 まとめ</h2>
+
+            <div class="max-w-3xl mx-auto space-y-6">
+                <div class="bg-green-50 border-2 border-green-500 rounded-lg p-6">
+                    <h3 class="text-xl font-bold text-green-800 mb-3">✅ 個人利用なら低コストで運用可能</h3>
+                    <p class="text-gray-700 mb-4">
+                        月10本の動画生成なら <strong class="text-green-600">月$32</strong> + Supabase無料プラン
+                    </p>
+                    <ul class="space-y-2 text-sm text-gray-700">
+                        <li>• Supabase（DB + Storage）は無料プラン内で十分</li>
+                        <li>• 画像生成は現在無料なので気軽に使える</li>
+                        <li>• コストの大部分は動画生成API</li>
+                    </ul>
+                </div>
+
+                <div class="bg-yellow-50 border-2 border-yellow-500 rounded-lg p-6">
+                    <h3 class="text-xl font-bold text-yellow-800 mb-3">⚠️ コスト管理のポイント</h3>
+                    <ul class="space-y-2 text-sm text-gray-700">
+                        <li>• 動画生成本数を管理する（最大のコスト要因）</li>
+                        <li>• 古いデータを定期削除してStorage容量を節約</li>
+                        <li>• Supabase無料プランは1GBまで（画像約2,000枚 or 動画約100本）</li>
+                    </ul>
+                </div>
+
+                <div class="bg-blue-50 border-2 border-blue-500 rounded-lg p-6">
+                    <h3 class="text-xl font-bold text-blue-800 mb-3">💰 月額料金の目安</h3>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between items-center p-3 bg-white rounded">
+                            <span>動画10本/月</span>
+                            <strong class="text-green-600 text-lg">$32</strong>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-white rounded">
+                            <span>動画50本/月</span>
+                            <strong class="text-blue-600 text-lg">$160</strong>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-white rounded">
+                            <span>動画200本/月</span>
+                            <strong class="text-purple-600 text-lg">$665</strong>
+                        </div>
+                        <div class="text-xs text-gray-600 text-center mt-3">
+                            ※ Supabase無料プラン or Proプラン（$25/月）含む
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg p-6">
+                    <p class="text-2xl font-bold mb-2">画像は何枚生成しても無料！</p>
+                    <p class="text-sm opacity-90">動画生成を適度に抑えることで、低コストで運用できます</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- フッター -->
+        <footer class="mt-8 text-center text-gray-600 text-sm">
+            <p>AI Movie Maker プロジェクト - 2026年1月8日作成</p>
+        </footer>
+    </div>
+
+    <script>
+        // 円グラフの描画
+        const ctx = document.getElementById('costChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: [
+                    '動画生成API ($160)',
+                    'Supabase ($0)',
+                    '画像生成API ($0)'
+                ],
+                datasets: [{
+                    data: [160, 0, 0],
+                    backgroundColor: [
+                        'rgb(239, 68, 68)',   // 赤（動画生成）
+                        'rgb(59, 130, 246)',  // 青（Supabase）
+                        'rgb(168, 85, 247)'   // 紫（画像生成）
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                size: 14
+                            },
+                            padding: 20
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: '月額$160の内訳（中規模利用の場合）',
+                        font: {
+                            size: 18,
+                            weight: 'bold'
+                        },
+                        padding: 20
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (context.parsed !== null) {
+                                    const percentage = context.parsed === 160 ? '100%' : '0%';
+                                    label += ': ' + percentage;
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
