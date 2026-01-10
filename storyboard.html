@@ -194,13 +194,8 @@
                 <div id="tab-image-content">
                 <h2 class="text-xl font-bold text-gray-900 mb-6">画像生成</h2>
 
-                <!-- 選択されたシーン情報 -->
-                <div id="selected-scene-info" class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p class="text-sm text-blue-700">シーンを選択してください</p>
-                </div>
-
                 <!-- 画像生成フォーム -->
-                <div id="image-generation-form" class="mb-8 hidden">
+                <div id="image-generation-form" class="mb-8">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">新規画像生成</h3>
 
                     <!-- 参照画像アップロード -->
@@ -281,13 +276,8 @@
                 <div id="tab-video-content" class="hidden">
                     <h2 class="text-xl font-bold text-gray-900 mb-6">動画生成</h2>
 
-                    <!-- 選択されたシーン情報 -->
-                    <div id="video-scene-info" class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                        <p class="text-sm text-green-700">シーンを選択してください</p>
-                    </div>
-
                     <!-- 動画生成フォーム -->
-                    <div id="video-generation-form" class="hidden">
+                    <div id="video-generation-form">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">動画生成</h3>
 
                         <!-- 選択中の画像プレビュー -->
@@ -637,18 +627,11 @@
 
         // 右パネルを更新
         function updateRightPanel() {
-            const infoDiv = document.getElementById('selected-scene-info');
-            const formDiv = document.getElementById('image-generation-form');
             const historyList = document.getElementById('image-history-list');
             const editSection = document.getElementById('image-edit-section');
 
             if (selectedSceneId) {
                 const scene = scenes.find(s => s.id === selectedSceneId);
-                infoDiv.innerHTML = `
-                    <p class="text-sm font-semibold text-blue-900">${scene.title}</p>
-                    <p class="text-xs text-blue-700 mt-1">セリフ: ${scene.dialogues.length}件</p>
-                `;
-                formDiv.classList.remove('hidden');
 
                 // 画像履歴を表示
                 if (scene.images.length > 0) {
@@ -667,8 +650,6 @@
                     editSection.classList.add('hidden');
                 }
             } else {
-                infoDiv.innerHTML = '<p class="text-sm text-blue-700">シーンを選択してください</p>';
-                formDiv.classList.add('hidden');
                 historyList.innerHTML = '<p class="text-sm text-gray-500">シーンを選択すると、画像履歴が表示されます</p>';
                 editSection.classList.add('hidden');
             }
@@ -1024,39 +1005,30 @@
             // 採用されている画像を探す
             const selectedImage = scene.images.find(img => img.selected);
 
-            const videoSceneInfo = document.getElementById('video-scene-info');
-            const videoForm = document.getElementById('video-generation-form');
             const videoImagePreview = document.getElementById('video-image-preview');
 
-            if (scene) {
-                // シーン情報を更新
-                videoSceneInfo.innerHTML = `
-                    <p class="text-sm font-semibold text-green-900">シーン #${scene.number}</p>
-                    <p class="text-xs text-green-700 mt-1">セリフ: ${scene.dialogues.length}件</p>
+            if (selectedImage) {
+                // 画像が採用されている場合
+                videoImagePreview.innerHTML = `
+                    <div class="text-center text-white">
+                        <svg class="w-12 h-12 mx-auto mb-2 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        <p class="text-xs font-semibold">✓ 採用済み画像</p>
+                        <p class="text-xs opacity-75 mt-1">${selectedImage.timestamp}</p>
+                    </div>
                 `;
-
-                if (selectedImage) {
-                    // 画像が採用されている場合
-                    videoForm.classList.remove('hidden');
-                    videoImagePreview.innerHTML = `
-                        <div class="text-center text-white">
-                            <svg class="w-12 h-12 mx-auto mb-2 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                            </svg>
-                            <p class="text-xs font-semibold">✓ 採用済み画像</p>
-                            <p class="text-xs opacity-75 mt-1">${selectedImage.timestamp}</p>
-                        </div>
-                    `;
-                } else {
-                    // 画像がまだ採用されていない場合
-                    videoForm.classList.add('hidden');
-                    videoSceneInfo.innerHTML = `
-                        <p class="text-sm font-semibold text-yellow-900">シーン #${scene.number}</p>
-                        <p class="text-xs text-yellow-700 mt-2">⚠️ まだ画像が採用されていません</p>
-                        <p class="text-xs text-yellow-600 mt-1">画像生成タブで画像を生成・採用してください</p>
-                    `;
-                    videoSceneInfo.className = 'mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg';
-                }
+            } else {
+                // 画像がまだ採用されていない場合
+                videoImagePreview.innerHTML = `
+                    <div class="text-center text-white">
+                        <svg class="w-12 h-12 mx-auto mb-2 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        <p class="text-xs font-semibold opacity-50">画像未採用</p>
+                        <p class="text-xs opacity-50 mt-1">画像生成タブで採用してください</p>
+                    </div>
+                `;
             }
         }
 
