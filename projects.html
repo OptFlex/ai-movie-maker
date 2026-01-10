@@ -199,6 +199,9 @@
             // 認証OK - 画面を表示
             document.getElementById('app').style.display = 'flex';
 
+            // ユーザー情報を表示
+            document.getElementById('user-email').textContent = session.user.email || 'ユーザー';
+
             // 企画一覧を読み込んで表示
             try {
                 const projects = await loadProjects();
