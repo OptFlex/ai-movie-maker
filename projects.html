@@ -57,36 +57,10 @@
         </main>
     </div>
 
+    <!-- 共通認証チェック -->
+    <script src="./auth.js"></script>
+
     <script>
-        // Supabase設定
-        const SUPABASE_URL = 'https://sdrpysyhoqnrpixwnhfy.supabase.co'
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkcnB5c3lob3FucnBpeHduaGZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2ODYwMDMsImV4cCI6MjA4MzI2MjAwM30.UK9f1aP_49c49KlIHRekvb3nmK5pInR3kMW-mwILzkI'
-
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-
-        // 認証チェック
-        async function checkAuth() {
-            const { data: { session } } = await supabaseClient.auth.getSession()
-
-            if (!session) {
-                // 未ログインならlogin.htmlへリダイレクト
-                window.location.href = './login.html'
-                return
-            }
-        }
-
-        // 認証状態の変化を監視（OAuth callbackを処理）
-        supabaseClient.auth.onAuthStateChange((event, session) => {
-            if (event === 'SIGNED_OUT' || !session) {
-                // ログアウト時または未ログイン時
-                if (!window.location.pathname.includes('login.html')) {
-                    window.location.href = './login.html'
-                }
-            }
-        })
-
-        // ページ読み込み時に認証チェックを実行
-        checkAuth()
 
         // ========================================
         // モックデータ（Supabaseのprojectsテーブルと同じ構造）
@@ -215,7 +189,14 @@
         // 初期化処理
         // ========================================
         async function init() {
-            // TODO: 認証チェックをここに追加（後で実装）
+            // 認証チェックとホワイトリスト確認
+            const session = await checkAuthAndWhitelist()
+
+            if (!session) {
+                return // 認証失敗時はリダイレクト済み
+            }
+
+            // 認証OK - 画面を表示
             document.getElementById('app').style.display = 'flex';
 
             // 企画一覧を読み込んで表示
@@ -233,9 +214,9 @@
         // ========================================
 
         // ログアウトボタン
-        document.getElementById('logout-btn').addEventListener('click', () => {
+        document.getElementById('logout-btn').addEventListener('click', async () => {
             if (confirm('ログアウトしますか？')) {
-                window.location.href = './login.html';
+                await logout()
             }
         });
 
