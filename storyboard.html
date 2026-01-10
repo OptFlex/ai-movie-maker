@@ -64,7 +64,7 @@
     <div class="flex h-[calc(100vh-57px)]">
 
         <!-- 左カラム: GPS（固定、スクロール不可） -->
-        <div class="w-80 bg-white border-r border-gray-200 shadow-md flex flex-col overflow-hidden">
+        <div class="w-80 bg-white border-r border-gray-200 shadow-md flex flex-col overflow-hidden" style="width: 320px;">
             <div class="p-6">
                 <!-- 企画名 -->
                 <div class="mb-6">
@@ -177,9 +177,21 @@
             </div>
         </div>
 
-        <!-- 右カラム: 画像生成・履歴 -->
-        <div class="w-96 bg-white border-l border-gray-200 shadow-md overflow-y-auto custom-scrollbar">
+        <!-- 右カラム: 画像生成・動画生成（タブ切り替え） -->
+        <div class="bg-white border-l border-gray-200 shadow-md overflow-y-auto custom-scrollbar" style="width: 440px;">
             <div class="p-6">
+                <!-- タブボタン -->
+                <div class="flex gap-2 mb-6">
+                    <button id="tab-image-btn" onclick="switchTab('image')" class="flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition bg-purple-600 text-white">
+                        📷 画像生成
+                    </button>
+                    <button id="tab-video-btn" onclick="switchTab('video')" class="flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition bg-purple-100 text-purple-700">
+                        🎬 動画生成
+                    </button>
+                </div>
+
+                <!-- 画像生成タブ -->
+                <div id="tab-image-content">
                 <h2 class="text-xl font-bold text-gray-900 mb-6">画像生成</h2>
 
                 <!-- 選択されたシーン情報 -->
@@ -262,6 +274,77 @@
                         生成
                     </button>
                 </div>
+                </div>
+                <!-- 画像生成タブ終了 -->
+
+                <!-- 動画生成タブ -->
+                <div id="tab-video-content" class="hidden">
+                    <h2 class="text-xl font-bold text-gray-900 mb-6">動画生成</h2>
+
+                    <!-- 選択されたシーン情報 -->
+                    <div id="video-scene-info" class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <p class="text-sm text-green-700">シーンを選択してください</p>
+                    </div>
+
+                    <!-- 動画生成フォーム -->
+                    <div id="video-generation-form" class="hidden">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">動画生成</h3>
+
+                        <!-- 選択中の画像プレビュー -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">選択中の画像</label>
+                            <div id="video-image-preview" class="aspect-video bg-gradient-to-br from-gray-700 to-gray-900 rounded-lg flex items-center justify-center overflow-hidden border-2 border-gray-300">
+                                <div class="text-center text-white">
+                                    <svg class="w-12 h-12 mx-auto mb-2 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                    <p class="text-xs font-semibold">採用済み画像</p>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">💡 画像生成タブで採用した画像が自動的に選択されます</p>
+                        </div>
+
+                        <!-- 動画プロンプト -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">動画生成プロンプト</label>
+                            <textarea
+                                id="video-prompt"
+                                class="w-full h-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 resize-none"
+                                placeholder="この画像から動画を生成します。カメラの動きやアクションを記述してください...
+
+例:
+- カメラがゆっくりズームイン
+- 人物が笑顔で手を振る
+- 背景の風景が動く"
+                            ></textarea>
+                            <p class="text-xs text-gray-500 mt-1">💡 動きや変化を具体的に記述すると、より良い動画が生成されます</p>
+                        </div>
+
+                        <!-- モデル選択 -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">モデル選択</label>
+                            <select id="video-model" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                <option value="veo-3.1-fast-generate-preview" selected>Veo 3.1 Fast - 8秒動画: $1.20（推奨）</option>
+                                <option value="veo-3.1-generate-preview">Veo 3.1 Standard - 8秒動画: $3.20（高品質）</option>
+                            </select>
+                        </div>
+
+                        <!-- 生成ボタン -->
+                        <button onclick="generateVideo()" class="w-full py-3 bg-gradient-to-r from-green-600 to-blue-600 text-white font-bold rounded-lg hover:from-green-700 hover:to-blue-700 transition shadow-lg">
+                            🎥 動画を生成（8秒・16:9）
+                        </button>
+
+                        <!-- 動画履歴 -->
+                        <div id="video-history" class="mt-8">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">動画生成履歴</h3>
+                            <div id="video-history-list" class="space-y-3">
+                                <p class="text-sm text-gray-500">シーンを選択すると、動画履歴が表示されます</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 動画生成タブ終了 -->
+
             </div>
         </div>
     </div>
@@ -545,6 +628,11 @@
             }
 
             updateRightPanel();
+
+            // 動画生成タブも更新（現在動画タブが表示されている場合）
+            if (currentTab === 'video') {
+                updateVideoImagePreview();
+            }
         }
 
         // 右パネルを更新
@@ -594,6 +682,11 @@
                     img.selected = index === imageIndex;
                 });
                 updateRightPanel();
+
+                // 動画生成タブも更新（画像を採用したら動画生成可能になる）
+                if (currentTab === 'video') {
+                    updateVideoImagePreview();
+                }
             }
         }
 
@@ -886,6 +979,143 @@
                     </div>
                 </div>
             `).join('');
+        }
+
+        // ========================================
+        // タブ切り替え機能
+        // ========================================
+        let currentTab = 'image'; // デフォルトは画像生成タブ
+
+        function switchTab(tabName) {
+            currentTab = tabName;
+
+            const imageBtn = document.getElementById('tab-image-btn');
+            const videoBtn = document.getElementById('tab-video-btn');
+            const imageContent = document.getElementById('tab-image-content');
+            const videoContent = document.getElementById('tab-video-content');
+
+            if (tabName === 'image') {
+                // 画像生成タブをアクティブに
+                imageBtn.className = 'flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition bg-purple-600 text-white';
+                videoBtn.className = 'flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition bg-purple-100 text-purple-700';
+                imageContent.classList.remove('hidden');
+                videoContent.classList.add('hidden');
+            } else {
+                // 動画生成タブをアクティブに
+                imageBtn.className = 'flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition bg-green-100 text-green-700';
+                videoBtn.className = 'flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition bg-green-600 text-white';
+                imageContent.classList.add('hidden');
+                videoContent.classList.remove('hidden');
+
+                // 動画生成タブに切り替えた時、選択中の画像を更新
+                updateVideoImagePreview();
+            }
+        }
+
+        // ========================================
+        // 動画生成タブ: 選択中の画像プレビュー更新
+        // ========================================
+        function updateVideoImagePreview() {
+            if (!selectedSceneId) return;
+
+            const scene = scenes.find(s => s.id === selectedSceneId);
+            if (!scene) return;
+
+            // 採用されている画像を探す
+            const selectedImage = scene.images.find(img => img.selected);
+
+            const videoSceneInfo = document.getElementById('video-scene-info');
+            const videoForm = document.getElementById('video-generation-form');
+            const videoImagePreview = document.getElementById('video-image-preview');
+
+            if (scene) {
+                // シーン情報を更新
+                videoSceneInfo.innerHTML = `
+                    <p class="text-sm font-semibold text-green-900">シーン #${scene.number}</p>
+                    <p class="text-xs text-green-700 mt-1">セリフ: ${scene.dialogues.length}件</p>
+                `;
+
+                if (selectedImage) {
+                    // 画像が採用されている場合
+                    videoForm.classList.remove('hidden');
+                    videoImagePreview.innerHTML = `
+                        <div class="text-center text-white">
+                            <svg class="w-12 h-12 mx-auto mb-2 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <p class="text-xs font-semibold">✓ 採用済み画像</p>
+                            <p class="text-xs opacity-75 mt-1">${selectedImage.timestamp}</p>
+                        </div>
+                    `;
+                } else {
+                    // 画像がまだ採用されていない場合
+                    videoForm.classList.add('hidden');
+                    videoSceneInfo.innerHTML = `
+                        <p class="text-sm font-semibold text-yellow-900">シーン #${scene.number}</p>
+                        <p class="text-xs text-yellow-700 mt-2">⚠️ まだ画像が採用されていません</p>
+                        <p class="text-xs text-yellow-600 mt-1">画像生成タブで画像を生成・採用してください</p>
+                    `;
+                    videoSceneInfo.className = 'mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg';
+                }
+            }
+        }
+
+        // ========================================
+        // 動画生成機能（モック）
+        // ========================================
+        function generateVideo() {
+            const prompt = document.getElementById('video-prompt').value;
+            const model = document.getElementById('video-model').value;
+
+            if (!prompt) {
+                alert('動画プロンプトを入力してください');
+                return;
+            }
+
+            if (!selectedSceneId) {
+                alert('シーンを選択してください');
+                return;
+            }
+
+            const scene = scenes.find(s => s.id === selectedSceneId);
+            if (!scene) return;
+
+            const selectedImage = scene.images.find(img => img.selected);
+            if (!selectedImage) {
+                alert('画像を採用してください（画像生成タブ）');
+                return;
+            }
+
+            // TODO: 実際のVeo 3.1 API呼び出し
+            alert(`動画生成を開始します（モック）\n\nシーン: #${scene.number}\nプロンプト: ${prompt}\nモデル: ${model}`);
+
+            // モックとして動画履歴に追加
+            const videoHistoryList = document.getElementById('video-history-list');
+            const now = new Date();
+            const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+
+            videoHistoryList.innerHTML = `
+                <div class="bg-white rounded-lg p-3 border border-green-200">
+                    <div class="aspect-video bg-gray-800 rounded-lg flex items-center justify-center text-white text-xs mb-2">
+                        <div class="text-center">
+                            <div class="text-2xl mb-1">▶️</div>
+                            <div>動画生成中...</div>
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-600 mb-2">
+                        <div class="font-semibold">プロンプト: ${prompt}</div>
+                        <div>${timestamp} | ${model === 'veo-3.1-fast-generate-preview' ? 'Veo 3.1 Fast' : 'Veo 3.1 Standard'} | 8秒</div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="flex-1 px-3 py-2 bg-gray-100 text-gray-400 rounded text-xs cursor-not-allowed">
+                            ⬇️ 生成中...
+                        </button>
+                    </div>
+                </div>
+            ` + videoHistoryList.innerHTML;
+
+            // プロンプトをクリア
+            document.getElementById('video-prompt').value = '';
         }
     </script>
 </body>
