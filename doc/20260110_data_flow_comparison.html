@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base64 vs Storage データフロー比較</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-8 text-center">
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">📊 Base64 vs Storage データフロー比較</h1>
+            <p class="text-gray-600">実際のデータのやり取りを可視化 - 2026年1月10日作成</p>
+        </header>
+
+        <!-- シナリオ: 画像一覧を表示する -->
+        <section class="mb-12">
+            <div class="bg-blue-600 text-white text-center py-4 rounded-t-xl">
+                <h2 class="text-2xl font-bold">📋 シナリオ: 絵コンテ画面で10枚の画像を表示する</h2>
+            </div>
+
+            <!-- アプローチ1: DBのみ (Base64) -->
+            <div class="bg-white border-4 border-red-500 rounded-b-xl p-8 mb-8">
+                <div class="flex items-center gap-3 mb-6">
+                    <span class="text-4xl">❌</span>
+                    <h3 class="text-3xl font-bold text-red-700">アプローチ1: DBのみ (Base64保存)</h3>
+                </div>
+
+                <!-- データフロー図 -->
+                <div class="bg-gradient-to-br from-red-50 to-orange-50 rounded-lg p-8 mb-6">
+                    <!-- ステップ1: リクエスト -->
+                    <div class="mb-8">
+                        <div class="text-center mb-4">
+                            <div class="bg-blue-500 text-white px-6 py-3 rounded-lg inline-block font-bold">
+                                ステップ1: ユーザーが画面を開く
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-center gap-6">
+                            <div class="bg-white border-2 border-gray-300 rounded-lg p-6 w-64 shadow-lg">
+                                <div class="text-center">
+                                    <div class="text-4xl mb-2">💻</div>
+                                    <div class="font-bold">ブラウザ</div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <div class="text-3xl">→</div>
+                                <div class="text-xs bg-purple-100 px-3 py-1 rounded mt-1">
+                                    SQLクエリ送信<br>
+                                    <span class="font-mono text-[10px]">SELECT *</span>
+                                </div>
+                            </div>
+                            <div class="bg-white border-2 border-red-500 rounded-lg p-6 w-64 shadow-lg">
+                                <div class="text-center">
+                                    <div class="text-4xl mb-2">🗄️</div>
+                                    <div class="font-bold text-red-700">Supabase DB</div>
+                                    <div class="text-xs text-gray-600 mt-2">全データ保存</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ステップ2: データベースからの返信 -->
+                    <div class="mb-8">
+                        <div class="text-center mb-4">
+                            <div class="bg-red-500 text-white px-6 py-3 rounded-lg inline-block font-bold">
+                                ステップ2: データベースからの返信（ここが重い！）
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-center gap-6">
+                            <div class="bg-white border-2 border-red-500 rounded-lg p-6 w-64 shadow-lg">
+                                <div class="text-center">
+                                    <div class="text-4xl mb-2">🗄️</div>
+                                    <div class="font-bold text-red-700">Supabase DB</div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <div class="text-3xl">→</div>
+                                <div class="text-xs bg-red-200 px-3 py-1 rounded mt-1 font-bold">
+                                    🔴 7MB のデータ転送<br>
+                                    <span class="text-[10px]">(Base64: 700KB × 10枚)</span>
+                                </div>
+                            </div>
+                            <div class="bg-white border-2 border-gray-300 rounded-lg p-6 w-64 shadow-lg">
+                                <div class="text-center">
+                                    <div class="text-4xl mb-2">💻</div>
+                                    <div class="font-bold">ブラウザ</div>
+                                    <div class="text-xs text-red-600 mt-2 font-bold">待機中...</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4 bg-red-100 border-2 border-red-400 rounded-lg p-4">
+                            <div class="font-bold text-red-800 mb-2">⚠️ 問題点:</div>
+                            <ul class="text-sm space-y-1 text-red-700">
+                                <li>• <strong>一度に7MBのデータ</strong>を受信する必要がある（モバイル回線だと遅い）</li>
+                                <li>• 画面に表示していない画像のBase64データも全て転送される</li>
+                                <li>• スクロールで見える3枚だけでも、10枚全て受信する</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- ステップ3: 画像表示 -->
+                    <div>
+                        <div class="text-center mb-4">
+                            <div class="bg-gray-500 text-white px-6 py-3 rounded-lg inline-block font-bold">
+                                ステップ3: 画像を表示
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-lg p-6 border-2 border-gray-300">
+                            <div class="text-center">
+                                <div class="text-4xl mb-2">💻</div>
+                                <div class="font-bold">ブラウザ</div>
+                                <div class="text-sm text-gray-600 mt-3">
+                                    Base64文字列を画像に変換して表示
+                                </div>
+                                <div class="mt-4 flex gap-2 justify-center flex-wrap">
+                                    <div class="w-16 h-16 bg-purple-300 rounded"></div>
+                                    <div class="w-16 h-16 bg-purple-300 rounded"></div>
+                                    <div class="w-16 h-16 bg-purple-300 rounded"></div>
+                                    <div class="w-16 h-16 bg-purple-300 rounded"></div>
+                                    <div class="w-16 h-16 bg-purple-300 rounded"></div>
+                                    <div class="w-16 h-16 bg-purple-300 rounded"></div>
+                                    <div class="w-16 h-16 bg-purple-300 rounded"></div>
+                                    <div class="w-16 h-16 bg-purple-300 rounded"></div>
+                                    <div class="w-16 h-16 bg-purple-300 rounded"></div>
+                                    <div class="w-16 h-16 bg-purple-300 rounded"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- まとめ -->
+                <div class="bg-red-50 border-2 border-red-400 rounded-lg p-6">
+                    <h4 class="font-bold text-red-800 text-xl mb-3">📊 転送データ量の内訳</h4>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between items-center bg-white p-3 rounded">
+                            <span>メタデータ（ID、プロンプト等）</span>
+                            <span class="font-mono bg-gray-100 px-3 py-1 rounded">2 KB</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-red-100 p-3 rounded font-bold">
+                            <span>画像データ（Base64）× 10枚</span>
+                            <span class="font-mono bg-red-200 px-3 py-1 rounded">7 MB 🔴</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-red-200 p-3 rounded font-bold text-lg border-2 border-red-500">
+                            <span>合計</span>
+                            <span class="font-mono bg-red-300 px-3 py-1 rounded">7 MB 🔴</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- アプローチ2: DB + Storage -->
+            <div class="bg-white border-4 border-green-500 rounded-xl p-8">
+                <div class="flex items-center gap-3 mb-6">
+                    <span class="text-4xl">✅</span>
+                    <h3 class="text-3xl font-bold text-green-700">アプローチ2: DB + Storage</h3>
+                </div>
+
+                <!-- データフロー図 -->
+                <div class="bg-gradient-to-br from-green-50 to-blue-50 rounded-lg p-8 mb-6">
+                    <!-- ステップ1: リクエスト -->
+                    <div class="mb-8">
+                        <div class="text-center mb-4">
+                            <div class="bg-blue-500 text-white px-6 py-3 rounded-lg inline-block font-bold">
+                                ステップ1: ユーザーが画面を開く
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-center gap-6">
+                            <div class="bg-white border-2 border-gray-300 rounded-lg p-6 w-64 shadow-lg">
+                                <div class="text-center">
+                                    <div class="text-4xl mb-2">💻</div>
+                                    <div class="font-bold">ブラウザ</div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <div class="text-3xl">→</div>
+                                <div class="text-xs bg-purple-100 px-3 py-1 rounded mt-1">
+                                    SQLクエリ送信<br>
+                                    <span class="font-mono text-[10px]">SELECT id,prompt,storage_path</span>
+                                </div>
+                            </div>
+                            <div class="bg-white border-2 border-blue-500 rounded-lg p-6 w-64 shadow-lg">
+                                <div class="text-center">
+                                    <div class="text-4xl mb-2">🗄️</div>
+                                    <div class="font-bold text-blue-700">Supabase DB</div>
+                                    <div class="text-xs text-gray-600 mt-2">メタデータのみ</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ステップ2: データベースからの返信（軽い！） -->
+                    <div class="mb-8">
+                        <div class="text-center mb-4">
+                            <div class="bg-green-500 text-white px-6 py-3 rounded-lg inline-block font-bold">
+                                ステップ2: データベースからの返信（超軽量！）
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-center gap-6">
+                            <div class="bg-white border-2 border-blue-500 rounded-lg p-6 w-64 shadow-lg">
+                                <div class="text-center">
+                                    <div class="text-4xl mb-2">🗄️</div>
+                                    <div class="font-bold text-blue-700">Supabase DB</div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <div class="text-3xl">→</div>
+                                <div class="text-xs bg-green-200 px-3 py-1 rounded mt-1 font-bold">
+                                    🟢 2KB のデータ転送<br>
+                                    <span class="text-[10px]">(URLとメタデータのみ)</span>
+                                </div>
+                            </div>
+                            <div class="bg-white border-2 border-gray-300 rounded-lg p-6 w-64 shadow-lg">
+                                <div class="text-center">
+                                    <div class="text-4xl mb-2">💻</div>
+                                    <div class="font-bold">ブラウザ</div>
+                                    <div class="text-xs text-green-600 mt-2 font-bold">瞬時に受信✅</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4 bg-green-100 border-2 border-green-400 rounded-lg p-4">
+                            <div class="font-bold text-green-800 mb-2">✅ 受信したデータの例:</div>
+                            <div class="bg-white p-3 rounded font-mono text-xs overflow-x-auto">
+<pre>[
+  { id: 1, prompt: "カフェの外観", storage_path: "user123/img1.png" },
+  { id: 2, prompt: "パフェを食べる", storage_path: "user123/img2.png" },
+  ...
+]</pre>
+                            </div>
+                            <div class="text-sm text-green-700 mt-2">
+                                ⚡ <strong>画像本体は含まれていない</strong>ので、一瞬で受信完了
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ステップ3: 画像を表示（必要な分だけ） -->
+                    <div>
+                        <div class="text-center mb-4">
+                            <div class="bg-green-500 text-white px-6 py-3 rounded-lg inline-block font-bold">
+                                ステップ3: 画像を表示（必要な分だけ読み込む）
+                            </div>
+                        </div>
+
+                        <!-- 画面に見えている部分 -->
+                        <div class="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4 mb-4">
+                            <div class="font-bold text-yellow-800 mb-3">👁️ 画面に見えている部分（3枚）</div>
+                            <div class="flex items-center gap-6">
+                                <div class="bg-white rounded-lg p-4 border-2 border-gray-300 flex-1">
+                                    <div class="text-center mb-3">
+                                        <div class="text-3xl">💻</div>
+                                        <div class="text-sm font-bold">ブラウザ</div>
+                                        <div class="mt-2 flex gap-2 justify-center">
+                                            <div class="w-20 h-20 bg-green-300 rounded flex items-center justify-center text-xs">画像1</div>
+                                            <div class="w-20 h-20 bg-green-300 rounded flex items-center justify-center text-xs">画像2</div>
+                                            <div class="w-20 h-20 bg-green-300 rounded flex items-center justify-center text-xs">画像3</div>
+                                        </div>
+                                        <div class="text-xs text-gray-500 mt-2">画面に表示中</div>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col gap-2">
+                                    <div class="flex items-center gap-2">
+                                        <div class="text-2xl">←</div>
+                                        <div class="text-xs bg-green-200 px-2 py-1 rounded font-bold">500KB</div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="text-2xl">←</div>
+                                        <div class="text-xs bg-green-200 px-2 py-1 rounded font-bold">500KB</div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="text-2xl">←</div>
+                                        <div class="text-xs bg-green-200 px-2 py-1 rounded font-bold">500KB</div>
+                                    </div>
+                                </div>
+                                <div class="bg-white rounded-lg p-4 border-2 border-green-500 flex-1">
+                                    <div class="text-center">
+                                        <div class="text-3xl mb-2">📦</div>
+                                        <div class="text-sm font-bold text-green-700">Supabase Storage</div>
+                                        <div class="text-xs text-gray-600 mt-2">(CDN経由で高速配信)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3 text-sm text-green-700 font-bold text-center">
+                                ✅ 見えている3枚だけ読み込む = 1.5MB
+                            </div>
+                        </div>
+
+                        <!-- スクロールしていない部分 -->
+                        <div class="bg-gray-100 border-2 border-gray-300 rounded-lg p-4">
+                            <div class="font-bold text-gray-600 mb-3">📜 スクロールしていない部分（7枚）</div>
+                            <div class="text-center">
+                                <div class="flex gap-2 justify-center mb-3">
+                                    <div class="w-16 h-16 bg-gray-300 rounded flex items-center justify-center text-xs">画像4</div>
+                                    <div class="w-16 h-16 bg-gray-300 rounded flex items-center justify-center text-xs">画像5</div>
+                                    <div class="w-16 h-16 bg-gray-300 rounded flex items-center justify-center text-xs">...</div>
+                                    <div class="w-16 h-16 bg-gray-300 rounded flex items-center justify-center text-xs">画像10</div>
+                                </div>
+                                <div class="text-sm text-gray-600 font-bold">
+                                    💡 まだ読み込まれていない（スクロールしたら読み込む）
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- まとめ -->
+                <div class="bg-green-50 border-2 border-green-400 rounded-lg p-6">
+                    <h4 class="font-bold text-green-800 text-xl mb-3">📊 転送データ量の内訳</h4>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between items-center bg-white p-3 rounded">
+                            <span>メタデータ（ID、プロンプト、URL）× 10件</span>
+                            <span class="font-mono bg-gray-100 px-3 py-1 rounded">2 KB</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-green-100 p-3 rounded">
+                            <span>画面に見えている画像 × 3枚</span>
+                            <span class="font-mono bg-green-200 px-3 py-1 rounded">1.5 MB</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-green-200 p-3 rounded font-bold text-lg border-2 border-green-500">
+                            <span>合計（初回表示時）</span>
+                            <span class="font-mono bg-green-300 px-3 py-1 rounded">1.5 MB 🟢</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 bg-blue-50 border border-blue-300 rounded p-3 text-sm">
+                        <div class="font-bold text-blue-800 mb-1">💡 追加の利点:</div>
+                        <ul class="space-y-1 text-blue-700">
+                            <li>• スクロールして画像7が見えたら、その時に500KBだけ読み込む</li>
+                            <li>• ブラウザが自動的にキャッシュするので、2回目以降は転送ゼロ</li>
+                            <li>• CDNから配信されるので、日本のユーザーには日本のサーバーから高速配信</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 比較まとめ -->
+        <section class="bg-white rounded-xl shadow-2xl p-8 mb-8">
+            <h2 class="text-3xl font-bold text-center mb-8">⚡ スピード比較</h2>
+
+            <div class="grid grid-cols-2 gap-8">
+                <!-- DBのみ -->
+                <div class="border-4 border-red-500 rounded-lg p-6">
+                    <h3 class="text-xl font-bold text-red-700 text-center mb-4">DBのみ (Base64)</h3>
+                    <div class="space-y-4">
+                        <div class="bg-red-50 p-4 rounded">
+                            <div class="text-sm text-gray-700 mb-2">初回表示にかかる時間（4G回線）</div>
+                            <div class="text-3xl font-bold text-red-600">約 7秒 🐌</div>
+                        </div>
+                        <div class="bg-red-50 p-4 rounded">
+                            <div class="text-sm text-gray-700 mb-2">転送データ量</div>
+                            <div class="text-3xl font-bold text-red-600">7 MB</div>
+                        </div>
+                        <div class="bg-red-100 p-3 rounded text-sm">
+                            <div class="font-bold text-red-800 mb-1">問題点:</div>
+                            <ul class="text-red-700 space-y-1">
+                                <li>• 見ていない画像も全て転送</li>
+                                <li>• モバイル回線だとさらに遅い</li>
+                                <li>• データベースに負荷がかかる</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DB + Storage -->
+                <div class="border-4 border-green-500 rounded-lg p-6">
+                    <h3 class="text-xl font-bold text-green-700 text-center mb-4">DB + Storage</h3>
+                    <div class="space-y-4">
+                        <div class="bg-green-50 p-4 rounded">
+                            <div class="text-sm text-gray-700 mb-2">初回表示にかかる時間（4G回線）</div>
+                            <div class="text-3xl font-bold text-green-600">約 1.5秒 🚀</div>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded">
+                            <div class="text-sm text-gray-700 mb-2">転送データ量</div>
+                            <div class="text-3xl font-bold text-green-600">1.5 MB</div>
+                        </div>
+                        <div class="bg-green-100 p-3 rounded text-sm">
+                            <div class="font-bold text-green-800 mb-1">メリット:</div>
+                            <ul class="text-green-700 space-y-1">
+                                <li>• 見える分だけ読み込む</li>
+                                <li>• CDNで高速配信</li>
+                                <li>• データベースは軽量</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 速度差の可視化 -->
+            <div class="mt-8 bg-gradient-to-r from-red-100 via-yellow-100 to-green-100 rounded-lg p-6">
+                <h4 class="font-bold text-center mb-4">読み込み時間の比較</h4>
+                <div class="space-y-3">
+                    <div>
+                        <div class="flex items-center gap-3 mb-1">
+                            <div class="text-sm font-bold w-32">DBのみ</div>
+                            <div class="flex-1 bg-red-500 h-8 rounded flex items-center justify-end px-3 text-white font-bold" style="width: 100%;">
+                                7秒
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-3 mb-1">
+                            <div class="text-sm font-bold w-32">DB + Storage</div>
+                            <div class="flex-1 flex">
+                                <div class="bg-green-500 h-8 rounded flex items-center justify-end px-3 text-white font-bold" style="width: 21.4%;">
+                                    1.5秒
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center mt-4 text-2xl font-bold text-green-700">
+                    ⚡ 約4.7倍速い！
+                </div>
+            </div>
+        </section>
+
+        <!-- 追加の詳細説明 -->
+        <section class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-8 mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">🤔 なぜBase64は重いのか？</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white rounded-lg p-6 border-2 border-purple-300">
+                    <h3 class="font-bold text-purple-800 mb-3 text-lg">元の画像データ（バイナリ）</h3>
+                    <div class="bg-gray-100 p-4 rounded mb-3">
+                        <div class="font-mono text-xs break-all">
+                            89 50 4E 47 0D 0A 1A 0A 00 00 00 0D ...
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-purple-600">500 KB</div>
+                        <div class="text-sm text-gray-600 mt-1">コンパクト</div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg p-6 border-2 border-orange-300">
+                    <h3 class="font-bold text-orange-800 mb-3 text-lg">Base64エンコード後</h3>
+                    <div class="bg-gray-100 p-4 rounded mb-3">
+                        <div class="font-mono text-xs break-all">
+                            iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC...
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-orange-600">700 KB</div>
+                        <div class="text-sm text-gray-600 mt-1">約1.4倍に膨張 📈</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4">
+                <div class="font-bold text-yellow-900 mb-2">📌 Base64の仕組み:</div>
+                <div class="text-sm text-yellow-800">
+                    バイナリデータ（0と1）をテキスト（A-Z, a-z, 0-9, +, /）に変換する方式。
+                    テキストで扱える利点があるが、<strong>データ量が約1.33倍に増える</strong>のが欠点。
+                </div>
+            </div>
+        </section>
+
+        <!-- 結論 -->
+        <section class="bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-xl shadow-2xl p-8">
+            <h2 class="text-3xl font-bold mb-6 text-center">🎯 結論</h2>
+
+            <div class="bg-white bg-opacity-20 rounded-lg p-6 mb-6">
+                <div class="text-2xl font-bold text-center mb-4">
+                    「軽い」のではなく「効率的」なのです
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div class="bg-white bg-opacity-30 rounded p-4">
+                        <div class="font-bold mb-2">❌ 誤解:</div>
+                        <div>「Storageに保存すると画像が軽くなる」</div>
+                    </div>
+                    <div class="bg-white bg-opacity-30 rounded p-4">
+                        <div class="font-bold mb-2">✅ 正解:</div>
+                        <div>「必要な分だけ読み込むから転送量が減る」</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <div class="bg-white bg-opacity-20 rounded-lg p-4">
+                    <div class="font-bold mb-2">🔑 重要なポイント:</div>
+                    <ul class="space-y-2">
+                        <li>• <strong>画像ファイル自体</strong>: Storageの方が軽い（500KB vs 700KB）</li>
+                        <li>• <strong>一覧取得時</strong>: Storageは画像を含まない（2KB vs 7MB）</li>
+                        <li>• <strong>画像表示時</strong>: 見える分だけ読み込む（1.5MB vs 7MB）</li>
+                        <li>• <strong>2回目以降</strong>: ブラウザキャッシュで転送ゼロ</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white bg-opacity-20 rounded-lg p-4">
+                    <div class="text-xl font-bold text-center">
+                        ⚡ Base64でまとめて送るより、Storageで必要な分だけ送る方が圧倒的に速い！
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- フッター -->
+        <footer class="mt-8 text-center text-gray-600 text-sm">
+            <p>AI Movie Maker プロジェクト - 2026年1月10日作成</p>
+        </footer>
+    </div>
+</body>
+</html>

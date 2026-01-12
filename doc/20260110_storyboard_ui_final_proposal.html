@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>絵コンテUI最終提案 - タブ切り替え + 横幅拡張</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .card {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            background: white;
+            margin-bottom: 24px;
+        }
+        .final-proposal {
+            border-color: #10b981;
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        }
+        .column-box {
+            border: 3px solid;
+            border-radius: 8px;
+            padding: 16px;
+            min-height: 150px;
+        }
+        .col-gps { border-color: #f59e0b; background: #fffbeb; }
+        .col-scenes { border-color: #3b82f6; background: #eff6ff; }
+        .col-right { border-color: #8b5cf6; background: #f5f3ff; }
+        .tab-active { background: #8b5cf6; color: white; }
+        .tab-inactive { background: #e9d5ff; color: #6b21a8; }
+        .workflow-step {
+            background: white;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+        .workflow-arrow {
+            font-size: 2rem;
+            color: #6366f1;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">絵コンテUI 最終提案</h1>
+        <p class="text-xl text-green-600 font-semibold mb-2">✅ 案2（タブ切り替え）+ 横幅拡張対応</p>
+        <p class="text-gray-600 mb-8">日付: 2026年1月10日 | 対象: 40インチモニター</p>
+
+        <!-- 採用理由 -->
+        <div class="card final-proposal">
+            <h2 class="text-2xl font-bold text-green-900 mb-4">🎯 この案を採用する理由</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-white rounded-lg p-4 border-2 border-green-400">
+                    <h3 class="font-bold text-green-900 mb-2">✅ ユーザー視点</h3>
+                    <ul class="text-sm space-y-2 text-gray-700">
+                        <li>• <strong>画像生成は最初だけ</strong> - 一度生成したら頻繁に使わない</li>
+                        <li>• <strong>タブで切り替え</strong> - 必要な時だけアクセス</li>
+                        <li>• <strong>シーンに集中</strong> - 中央エリアを広く確保</li>
+                        <li>• <strong>動画生成がメイン</strong> - 最終的な作業に集中</li>
+                    </ul>
+                </div>
+                <div class="bg-white rounded-lg p-4 border-2 border-green-400">
+                    <h3 class="font-bold text-green-900 mb-2">✅ 技術視点</h3>
+                    <ul class="text-sm space-y-2 text-gray-700">
+                        <li>• <strong>40インチ対応</strong> - 横幅を最大限活用</li>
+                        <li>• <strong>横スクロール可能</strong> - さらに広げても対応</li>
+                        <li>• <strong>現在のUIベース</strong> - 修正範囲が最小</li>
+                        <li>• <strong>実装が簡単</strong> - タブはJSで切り替えるだけ</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- レイアウト図 -->
+        <div class="card">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">📐 最終レイアウト</h2>
+
+            <div class="bg-gray-100 rounded-lg p-6 mb-4">
+                <div class="flex gap-4">
+                    <!-- GPS -->
+                    <div class="column-box col-gps" style="width: 320px;">
+                        <h3 class="font-bold text-orange-800 text-sm mb-3">GPS・企画情報</h3>
+                        <div class="space-y-2 text-xs">
+                            <div class="bg-white p-2 rounded border">企画名</div>
+                            <div class="bg-white p-2 rounded border h-16">サムネイル</div>
+                            <div class="bg-white p-2 rounded border">Goal</div>
+                            <div class="bg-white p-2 rounded border">Plan</div>
+                            <div class="bg-white p-2 rounded border">Status</div>
+                        </div>
+                        <div class="mt-3 text-xs text-orange-700 font-semibold">
+                            固定幅: 320px
+                        </div>
+                    </div>
+
+                    <!-- シーン一覧 -->
+                    <div class="column-box col-scenes flex-1">
+                        <h3 class="font-bold text-blue-800 text-sm mb-3">シーン一覧</h3>
+                        <div class="space-y-2 text-xs">
+                            <div class="bg-white p-3 rounded border-2 border-blue-500 shadow-md">
+                                <div class="font-bold mb-1">シーン #1 ⭐ 選択中</div>
+                                <div class="flex gap-2">
+                                    <div class="flex-1">
+                                        <div class="text-gray-600 text-xs mb-1">セリフ</div>
+                                        <div class="bg-gray-50 p-2 rounded text-xs">ナレーター: こんにちは...</div>
+                                    </div>
+                                    <div class="w-32 aspect-video bg-green-100 rounded flex items-center justify-center text-xs">
+                                        ✓ 画像
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white p-3 rounded border">
+                                <div class="font-bold mb-1">シーン #2</div>
+                                <div class="text-gray-600 text-xs">セリフ: 1件</div>
+                            </div>
+                            <div class="bg-white p-3 rounded border">
+                                <div class="font-bold mb-1">シーン #3</div>
+                                <div class="text-gray-600 text-xs">セリフ: 3件</div>
+                            </div>
+                        </div>
+                        <div class="mt-3 text-xs text-blue-700 font-semibold">
+                            可変幅: flex-1（広いスペース確保）
+                        </div>
+                    </div>
+
+                    <!-- 右パネル（タブ） -->
+                    <div class="column-box col-right" style="width: 440px;">
+                        <div class="mb-3">
+                            <div class="flex gap-2 mb-3">
+                                <button class="tab-active flex-1 py-2 px-4 rounded-lg font-semibold text-sm transition">
+                                    📷 画像生成
+                                </button>
+                                <button class="tab-inactive flex-1 py-2 px-4 rounded-lg font-semibold text-sm transition">
+                                    🎬 動画生成
+                                </button>
+                            </div>
+                            <div class="text-xs text-purple-700 font-semibold mb-3">
+                                タブで切り替え | 固定幅: 440px
+                            </div>
+                        </div>
+
+                        <!-- 画像生成タブの内容 -->
+                        <div class="bg-white rounded-lg p-3 border border-purple-300">
+                            <div class="text-xs text-purple-700 font-semibold mb-2">画像生成タブ（デフォルト表示）</div>
+                            <div class="space-y-2 text-xs">
+                                <div class="p-2 bg-purple-50 rounded">シーン #1</div>
+                                <div class="aspect-video bg-gray-200 rounded flex items-center justify-center">
+                                    参照画像
+                                </div>
+                                <textarea class="w-full p-2 border rounded text-xs" rows="3" placeholder="プロンプト..."></textarea>
+                                <button class="w-full py-2 bg-purple-600 text-white rounded font-semibold">生成</button>
+                                <div class="text-gray-600">画像履歴: 2件</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-green-50 border-2 border-green-300 rounded-lg p-4">
+                <h3 class="font-bold text-green-900 mb-2">📏 推奨サイズ</h3>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <div class="font-semibold text-green-800 mb-1">最小幅</div>
+                        <div class="text-gray-700">GPS 320px + シーン 600px + 右パネル 440px = <strong>1360px</strong></div>
+                    </div>
+                    <div>
+                        <div class="font-semibold text-green-800 mb-1">40インチモニター想定</div>
+                        <div class="text-gray-700">GPS 320px + シーン <strong>1200px以上</strong> + 右パネル 440px = <strong>快適！</strong></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- タブ切り替えの動作 -->
+        <div class="card">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">🔄 タブ切り替えの動作</h2>
+
+            <div class="grid grid-cols-2 gap-6">
+                <!-- 画像生成タブ -->
+                <div class="bg-purple-50 border-2 border-purple-400 rounded-lg p-4">
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-bold">タブ1</span>
+                        <h3 class="font-bold text-purple-900 text-lg">📷 画像生成</h3>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 mb-3">
+                        <div class="text-sm font-semibold text-purple-900 mb-2">表示内容</div>
+                        <ul class="text-sm space-y-1 text-gray-700">
+                            <li>• 選択中のシーン情報</li>
+                            <li>• 参照画像アップロード（最大14枚）</li>
+                            <li>• プロンプト入力欄</li>
+                            <li>• 画像生成ボタン</li>
+                            <li>• 画像生成履歴（このシーンの過去画像）</li>
+                            <li>• 画像選択・採用機能</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-purple-100 rounded-lg p-3">
+                        <div class="text-xs font-semibold text-purple-900 mb-1">💡 使うタイミング</div>
+                        <div class="text-xs text-purple-800">
+                            シーン作成直後、まだ画像がない時<br>
+                            画像を変更したい時
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 動画生成タブ -->
+                <div class="bg-green-50 border-2 border-green-400 rounded-lg p-4">
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-bold">タブ2</span>
+                        <h3 class="font-bold text-green-900 text-lg">🎬 動画生成</h3>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 mb-3">
+                        <div class="text-sm font-semibold text-green-900 mb-2">表示内容</div>
+                        <ul class="text-sm space-y-1 text-gray-700">
+                            <li>• 選択中のシーン情報</li>
+                            <li>• <strong>選択中の画像プレビュー</strong>（自動選択）</li>
+                            <li>• 動画プロンプト入力欄</li>
+                            <li>• モデル選択（Veo 3.1 Fast / Standard）</li>
+                            <li>• 動画生成ボタン</li>
+                            <li>• 動画生成履歴（このシーンの過去動画）</li>
+                            <li>• 動画ダウンロード機能</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-green-100 rounded-lg p-3">
+                        <div class="text-xs font-semibold text-green-900 mb-1">💡 使うタイミング</div>
+                        <div class="text-xs text-green-800">
+                            画像生成完了後、動画を作りたい時<br>
+                            <strong>メインの作業場所</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ワークフロー -->
+        <div class="card">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">🎬 実際の作業フロー</h2>
+
+            <div class="space-y-4">
+                <!-- ステップ1 -->
+                <div class="workflow-step bg-orange-50 border-orange-300">
+                    <div class="text-2xl mb-2">1️⃣</div>
+                    <div class="font-bold text-orange-900 mb-1">GPS・企画情報を入力</div>
+                    <div class="text-xs text-orange-700">左カラムで企画の目標や計画を記入</div>
+                </div>
+
+                <div class="text-center workflow-arrow">↓</div>
+
+                <!-- ステップ2 -->
+                <div class="workflow-step bg-blue-50 border-blue-300">
+                    <div class="text-2xl mb-2">2️⃣</div>
+                    <div class="font-bold text-blue-900 mb-1">シーンを追加してセリフを書く</div>
+                    <div class="text-xs text-blue-700">中央カラムでシーン#1, #2, #3... を追加</div>
+                </div>
+
+                <div class="text-center workflow-arrow">↓</div>
+
+                <!-- ステップ3 -->
+                <div class="workflow-step bg-purple-50 border-purple-300">
+                    <div class="text-2xl mb-2">3️⃣</div>
+                    <div class="font-bold text-purple-900 mb-1">シーンを選択 → 画像生成タブで画像を作成</div>
+                    <div class="text-xs text-purple-700">
+                        シーン#1をクリック → 右パネル「📷 画像生成」タブ → プロンプト入力 → 生成 → 採用
+                    </div>
+                </div>
+
+                <div class="text-center workflow-arrow">↓</div>
+
+                <!-- ステップ4 -->
+                <div class="workflow-step bg-green-50 border-green-300">
+                    <div class="text-2xl mb-2">4️⃣</div>
+                    <div class="font-bold text-green-900 mb-1">動画生成タブに切り替えて動画を作成</div>
+                    <div class="text-xs text-green-700">
+                        右パネル「🎬 動画生成」タブをクリック → 採用画像が自動選択 → 動画プロンプト入力 → 生成
+                    </div>
+                </div>
+
+                <div class="text-center workflow-arrow">↓</div>
+
+                <!-- ステップ5 -->
+                <div class="workflow-step bg-indigo-50 border-indigo-300">
+                    <div class="text-2xl mb-2">5️⃣</div>
+                    <div class="font-bold text-indigo-900 mb-1">次のシーンへ（繰り返し）</div>
+                    <div class="text-xs text-indigo-700">
+                        シーン#2を選択 → 画像生成 → 動画生成 → シーン#3... と繰り返し
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
+                <h3 class="font-bold text-yellow-900 mb-2">💡 ポイント</h3>
+                <ul class="text-sm space-y-1 text-yellow-800">
+                    <li>• <strong>画像生成は最初だけ</strong> - 画像ができたらタブを切り替え</li>
+                    <li>• <strong>動画生成がメイン作業</strong> - 各シーンの動画を次々と生成</li>
+                    <li>• <strong>シーンを切り替えても</strong> - 右パネルのタブ状態は維持される</li>
+                    <li>• <strong>ページ遷移なし</strong> - 全ての作業が1つの画面で完結</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 動画生成タブの詳細 -->
+        <div class="card">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">🎥 動画生成タブの詳細UI</h2>
+
+            <div class="bg-green-50 border-2 border-green-300 rounded-lg p-6">
+                <h3 class="font-bold text-green-900 mb-4 text-lg">🎬 動画生成タブ（新規追加）</h3>
+
+                <div class="space-y-4">
+                    <!-- 選択中のシーン -->
+                    <div class="bg-white rounded-lg p-4 border border-green-300">
+                        <div class="text-xs text-green-700 font-semibold mb-1">選択中のシーン</div>
+                        <div class="font-bold text-green-900">シーン #1</div>
+                        <div class="text-xs text-gray-600 mt-1">セリフ: 2件</div>
+                    </div>
+
+                    <!-- 選択中の画像 -->
+                    <div class="bg-white rounded-lg p-4 border border-green-300">
+                        <div class="text-xs text-green-700 font-semibold mb-2">選択中の画像</div>
+                        <div class="aspect-video bg-gradient-to-br from-gray-700 to-gray-900 rounded-lg flex items-center justify-center text-white text-sm mb-2">
+                            <div class="text-center">
+                                <div class="text-3xl mb-2">🖼️</div>
+                                <div>採用済み画像</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-semibold">✓ 採用中</span>
+                            <span class="text-xs text-gray-600">2026-01-10 15:30 生成</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-2">※ 画像生成タブで採用した画像が自動的に選択されます</div>
+                    </div>
+
+                    <!-- 動画プロンプト -->
+                    <div class="bg-white rounded-lg p-4 border border-green-300">
+                        <label class="block text-xs font-semibold text-green-700 mb-2">動画生成プロンプト</label>
+                        <textarea class="w-full h-24 px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="この画像から動画を生成します。カメラの動きやアクションを記述してください...
+
+例:
+- カメラがゆっくりズームイン
+- 人物が笑顔で手を振る
+- 背景の風景が動く"></textarea>
+                        <div class="text-xs text-gray-500 mt-1">💡 動きや変化を具体的に記述すると、より良い動画が生成されます</div>
+                    </div>
+
+                    <!-- モデル選択 -->
+                    <div class="bg-white rounded-lg p-4 border border-green-300">
+                        <label class="block text-xs font-semibold text-green-700 mb-2">モデル選択</label>
+                        <select class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                            <option selected>Veo 3.1 Fast - 8秒動画: $1.20（推奨）</option>
+                            <option>Veo 3.1 Standard - 8秒動画: $3.20（高品質）</option>
+                        </select>
+                    </div>
+
+                    <!-- 生成ボタン -->
+                    <button class="w-full py-3 bg-gradient-to-r from-green-600 to-blue-600 text-white font-bold rounded-lg hover:from-green-700 hover:to-blue-700 transition shadow-lg">
+                        🎥 動画を生成（8秒・16:9）
+                    </button>
+
+                    <!-- 動画履歴 -->
+                    <div>
+                        <h4 class="font-bold text-green-900 mb-3 text-sm">動画生成履歴（このシーン）</h4>
+                        <div class="space-y-3">
+                            <div class="bg-white rounded-lg p-3 border border-green-200">
+                                <div class="aspect-video bg-gray-800 rounded-lg flex items-center justify-center text-white text-xs mb-2">
+                                    <div class="text-center">
+                                        <div class="text-2xl mb-1">▶️</div>
+                                        <div>動画プレビュー</div>
+                                    </div>
+                                </div>
+                                <div class="text-xs text-gray-600 mb-2">
+                                    <div class="font-semibold">プロンプト: カメラがゆっくりズームイン...</div>
+                                    <div>2026-01-10 15:45 | Veo 3.1 Fast | 8秒</div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button class="flex-1 px-3 py-2 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200 font-semibold">
+                                        ⬇️ ダウンロード
+                                    </button>
+                                    <button class="flex-1 px-3 py-2 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200 font-semibold">
+                                        ▶️ プレビュー
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="text-xs text-gray-500 text-center">
+                                生成履歴: 1件
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 実装計画 -->
+        <div class="card">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">🔧 実装計画（ステップバイステップ）</h2>
+
+            <div class="space-y-3">
+                <div class="bg-green-50 border-2 border-green-400 rounded-lg p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="bg-green-600 text-white px-3 py-1 rounded-full text-xs font-bold">Step 1</span>
+                        <h3 class="font-bold text-green-900">HTMLマークアップ調整</h3>
+                    </div>
+                    <ul class="text-sm text-gray-700 space-y-1 ml-8">
+                        <li>• GPS幅を320pxに拡張（現在280px）</li>
+                        <li>• 右パネル幅を440pxに拡張（現在384px）</li>
+                        <li>• タブボタンを追加（画像生成 / 動画生成）</li>
+                        <li>• 動画生成タブのHTMLを追加（モック状態）</li>
+                    </ul>
+                    <div class="mt-2 text-xs text-green-700 font-semibold">⏱️ 所要時間: 30分</div>
+                </div>
+
+                <div class="bg-blue-50 border-2 border-blue-400 rounded-lg p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold">Step 2</span>
+                        <h3 class="font-bold text-blue-900">タブ切り替え機能（JavaScript）</h3>
+                    </div>
+                    <ul class="text-sm text-gray-700 space-y-1 ml-8">
+                        <li>• タブボタンのクリックイベント</li>
+                        <li>• タブ切り替え時のコンテンツ表示/非表示</li>
+                        <li>• タブ状態の管理（localStorage等）</li>
+                    </ul>
+                    <div class="mt-2 text-xs text-blue-700 font-semibold">⏱️ 所要時間: 15分</div>
+                </div>
+
+                <div class="bg-purple-50 border-2 border-purple-400 rounded-lg p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="bg-purple-600 text-white px-3 py-1 rounded-full text-xs font-bold">Step 3</span>
+                        <h3 class="font-bold text-purple-900">シーン選択時の連動処理</h3>
+                    </div>
+                    <ul class="text-sm text-gray-700 space-y-1 ml-8">
+                        <li>• シーン選択 → 両方のタブのシーン情報を更新</li>
+                        <li>• 画像生成タブ → そのシーンの画像履歴を表示</li>
+                        <li>• 動画生成タブ → 採用画像を自動選択して表示</li>
+                    </ul>
+                    <div class="mt-2 text-xs text-purple-700 font-semibold">⏱️ 所要時間: 20分</div>
+                </div>
+
+                <div class="bg-orange-50 border-2 border-orange-400 rounded-lg p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="bg-orange-600 text-white px-3 py-1 rounded-full text-xs font-bold">Step 4</span>
+                        <h3 class="font-bold text-orange-900">動画生成API統合（Veo 3.1）</h3>
+                    </div>
+                    <ul class="text-sm text-gray-700 space-y-1 ml-8">
+                        <li>• 動画生成ボタンのクリックイベント</li>
+                        <li>• Supabase Edge Function経由でVeo 3.1呼び出し</li>
+                        <li>• 生成状況のポーリング処理</li>
+                        <li>• 動画履歴への追加</li>
+                        <li>• ダウンロード機能</li>
+                    </ul>
+                    <div class="mt-2 text-xs text-orange-700 font-semibold">⏱️ 所要時間: 1時間（既存のapi-test-movie.htmlから移植）</div>
+                </div>
+            </div>
+
+            <div class="mt-6 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-400 rounded-lg p-4">
+                <h3 class="font-bold text-gray-900 mb-2">📊 合計作業時間</h3>
+                <div class="text-2xl font-bold text-green-700">約 2時間</div>
+                <div class="text-sm text-gray-600 mt-1">（API統合部分は既存コードを流用するため早い）</div>
+            </div>
+        </div>
+
+        <!-- まとめ -->
+        <div class="card" style="background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%); border-color: #10b981;">
+            <h2 class="text-3xl font-bold text-white mb-4">✅ 最終確認</h2>
+
+            <div class="bg-white bg-opacity-20 backdrop-blur rounded-lg p-6 mb-4">
+                <h3 class="font-bold text-white text-xl mb-3">📋 この提案の内容</h3>
+                <div class="grid grid-cols-2 gap-4 text-white text-sm">
+                    <div>
+                        <div class="font-bold mb-2">レイアウト</div>
+                        <ul class="space-y-1">
+                            <li>✓ GPS: 320px（固定）</li>
+                            <li>✓ シーン一覧: flex-1（広い）</li>
+                            <li>✓ 右パネル: 440px（タブ切り替え）</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <div class="font-bold mb-2">タブ構成</div>
+                        <ul class="space-y-1">
+                            <li>✓ タブ1: 📷 画像生成</li>
+                            <li>✓ タブ2: 🎬 動画生成（新規）</li>
+                            <li>✓ シーン選択で両方連動</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white bg-opacity-20 backdrop-blur rounded-lg p-6 mb-4">
+                <h3 class="font-bold text-white text-xl mb-3">🎯 ユーザー体験</h3>
+                <ul class="text-white space-y-2">
+                    <li>✓ <strong>画像生成は最初だけ</strong> - タブで必要な時だけアクセス</li>
+                    <li>✓ <strong>動画生成がメイン</strong> - 各シーンの動画を次々と生成</li>
+                    <li>✓ <strong>40インチで快適</strong> - シーン一覧が広々</li>
+                    <li>✓ <strong>ページ遷移なし</strong> - 全てが1つの画面で完結</li>
+                </ul>
+            </div>
+
+            <div class="bg-white bg-opacity-20 backdrop-blur rounded-lg p-6">
+                <h3 class="font-bold text-white text-xl mb-3">🚀 次のステップ</h3>
+                <ol class="text-white space-y-2 text-lg">
+                    <li><strong>1.</strong> この提案でOKか確認</li>
+                    <li><strong>2.</strong> OKなら storyboard.html の修正開始</li>
+                    <li><strong>3.</strong> Step 1-4を順番に実装</li>
+                    <li><strong>4.</strong> テスト・調整</li>
+                </ol>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>

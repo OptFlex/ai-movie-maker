@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>絵コンテアプリ - データベース設計図</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      color: white;
+      text-align: center;
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .subtitle {
+      color: rgba(255,255,255,0.9);
+      text-align: center;
+      margin-bottom: 40px;
+      font-size: 1.1rem;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+
+    .status-implemented {
+      background: #10b981;
+      color: white;
+    }
+
+    .status-planned {
+      background: #f59e0b;
+      color: white;
+    }
+
+    /* ER図セクション */
+    .er-diagram {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      margin-bottom: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .er-title {
+      font-size: 1.8rem;
+      color: #1f2937;
+      margin-bottom: 30px;
+      text-align: center;
+      border-bottom: 3px solid #667eea;
+      padding-bottom: 15px;
+    }
+
+    .er-container {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+      align-items: center;
+    }
+
+    /* テーブルカード */
+    .table-card {
+      background: white;
+      border: 3px solid #e5e7eb;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+      width: 100%;
+      max-width: 500px;
+    }
+
+    .table-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+
+    .table-card.implemented {
+      border-color: #10b981;
+    }
+
+    .table-card.planned {
+      border-color: #f59e0b;
+    }
+
+    .table-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      font-size: 1.3rem;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .table-card.implemented .table-header {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+
+    .table-card.planned .table-header {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+
+    .table-icon {
+      font-size: 1.5rem;
+    }
+
+    .table-body {
+      padding: 0;
+    }
+
+    .column-row {
+      display: grid;
+      grid-template-columns: 40% 25% 35%;
+      padding: 12px 20px;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+
+    .column-row:hover {
+      background: #f9fafb;
+    }
+
+    .column-row:last-child {
+      border-bottom: none;
+    }
+
+    .column-row.header {
+      background: #f3f4f6;
+      font-weight: 700;
+      color: #374151;
+    }
+
+    .column-name {
+      font-weight: 600;
+      color: #1f2937;
+      font-family: 'Monaco', monospace;
+    }
+
+    .column-type {
+      color: #6366f1;
+      font-family: 'Monaco', monospace;
+      font-weight: 500;
+    }
+
+    .column-desc {
+      color: #6b7280;
+      font-size: 0.85rem;
+    }
+
+    .pk-badge {
+      background: #fbbf24;
+      color: #78350f;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      margin-left: 6px;
+    }
+
+    .fk-badge {
+      background: #60a5fa;
+      color: #1e3a8a;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      margin-left: 6px;
+    }
+
+    /* 関連線 */
+    .relation-line {
+      text-align: center;
+      padding: 20px 0;
+      color: #6b7280;
+      font-weight: 600;
+      position: relative;
+    }
+
+    .relation-line::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: linear-gradient(to bottom, #e5e7eb 0%, #9ca3af 50%, #e5e7eb 100%);
+      transform: translateX(-50%);
+    }
+
+    .relation-label {
+      background: white;
+      padding: 8px 20px;
+      border: 2px solid #9ca3af;
+      border-radius: 20px;
+      display: inline-block;
+      position: relative;
+      z-index: 1;
+      font-size: 0.9rem;
+    }
+
+    /* レイアウト調整 */
+    .level-1 {
+      display: flex;
+      justify-content: center;
+    }
+
+    .level-2, .level-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+      gap: 30px;
+      width: 100%;
+    }
+
+    /* テーブル説明セクション */
+    .table-details {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      margin-bottom: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .detail-section {
+      margin-bottom: 30px;
+    }
+
+    .detail-title {
+      font-size: 1.5rem;
+      color: #1f2937;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .detail-content {
+      background: #f9fafb;
+      padding: 20px;
+      border-radius: 12px;
+      border-left: 4px solid #667eea;
+      line-height: 1.8;
+      color: #374151;
+    }
+
+    .detail-content code {
+      background: #e5e7eb;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: 'Monaco', monospace;
+      color: #1f2937;
+      font-size: 0.9rem;
+    }
+
+    /* データフロー図 */
+    .data-flow {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      margin-bottom: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .flow-step {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 20px;
+      padding: 20px;
+      background: #f9fafb;
+      border-radius: 12px;
+      transition: transform 0.2s;
+    }
+
+    .flow-step:hover {
+      transform: translateX(10px);
+      background: #f3f4f6;
+    }
+
+    .flow-number {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .flow-content {
+      flex: 1;
+    }
+
+    .flow-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 5px;
+    }
+
+    .flow-desc {
+      color: #6b7280;
+    }
+
+    /* チェックリスト */
+    .checklist {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .checklist-item {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      transition: background 0.2s;
+    }
+
+    .checklist-item:hover {
+      background: #f9fafb;
+    }
+
+    .checklist-item.done {
+      background: #d1fae5;
+    }
+
+    .checklist-item.todo {
+      background: #fef3c7;
+    }
+
+    .checkbox {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .checkbox.done {
+      background: #10b981;
+      color: white;
+    }
+
+    .checkbox.todo {
+      background: #f59e0b;
+      color: white;
+    }
+
+    .checklist-text {
+      flex: 1;
+      font-size: 1.1rem;
+      color: #1f2937;
+    }
+
+    @media (max-width: 768px) {
+      .level-2, .level-3 {
+        grid-template-columns: 1fr;
+      }
+
+      .column-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      h1 {
+        font-size: 1.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎬 絵コンテアプリ データベース設計図</h1>
+    <p class="subtitle">直感的に理解できるビジュアルガイド</p>
+
+    <!-- ER図 -->
+    <div class="er-diagram">
+      <h2 class="er-title">📊 テーブル構造とリレーション</h2>
+
+      <div class="er-container">
+        <!-- Level 0: 認証 -->
+        <div class="level-1">
+          <div class="table-card implemented">
+            <div class="table-header">
+              <span><span class="table-icon">🔐</span> auth.users</span>
+              <span class="status-badge status-implemented">実装済み</span>
+            </div>
+            <div class="table-body">
+              <div class="column-row header">
+                <div>カラム名</div>
+                <div>型</div>
+                <div>説明</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">id <span class="pk-badge">PK</span></div>
+                <div class="column-type">UUID</div>
+                <div class="column-desc">ユーザーID</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">email</div>
+                <div class="column-type">TEXT</div>
+                <div class="column-desc">メールアドレス</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="relation-line">
+          <span class="relation-label">↓ 1人のユーザーは複数の企画を持つ (1対多)</span>
+        </div>
+
+        <!-- Level 1: 企画 -->
+        <div class="level-1">
+          <div class="table-card planned">
+            <div class="table-header">
+              <span><span class="table-icon">📋</span> projects</span>
+              <span class="status-badge status-planned">計画中</span>
+            </div>
+            <div class="table-body">
+              <div class="column-row header">
+                <div>カラム名</div>
+                <div>型</div>
+                <div>説明</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">id <span class="pk-badge">PK</span></div>
+                <div class="column-type">UUID</div>
+                <div class="column-desc">企画ID</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">user_id <span class="fk-badge">FK</span></div>
+                <div class="column-type">UUID</div>
+                <div class="column-desc">作成者ID</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">title</div>
+                <div class="column-type">TEXT</div>
+                <div class="column-desc">企画タイトル</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">channel_name</div>
+                <div class="column-type">TEXT</div>
+                <div class="column-desc">チャンネル名</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">goal</div>
+                <div class="column-type">TEXT</div>
+                <div class="column-desc">目標 (GPS-G)</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">plan</div>
+                <div class="column-type">TEXT</div>
+                <div class="column-desc">計画 (GPS-P)</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">status</div>
+                <div class="column-type">TEXT</div>
+                <div class="column-desc">進捗 (GPS-S)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="relation-line">
+          <span class="relation-label">↓ 1つの企画は複数のシーンを持つ (1対多)</span>
+        </div>
+
+        <!-- Level 2: シーン -->
+        <div class="level-1">
+          <div class="table-card planned">
+            <div class="table-header">
+              <span><span class="table-icon">🎞️</span> scenes</span>
+              <span class="status-badge status-planned">計画中</span>
+            </div>
+            <div class="table-body">
+              <div class="column-row header">
+                <div>カラム名</div>
+                <div>型</div>
+                <div>説明</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">id <span class="pk-badge">PK</span></div>
+                <div class="column-type">UUID</div>
+                <div class="column-desc">シーンID</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">project_id <span class="fk-badge">FK</span></div>
+                <div class="column-type">UUID</div>
+                <div class="column-desc">所属企画ID</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">number</div>
+                <div class="column-type">INTEGER</div>
+                <div class="column-desc">シーン番号 (#1, #2...)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="relation-line">
+          <span class="relation-label">↓ 1つのシーンは複数のセリフと画像を持つ (1対多)</span>
+        </div>
+
+        <!-- Level 3: セリフと画像 -->
+        <div class="level-2">
+          <div class="table-card planned">
+            <div class="table-header">
+              <span><span class="table-icon">💬</span> dialogues</span>
+              <span class="status-badge status-planned">計画中</span>
+            </div>
+            <div class="table-body">
+              <div class="column-row header">
+                <div>カラム名</div>
+                <div>型</div>
+                <div>説明</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">id <span class="pk-badge">PK</span></div>
+                <div class="column-type">UUID</div>
+                <div class="column-desc">セリフID</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">scene_id <span class="fk-badge">FK</span></div>
+                <div class="column-type">UUID</div>
+                <div class="column-desc">所属シーンID</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">speaker</div>
+                <div class="column-type">TEXT</div>
+                <div class="column-desc">話者名</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">text</div>
+                <div class="column-type">TEXT</div>
+                <div class="column-desc">セリフ本文</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">order_index</div>
+                <div class="column-type">INTEGER</div>
+                <div class="column-desc">順序</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-card planned">
+            <div class="table-header">
+              <span><span class="table-icon">🖼️</span> images</span>
+              <span class="status-badge status-planned">計画中</span>
+            </div>
+            <div class="table-body">
+              <div class="column-row header">
+                <div>カラム名</div>
+                <div>型</div>
+                <div>説明</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">id <span class="pk-badge">PK</span></div>
+                <div class="column-type">UUID</div>
+                <div class="column-desc">画像ID</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">scene_id <span class="fk-badge">FK</span></div>
+                <div class="column-type">UUID</div>
+                <div class="column-desc">所属シーンID</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">prompt</div>
+                <div class="column-type">TEXT</div>
+                <div class="column-desc">生成プロンプト</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">image_url</div>
+                <div class="column-type">TEXT</div>
+                <div class="column-desc">画像URL</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">selected</div>
+                <div class="column-type">BOOLEAN</div>
+                <div class="column-desc">採用フラグ</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ホワイトリスト（別系統） -->
+        <div style="margin-top: 40px; padding-top: 40px; border-top: 3px dashed #e5e7eb;">
+          <h3 style="text-align: center; color: #6b7280; margin-bottom: 20px;">認証・アクセス制御</h3>
+          <div class="level-1">
+            <div class="table-card implemented">
+              <div class="table-header">
+                <span><span class="table-icon">✅</span> allowed_emails</span>
+                <span class="status-badge status-implemented">実装済み</span>
+              </div>
+              <div class="table-body">
+                <div class="column-row header">
+                  <div>カラム名</div>
+                  <div>型</div>
+                  <div>説明</div>
+                </div>
+                <div class="column-row">
+                  <div class="column-name">email <span class="pk-badge">PK</span></div>
+                  <div class="column-type">TEXT</div>
+                  <div class="column-desc">許可メールアドレス</div>
+                </div>
+                <div class="column-row">
+                  <div class="column-name">name</div>
+                  <div class="column-type">TEXT</div>
+                  <div class="column-desc">ユーザー名</div>
+                </div>
+                <div class="column-row">
+                  <div class="column-name">added_at</div>
+                  <div class="column-type">TIMESTAMPTZ</div>
+                  <div class="column-desc">追加日時</div>
+                </div>
+                <div class="column-row">
+                  <div class="column-name">notes</div>
+                  <div class="column-type">TEXT</div>
+                  <div class="column-desc">メモ</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- データフロー -->
+    <div class="data-flow">
+      <h2 class="er-title">🔄 データの流れ</h2>
+
+      <div class="flow-step">
+        <div class="flow-number">1</div>
+        <div class="flow-content">
+          <div class="flow-title">ユーザー登録・ログイン</div>
+          <div class="flow-desc">Google OAuth → Supabase Auth → <code>auth.users</code> テーブルに自動保存</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-number">2</div>
+        <div class="flow-content">
+          <div class="flow-title">ホワイトリスト確認</div>
+          <div class="flow-desc"><code>allowed_emails</code> テーブルでメールアドレスを照合。未登録なら自動ログアウト</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-number">3</div>
+        <div class="flow-content">
+          <div class="flow-title">企画作成</div>
+          <div class="flow-desc"><code>projects</code> テーブルに新規レコード作成。user_idで紐付け</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-number">4</div>
+        <div class="flow-content">
+          <div class="flow-title">シーン追加</div>
+          <div class="flow-desc"><code>scenes</code> テーブルに追加。project_idで企画と紐付け</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-number">5</div>
+        <div class="flow-content">
+          <div class="flow-title">セリフ入力</div>
+          <div class="flow-desc"><code>dialogues</code> テーブルに保存。scene_idで紐付け、order_indexで順序管理</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-number">6</div>
+        <div class="flow-content">
+          <div class="flow-title">画像生成</div>
+          <div class="flow-desc">Edge Function (generate-image) → Gemini API → Base64画像取得</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-number">7</div>
+        <div class="flow-content">
+          <div class="flow-title">画像保存</div>
+          <div class="flow-desc">Base64 → Supabase Storage (storyboard-images) → URL取得 → <code>images</code> テーブルに保存</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-number">8</div>
+        <div class="flow-content">
+          <div class="flow-title">動画生成</div>
+          <div class="flow-desc">Edge Function (generate-video) → Veo 3.1 API → 長時間実行 → ポーリングで完了確認</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- テーブル詳細説明 -->
+    <div class="table-details">
+      <h2 class="er-title">📖 テーブル詳細説明</h2>
+
+      <div class="detail-section">
+        <div class="detail-title">🔐 auth.users（Supabase標準）</div>
+        <div class="detail-content">
+          <strong>役割:</strong> Supabase Authが自動管理する認証ユーザーテーブル<br>
+          <strong>特徴:</strong> Google OAuthでログインすると自動的にレコードが作成される<br>
+          <strong>用途:</strong> すべてのテーブルで <code>user_id</code> として外部キー参照される基盤テーブル
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-title">✅ allowed_emails（ホワイトリスト）</div>
+        <div class="detail-content">
+          <strong>役割:</strong> アプリへのアクセスを許可するメールアドレスのホワイトリスト<br>
+          <strong>実装状況:</strong> ✅ 実装済み・稼働中<br>
+          <strong>セキュリティ:</strong> ログイン時に自動チェック。未登録ユーザーは即座にログアウト<br>
+          <strong>RLS:</strong> 全ユーザーが読み取り可能（自分のメールがホワイトリストにあるか確認するため）
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-title">📋 projects（企画管理）</div>
+        <div class="detail-content">
+          <strong>役割:</strong> YouTube動画企画のマスターテーブル<br>
+          <strong>GPS設計:</strong> Goal（目標）、Plan（計画）、Status（進捗）を記録<br>
+          <strong>マルチチャンネル対応:</strong> <code>channel_name</code> で複数チャンネルを管理可能<br>
+          <strong>RLS:</strong> ユーザーは自分が作成した企画のみ参照・編集可能
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-title">🎞️ scenes（シーン）</div>
+        <div class="detail-content">
+          <strong>役割:</strong> 企画内の各シーン（#1, #2, #3...）を管理<br>
+          <strong>一意制約:</strong> 同じproject_id内で同じnumberは許可しない<br>
+          <strong>カスケード削除:</strong> 企画を削除すると、関連するすべてのシーンも自動削除<br>
+          <strong>RLS:</strong> ユーザーの企画に紐づくシーンのみアクセス可能
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-title">💬 dialogues（セリフ）</div>
+        <div class="detail-content">
+          <strong>役割:</strong> 各シーンの台詞を管理<br>
+          <strong>順序管理:</strong> <code>order_index</code> で発話順を制御（0, 1, 2...）<br>
+          <strong>話者指定:</strong> <code>speaker</code> で「ナレーター」「真子さん」などを記録<br>
+          <strong>カスケード削除:</strong> シーン削除時に関連セリフも自動削除
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-title">🖼️ images（画像候補）</div>
+        <div class="detail-content">
+          <strong>役割:</strong> Gemini APIで生成した画像の履歴と採用画像を管理<br>
+          <strong>採用制御:</strong> <code>selected = true</code> の画像は1シーンにつき1つまで（UNIQUE制約）<br>
+          <strong>再生成対応:</strong> 複数の画像候補を保存し、後から選択変更が可能<br>
+          <strong>Storage連携:</strong> <code>image_url</code> は Supabase Storage の公開URLを保存
+        </div>
+      </div>
+    </div>
+
+    <!-- 実装チェックリスト -->
+    <div class="checklist">
+      <h2 class="er-title">✓ 実装チェックリスト</h2>
+
+      <div class="checklist-item done">
+        <div class="checkbox done">✓</div>
+        <div class="checklist-text">allowed_emails テーブル作成 + RLSポリシー設定</div>
+      </div>
+
+      <div class="checklist-item done">
+        <div class="checkbox done">✓</div>
+        <div class="checklist-text">Google OAuth認証の実装</div>
+      </div>
+
+      <div class="checklist-item done">
+        <div class="checkbox done">✓</div>
+        <div class="checklist-text">Edge Function（Gemini・Veo API連携）</div>
+      </div>
+
+      <div class="checklist-item done">
+        <div class="checkbox done">✓</div>
+        <div class="checklist-text">フロントエンドのモックUI作成</div>
+      </div>
+
+      <div class="checklist-item todo">
+        <div class="checkbox todo">◯</div>
+        <div class="checklist-text">projects テーブルの作成とRLSポリシー設定</div>
+      </div>
+
+      <div class="checklist-item todo">
+        <div class="checkbox todo">◯</div>
+        <div class="checklist-text">scenes テーブルの作成とRLSポリシー設定</div>
+      </div>
+
+      <div class="checklist-item todo">
+        <div class="checkbox todo">◯</div>
+        <div class="checklist-text">dialogues テーブルの作成とRLSポリシー設定</div>
+      </div>
+
+      <div class="checklist-item todo">
+        <div class="checkbox todo">◯</div>
+        <div class="checklist-text">images テーブルの作成とRLSポリシー設定</div>
+      </div>
+
+      <div class="checklist-item todo">
+        <div class="checkbox todo">◯</div>
+        <div class="checklist-text">Supabase Storage バケット作成（storyboard-images）</div>
+      </div>
+
+      <div class="checklist-item todo">
+        <div class="checkbox todo">◯</div>
+        <div class="checklist-text">フロントエンド ← → Supabase連携実装</div>
+      </div>
+
+      <div class="checklist-item todo">
+        <div class="checkbox todo">◯</div>
+        <div class="checklist-text">画像のBase64 → Storage保存処理の実装</div>
+      </div>
+
+      <div class="checklist-item todo">
+        <div class="checkbox todo">◯</div>
+        <div class="checklist-text">動画生成の長時間実行ポーリング処理</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

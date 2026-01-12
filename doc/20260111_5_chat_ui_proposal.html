@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>画像生成UI提案 - トーク形式</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f5;
+      padding: 40px;
+      line-height: 1.6;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
+      color: white;
+      padding: 50px;
+      text-align: center;
+      border-radius: 20px;
+      margin-bottom: 40px;
+      box-shadow: 0 8px 30px rgba(124, 58, 237, 0.3);
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 15px;
+    }
+
+    .header .subtitle {
+      font-size: 1.2rem;
+      opacity: 0.95;
+    }
+
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .section {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    .section-title {
+      font-size: 2rem;
+      color: #1f2937;
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 3px solid #7c3aed;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .info-box {
+      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+      border: 3px solid #3b82f6;
+      border-radius: 12px;
+      padding: 25px;
+      margin: 20px 0;
+    }
+
+    .info-box-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #1e3a8a;
+      margin-bottom: 12px;
+    }
+
+    .info-box-content {
+      color: #1e40af;
+      line-height: 1.8;
+      font-size: 1.05rem;
+    }
+
+    /* モックアップUI */
+    .mockup-container {
+      background: #f9fafb;
+      border: 3px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 30px;
+      margin: 30px 0;
+    }
+
+    .mockup-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #374151;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    /* チャットメッセージ */
+    .chat-history {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      max-height: 600px;
+      overflow-y: auto;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .message {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 25px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.user-message {
+      flex-direction: row;
+    }
+
+    .message.ai-message {
+      flex-direction: row-reverse;
+    }
+
+    .avatar {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .message.user-message .avatar {
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    }
+
+    .message.ai-message .avatar {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+
+    .message-content {
+      flex: 1;
+      max-width: 70%;
+    }
+
+    .message.user-message .message-content {
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border: 2px solid #3b82f6;
+      border-radius: 16px 16px 16px 4px;
+    }
+
+    .message.ai-message .message-content {
+      background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+      border: 2px solid #10b981;
+      border-radius: 16px 16px 4px 16px;
+    }
+
+    .message-bubble {
+      padding: 18px 22px;
+    }
+
+    .prompt-text {
+      font-size: 1.05rem;
+      color: #1f2937;
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+
+    .reference-images {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .reference-thumb {
+      width: 80px;
+      height: 80px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 2px solid rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+      cursor: pointer;
+      background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+
+    .reference-thumb:hover {
+      transform: scale(1.1);
+      border-color: #7c3aed;
+    }
+
+    .generated-image {
+      width: 100%;
+      max-width: 400px;
+      border-radius: 12px;
+      margin-top: 12px;
+      cursor: pointer;
+      transition: transform 0.2s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+      min-height: 250px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #6b7280;
+      font-size: 0.95rem;
+    }
+
+    .generated-image:hover {
+      transform: scale(1.02);
+    }
+
+    .timestamp {
+      font-size: 0.85rem;
+      color: #6b7280;
+      margin-top: 8px;
+    }
+
+    .message-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .action-btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 2px solid;
+      background: white;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .action-btn.select {
+      border-color: #10b981;
+      color: #10b981;
+    }
+
+    .action-btn.select:hover {
+      background: #10b981;
+      color: white;
+    }
+
+    .action-btn.regenerate {
+      border-color: #f59e0b;
+      color: #f59e0b;
+    }
+
+    .action-btn.regenerate:hover {
+      background: #f59e0b;
+      color: white;
+    }
+
+    .load-more {
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .load-more-btn {
+      padding: 12px 30px;
+      border-radius: 12px;
+      border: 3px solid #7c3aed;
+      background: white;
+      color: #7c3aed;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .load-more-btn:hover {
+      background: #7c3aed;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+    }
+
+    /* 比較テーブル */
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin: 30px 0;
+    }
+
+    .comparison-item {
+      border: 3px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 25px;
+    }
+
+    .comparison-item.good {
+      border-color: #10b981;
+      background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    }
+
+    .comparison-item.bad {
+      border-color: #ef4444;
+      background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    }
+
+    .comparison-label {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .comparison-item.good .comparison-label {
+      color: #065f46;
+    }
+
+    .comparison-item.bad .comparison-label {
+      color: #991b1b;
+    }
+
+    .comparison-content {
+      line-height: 1.8;
+      font-size: 1.05rem;
+    }
+
+    .comparison-item.good .comparison-content {
+      color: #047857;
+    }
+
+    .comparison-item.bad .comparison-content {
+      color: #b91c1c;
+    }
+
+    /* 技術仕様 */
+    .spec-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin: 25px 0;
+    }
+
+    .spec-card {
+      background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .spec-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 10px;
+    }
+
+    .spec-content {
+      color: #6b7280;
+      line-height: 1.7;
+      font-size: 0.95rem;
+    }
+
+    .spec-content code {
+      background: #e5e7eb;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: 'Monaco', monospace;
+      color: #1f2937;
+      font-size: 0.9rem;
+    }
+
+    /* コードブロック */
+    .code-block {
+      background: #1f2937;
+      color: #e5e7eb;
+      padding: 25px;
+      border-radius: 12px;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 0.9rem;
+      line-height: 1.8;
+      overflow-x: auto;
+      margin: 20px 0;
+    }
+
+    .code-comment {
+      color: #9ca3af;
+    }
+
+    .code-keyword {
+      color: #fbbf24;
+    }
+
+    .code-string {
+      color: #10b981;
+    }
+
+    .code-function {
+      color: #60a5fa;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🎨 画像生成UI提案 - トーク形式</h1>
+    <p class="subtitle">ChatGPT風のトーク形式で画像生成履歴を表示</p>
+  </div>
+
+  <div class="container">
+    <!-- 概要 -->
+    <div class="section">
+      <h2 class="section-title">📋 提案概要</h2>
+
+      <div class="info-box">
+        <div class="info-box-title">💡 コンセプト</div>
+        <div class="info-box-content">
+          <strong>ユーザーとAIの対話として画像生成履歴を表示</strong><br>
+          ・プロンプト入力 → AI応答（画像生成）の流れを視覚化<br>
+          ・参照画像も一緒に表示して「どうやって作ったか」が一目でわかる<br>
+          ・ChatGPT的なUIで直感的に操作可能
+        </div>
+      </div>
+
+      <div class="comparison">
+        <div class="comparison-item good">
+          <div class="comparison-label">✅ トーク形式のメリット</div>
+          <div class="comparison-content">
+            <strong>直感的:</strong> 会話の流れで理解しやすい<br>
+            <strong>時系列:</strong> 試行錯誤のプロセスが可視化<br>
+            <strong>再現性:</strong> 過去のプロンプト・参照画像を確認可能<br>
+            <strong>親しみやすさ:</strong> ChatGPT的なUIで馴染みやすい
+          </div>
+        </div>
+
+        <div class="comparison-item bad">
+          <div class="comparison-label">⚠️ 懸念点（解決策あり）</div>
+          <div class="comparison-content">
+            <strong>重くなる?</strong> → 最新10件のみ表示（ページネーション）<br>
+            <strong>スクロールが長い?</strong> → 遅延読み込み（lazy loading）<br>
+            <strong>画像が多い?</strong> → サムネイル表示 → クリックでフルサイズ<br>
+            <strong>更新頻繁?</strong> → Realtime購読で差分更新のみ
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- モックアップ -->
+    <div class="section">
+      <h2 class="section-title">🎨 UIモックアップ</h2>
+      <p style="color: #6b7280; margin-bottom: 20px;">シーン #1 の画像生成履歴（トーク形式）</p>
+
+      <div class="mockup-container">
+        <div class="mockup-title">画像生成履歴</div>
+
+        <div class="chat-history">
+          <!-- メッセージ1 -->
+          <div class="message user-message">
+            <div class="avatar">👤</div>
+            <div class="message-content">
+              <div class="message-bubble">
+                <div class="prompt-text">「美しい風景を生成して」</div>
+                <div class="reference-images">
+                  <div class="reference-thumb">参照画像1<br>📷</div>
+                  <div class="reference-thumb">参照画像2<br>📷</div>
+                </div>
+                <div class="timestamp">2026-01-11 10:30</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="message ai-message">
+            <div class="avatar">🤖</div>
+            <div class="message-content">
+              <div class="message-bubble">
+                <div class="generated-image">生成された画像<br>🖼️<br>(400x300px)</div>
+                <div class="message-actions">
+                  <button class="action-btn select">✓ 採用</button>
+                  <button class="action-btn regenerate">🔄 再生成</button>
+                </div>
+                <div class="timestamp">2026-01-11 10:31</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- メッセージ2 -->
+          <div class="message user-message">
+            <div class="avatar">👤</div>
+            <div class="message-content">
+              <div class="message-bubble">
+                <div class="prompt-text">「もっとアニメ風に変更して」</div>
+                <div class="reference-images">
+                  <div class="reference-thumb">参照画像1<br>📷</div>
+                  <div class="reference-thumb">参照画像2<br>📷</div>
+                  <div class="reference-thumb">参照画像3<br>📷</div>
+                </div>
+                <div class="timestamp">2026-01-11 10:35</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="message ai-message">
+            <div class="avatar">🤖</div>
+            <div class="message-content">
+              <div class="message-bubble">
+                <div class="generated-image">アニメ風の画像<br>🖼️<br>(400x300px)</div>
+                <div class="message-actions">
+                  <button class="action-btn select">✓ 採用</button>
+                  <button class="action-btn regenerate">🔄 再生成</button>
+                </div>
+                <div class="timestamp">2026-01-11 10:36</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- メッセージ3 -->
+          <div class="message user-message">
+            <div class="avatar">👤</div>
+            <div class="message-content">
+              <div class="message-bubble">
+                <div class="prompt-text">「色をもっと鮮やかにして」</div>
+                <div class="timestamp">2026-01-11 10:40</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="message ai-message">
+            <div class="avatar">🤖</div>
+            <div class="message-content">
+              <div class="message-bubble">
+                <div class="generated-image">鮮やかな画像<br>🖼️<br>(400x300px)<br><strong style="color: #10b981;">✓ 採用済み</strong></div>
+                <div class="message-actions">
+                  <button class="action-btn regenerate">🔄 再生成</button>
+                </div>
+                <div class="timestamp">2026-01-11 10:41</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="load-more">
+          <button class="load-more-btn">もっと見る（7件の履歴）</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- データベース設計 -->
+    <div class="section">
+      <h2 class="section-title">🗄️ データベース設計（修正版）</h2>
+
+      <div class="info-box">
+        <div class="info-box-title">🔧 imagesテーブルに reference_images カラムを追加</div>
+        <div class="info-box-content">
+          参照画像のURL配列をJSONB形式で保存することで、「どの参照画像を使ったか」を記録できます。
+        </div>
+      </div>
+
+      <div class="code-block">
+<span class="code-keyword">CREATE TABLE</span> images (
+  id <span class="code-string">UUID</span> <span class="code-keyword">PRIMARY KEY DEFAULT</span> gen_random_uuid(),
+  scene_id <span class="code-string">UUID</span> <span class="code-keyword">REFERENCES</span> scenes(id) <span class="code-keyword">ON DELETE CASCADE</span>,
+
+  <span class="code-comment">-- 生成プロンプト</span>
+  prompt <span class="code-string">TEXT</span> <span class="code-keyword">NOT NULL</span>,
+
+  <span class="code-comment">-- 生成された画像</span>
+  image_url <span class="code-string">TEXT</span>,
+
+  <span class="code-comment">-- 参照画像（複数の場合はJSON配列）👈 NEW!</span>
+  reference_images <span class="code-string">JSONB</span>,
+
+  <span class="code-comment">-- 採用フラグ</span>
+  selected <span class="code-string">BOOLEAN</span> <span class="code-keyword">DEFAULT</span> <span class="code-keyword">false</span>,
+
+  created_at <span class="code-string">TIMESTAMPTZ</span> <span class="code-keyword">DEFAULT</span> NOW(),
+
+  <span class="code-keyword">CONSTRAINT</span> one_selected_per_scene <span class="code-keyword">UNIQUE</span> (scene_id, selected)
+    <span class="code-keyword">WHERE</span> (selected = <span class="code-keyword">true</span>)
+);
+
+<span class="code-comment">-- インデックス作成</span>
+<span class="code-keyword">CREATE INDEX</span> idx_images_reference_images
+  <span class="code-keyword">ON</span> images <span class="code-keyword">USING GIN</span> (reference_images);
+      </div>
+
+      <p style="margin: 20px 0; color: #6b7280; font-size: 1.05rem;"><strong>データ例:</strong></p>
+
+      <div class="code-block">
+{
+  <span class="code-string">"id"</span>: <span class="code-string">"img-123"</span>,
+  <span class="code-string">"scene_id"</span>: <span class="code-string">"scene-456"</span>,
+  <span class="code-string">"prompt"</span>: <span class="code-string">"美しい風景をアニメ風に"</span>,
+  <span class="code-string">"image_url"</span>: <span class="code-string">"https://xxx.supabase.co/storage/.../generated-123.png"</span>,
+  <span class="code-string">"reference_images"</span>: [
+    {
+      <span class="code-string">"url"</span>: <span class="code-string">"https://xxx.supabase.co/storage/.../ref-001.png"</span>,
+      <span class="code-string">"uploaded_at"</span>: <span class="code-string">"2026-01-11T10:30:00Z"</span>
+    },
+    {
+      <span class="code-string">"url"</span>: <span class="code-string">"https://xxx.supabase.co/storage/.../ref-002.png"</span>,
+      <span class="code-string">"uploaded_at"</span>: <span class="code-string">"2026-01-11T10:31:00Z"</span>
+    }
+  ],
+  <span class="code-string">"selected"</span>: <span class="code-keyword">false</span>,
+  <span class="code-string">"created_at"</span>: <span class="code-string">"2026-01-11T10:32:00Z"</span>
+}
+      </div>
+    </div>
+
+    <!-- 実装仕様 -->
+    <div class="section">
+      <h2 class="section-title">⚙️ 実装仕様</h2>
+
+      <div class="spec-grid">
+        <div class="spec-card">
+          <div class="spec-title">📊 データ取得</div>
+          <div class="spec-content">
+            最新10件のみ取得して表示<br>
+            <code>LIMIT 10</code> + <code>ORDER BY created_at DESC</code><br>
+            「もっと見る」でページネーション
+          </div>
+        </div>
+
+        <div class="spec-card">
+          <div class="spec-title">🖼️ 画像表示</div>
+          <div class="spec-content">
+            遅延読み込み: <code>loading="lazy"</code><br>
+            サムネイル表示（max-width: 400px）<br>
+            クリックでフルサイズモーダル
+          </div>
+        </div>
+
+        <div class="spec-card">
+          <div class="spec-title">🔄 リアルタイム更新</div>
+          <div class="spec-content">
+            Supabase Realtime購読<br>
+            新規画像のINSERTイベントだけ監視<br>
+            差分更新でパフォーマンス維持
+          </div>
+        </div>
+
+        <div class="spec-card">
+          <div class="spec-title">💾 ストレージ容量</div>
+          <div class="spec-content">
+            参照画像: 約1MB/枚<br>
+            生成画像: 約2MB/枚<br>
+            10シーン × 3回 = 約90MB/プロジェクト
+          </div>
+        </div>
+
+        <div class="spec-card">
+          <div class="spec-title">⚡ パフォーマンス</div>
+          <div class="spec-content">
+            初期読み込み: 10件のみ（約20MB）<br>
+            追加読み込み: 10件ずつ<br>
+            ブラウザキャッシュ活用
+          </div>
+        </div>
+
+        <div class="spec-card">
+          <div class="spec-title">🎯 ユーザー体験</div>
+          <div class="spec-content">
+            ChatGPT風のUIで直感的<br>
+            試行錯誤のプロセスが可視化<br>
+            採用/再生成のアクションが明確
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 実装コード例 -->
+    <div class="section">
+      <h2 class="section-title">💻 実装コード例</h2>
+
+      <h3 style="font-size: 1.3rem; color: #1f2937; margin: 25px 0 15px;">データ取得</h3>
+
+      <div class="code-block">
+<span class="code-comment">// 最新10件の画像生成履歴を取得</span>
+<span class="code-keyword">const</span> { data: images } = <span class="code-keyword">await</span> <span class="code-function">supabaseClient</span>
+  .<span class="code-function">from</span>(<span class="code-string">'images'</span>)
+  .<span class="code-function">select</span>(<span class="code-string">'*'</span>)
+  .<span class="code-function">eq</span>(<span class="code-string">'scene_id'</span>, currentSceneId)
+  .<span class="code-function">order</span>(<span class="code-string">'created_at'</span>, { ascending: <span class="code-keyword">false</span> })
+  .<span class="code-function">limit</span>(<span class="code-keyword">10</span>);
+
+<span class="code-comment">// トーク形式でレンダリング</span>
+images.<span class="code-function">forEach</span>(image => {
+  <span class="code-function">renderUserMessage</span>(image.prompt, image.reference_images, image.created_at);
+  <span class="code-function">renderAiMessage</span>(image.image_url, image.selected, image.id);
+});
+      </div>
+
+      <h3 style="font-size: 1.3rem; color: #1f2937; margin: 35px 0 15px;">リアルタイム更新</h3>
+
+      <div class="code-block">
+<span class="code-comment">// 新規画像のINSERTを監視</span>
+<span class="code-keyword">const</span> subscription = <span class="code-function">supabaseClient</span>
+  .<span class="code-function">channel</span>(<span class="code-string">'images'</span>)
+  .<span class="code-function">on</span>(<span class="code-string">'postgres_changes'</span>, {
+    event: <span class="code-string">'INSERT'</span>,
+    schema: <span class="code-string">'public'</span>,
+    table: <span class="code-string">'images'</span>,
+    filter: <span class="code-string">`scene_id=eq.${currentSceneId}`</span>
+  }, (payload) => {
+    <span class="code-comment">// 新しい画像だけ追加（全体を再読み込みしない）</span>
+    <span class="code-keyword">const</span> newImage = payload.new;
+    <span class="code-function">renderUserMessage</span>(newImage.prompt, newImage.reference_images, newImage.created_at);
+    <span class="code-function">renderAiMessage</span>(newImage.image_url, newImage.selected, newImage.id);
+  })
+  .<span class="code-function">subscribe</span>();
+      </div>
+
+      <h3 style="font-size: 1.3rem; color: #1f2937; margin: 35px 0 15px;">参照画像の保存</h3>
+
+      <div class="code-block">
+<span class="code-comment">// 1. 参照画像をStorageにアップロード</span>
+<span class="code-keyword">const</span> referenceUrls = [];
+
+<span class="code-keyword">for</span> (<span class="code-keyword">const</span> file <span class="code-keyword">of</span> referenceFiles) {
+  <span class="code-keyword">const</span> { data } = <span class="code-keyword">await</span> <span class="code-function">supabaseClient</span>.storage
+    .<span class="code-function">from</span>(<span class="code-string">'storyboard-images'</span>)
+    .<span class="code-function">upload</span>(<span class="code-string">`${userId}/references/${<span class="code-function">uuid</span>()}.png`</span>, file);
+
+  referenceUrls.<span class="code-function">push</span>({
+    url: data.publicUrl,
+    uploaded_at: <span class="code-keyword">new</span> <span class="code-function">Date</span>().<span class="code-function">toISOString</span>()
+  });
+}
+
+<span class="code-comment">// 2. 画像生成</span>
+<span class="code-keyword">const</span> response = <span class="code-keyword">await</span> <span class="code-function">fetch</span>(<span class="code-string">'/functions/v1/generate-image'</span>, {
+  method: <span class="code-string">'POST'</span>,
+  body: <span class="code-function">JSON.stringify</span>({
+    prompt: userPrompt,
+    referenceImages: referenceUrls.<span class="code-function">map</span>(r => r.url)
+  })
+});
+
+<span class="code-keyword">const</span> { imageBase64 } = <span class="code-keyword">await</span> response.<span class="code-function">json</span>();
+
+<span class="code-comment">// 3. 生成画像をStorageにアップロード</span>
+<span class="code-keyword">const</span> blob = <span class="code-function">base64ToBlob</span>(imageBase64);
+<span class="code-keyword">const</span> { data: uploadData } = <span class="code-keyword">await</span> <span class="code-function">supabaseClient</span>.storage
+  .<span class="code-function">from</span>(<span class="code-string">'storyboard-images'</span>)
+  .<span class="code-function">upload</span>(<span class="code-string">`${userId}/scenes/${sceneId}/${<span class="code-function">uuid</span>()}.png`</span>, blob);
+
+<span class="code-comment">// 4. imagesテーブルに保存</span>
+<span class="code-keyword">await</span> <span class="code-function">supabaseClient</span>
+  .<span class="code-function">from</span>(<span class="code-string">'images'</span>)
+  .<span class="code-function">insert</span>({
+    scene_id: currentSceneId,
+    prompt: userPrompt,
+    image_url: uploadData.publicUrl,
+    reference_images: referenceUrls  <span class="code-comment">// 👈 参照画像も保存！</span>
+  });
+      </div>
+    </div>
+
+    <!-- まとめ -->
+    <div class="section">
+      <h2 class="section-title">📝 まとめ</h2>
+
+      <div class="info-box" style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-color: #10b981;">
+        <div class="info-box-title" style="color: #065f46;">✅ この提案のポイント</div>
+        <div class="info-box-content" style="color: #047857;">
+          <strong>1. トーク形式UIで直感的</strong><br>
+          ChatGPT風の対話形式で、試行錯誤のプロセスが可視化されます。<br><br>
+
+          <strong>2. 参照画像も保存して再現性を確保</strong><br>
+          reference_imagesカラム（JSONB）で参照画像URLを配列保存。後から確認・再利用が可能。<br><br>
+
+          <strong>3. パフォーマンス最適化</strong><br>
+          最新10件のみ表示、遅延読み込み、Realtime差分更新で軽量化。<br><br>
+
+          <strong>4. ストレージコストは許容範囲</strong><br>
+          1プロジェクト約90MB。Supabaseの無料枠（1GB）で約11プロジェクト作成可能。<br><br>
+
+          <strong>5. ユーザー体験の向上</strong><br>
+          採用/再生成のアクションが明確。画像生成の履歴が一目でわかる。
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 40px; padding: 30px; background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); border-radius: 12px;">
+        <h3 style="font-size: 1.5rem; color: #1f2937; margin-bottom: 15px;">🚀 次のステップ</h3>
+        <p style="color: #6b7280; font-size: 1.1rem; line-height: 1.8;">
+          1. imagesテーブルに <code>reference_images JSONB</code> カラムを追加<br>
+          2. トーク形式UIの基本実装（最新10件表示）<br>
+          3. 参照画像アップロード機能の実装<br>
+          4. ページネーション（「もっと見る」ボタン）<br>
+          5. リアルタイム更新の実装
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

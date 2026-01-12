@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>絵コンテアプリ - 完全データベース設計提案</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 100%);
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      color: white;
+      text-align: center;
+      font-size: 2.8rem;
+      margin-bottom: 10px;
+      text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+    }
+
+    .subtitle {
+      color: rgba(255,255,255,0.95);
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 1.2rem;
+    }
+
+    .version-info {
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 15px 30px;
+      text-align: center;
+      color: white;
+      margin-bottom: 40px;
+      border: 2px solid rgba(255,255,255,0.3);
+    }
+
+    .version-info strong {
+      color: #fbbf24;
+      font-size: 1.1rem;
+    }
+
+    /* タブ切り替え */
+    .tabs {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+
+    .tab-button {
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(10px);
+      color: white;
+      border: 2px solid rgba(255,255,255,0.3);
+      padding: 15px 30px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+
+    .tab-button:hover {
+      background: rgba(255,255,255,0.3);
+      transform: translateY(-2px);
+    }
+
+    .tab-button.active {
+      background: white;
+      color: #1e3a8a;
+      border-color: white;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* カードスタイル */
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      margin-bottom: 30px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .card-title {
+      font-size: 2rem;
+      color: #1f2937;
+      margin-bottom: 25px;
+      text-align: center;
+      border-bottom: 4px solid #7c3aed;
+      padding-bottom: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .card-title .emoji {
+      font-size: 2.5rem;
+    }
+
+    /* ステータスバッジ */
+    .status-badge {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      margin-left: 10px;
+    }
+
+    .status-done {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+    }
+
+    .status-next {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: white;
+    }
+
+    /* テーブル設計 */
+    .table-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+      gap: 30px;
+      margin-top: 30px;
+    }
+
+    .table-card {
+      background: white;
+      border: 3px solid #e5e7eb;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      transition: all 0.3s;
+    }
+
+    .table-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    }
+
+    .table-card.implemented {
+      border-color: #10b981;
+    }
+
+    .table-card.planned {
+      border-color: #f59e0b;
+    }
+
+    .table-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 25px;
+      font-size: 1.4rem;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .table-card.implemented .table-header {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+
+    .table-card.planned .table-header {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+
+    .table-icon {
+      font-size: 1.6rem;
+      margin-right: 10px;
+    }
+
+    .table-body {
+      padding: 0;
+    }
+
+    .column-row {
+      display: grid;
+      grid-template-columns: 40% 20% 40%;
+      padding: 14px 25px;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 0.95rem;
+      transition: background 0.2s;
+      gap: 10px;
+    }
+
+    .column-row:hover {
+      background: #f9fafb;
+    }
+
+    .column-row:last-child {
+      border-bottom: none;
+    }
+
+    .column-row.header {
+      background: #f3f4f6;
+      font-weight: 700;
+      color: #374151;
+      position: sticky;
+      top: 0;
+    }
+
+    .column-name {
+      font-weight: 600;
+      color: #1f2937;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 0.9rem;
+    }
+
+    .column-type {
+      color: #6366f1;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+
+    .column-desc {
+      color: #6b7280;
+      font-size: 0.9rem;
+    }
+
+    .pk-badge {
+      background: #fbbf24;
+      color: #78350f;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      margin-left: 6px;
+    }
+
+    .fk-badge {
+      background: #60a5fa;
+      color: #1e3a8a;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      margin-left: 6px;
+    }
+
+    /* SQL表示 */
+    .sql-block {
+      background: #1f2937;
+      color: #e5e7eb;
+      padding: 25px;
+      border-radius: 12px;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 0.9rem;
+      line-height: 1.8;
+      overflow-x: auto;
+      margin: 20px 0;
+      border-left: 5px solid #7c3aed;
+    }
+
+    .sql-keyword {
+      color: #f59e0b;
+      font-weight: 700;
+    }
+
+    .sql-type {
+      color: #60a5fa;
+    }
+
+    .sql-string {
+      color: #10b981;
+    }
+
+    .sql-comment {
+      color: #9ca3af;
+      font-style: italic;
+    }
+
+    /* マイグレーション手順 */
+    .migration-step {
+      background: #f9fafb;
+      border-left: 5px solid #7c3aed;
+      padding: 20px 25px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+    }
+
+    .migration-step-number {
+      background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.2rem;
+      margin-right: 15px;
+    }
+
+    .migration-step-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+    }
+
+    .migration-step-desc {
+      color: #6b7280;
+      line-height: 1.8;
+      margin-left: 55px;
+    }
+
+    /* ER図 */
+    .er-diagram {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 25px;
+      padding: 30px;
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%);
+      border-radius: 20px;
+      margin: 30px 0;
+    }
+
+    .er-relation {
+      text-align: center;
+      padding: 15px 0;
+      color: #4b5563;
+      font-weight: 700;
+      position: relative;
+      font-size: 1.1rem;
+    }
+
+    .er-relation::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: -15px;
+      bottom: -15px;
+      width: 4px;
+      background: linear-gradient(to bottom, transparent 0%, #9ca3af 20%, #9ca3af 80%, transparent 100%);
+      transform: translateX(-50%);
+    }
+
+    .er-relation-label {
+      background: white;
+      padding: 10px 25px;
+      border: 3px solid #7c3aed;
+      border-radius: 25px;
+      display: inline-block;
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    /* データフロー */
+    .flow-container {
+      display: grid;
+      gap: 20px;
+      margin-top: 30px;
+    }
+
+    .flow-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+      padding: 25px;
+      background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+      border-radius: 16px;
+      border-left: 6px solid #7c3aed;
+      transition: all 0.3s;
+    }
+
+    .flow-step:hover {
+      transform: translateX(10px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    }
+
+    .flow-number {
+      background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+      color: white;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+    }
+
+    .flow-content {
+      flex: 1;
+    }
+
+    .flow-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 8px;
+    }
+
+    .flow-desc {
+      color: #6b7280;
+      line-height: 1.8;
+      font-size: 1rem;
+    }
+
+    .flow-desc code {
+      background: #e5e7eb;
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-family: 'Monaco', monospace;
+      color: #1f2937;
+      font-size: 0.9rem;
+    }
+
+    /* セキュリティ説明 */
+    .security-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 25px;
+      margin-top: 30px;
+    }
+
+    .security-item {
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      padding: 25px;
+      border-radius: 16px;
+      border: 3px solid #f59e0b;
+    }
+
+    .security-item.high {
+      background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+      border-color: #10b981;
+    }
+
+    .security-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .security-desc {
+      color: #374151;
+      line-height: 1.7;
+    }
+
+    /* チェックリスト */
+    .checklist {
+      margin-top: 30px;
+    }
+
+    .checklist-item {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 18px 25px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      transition: all 0.3s;
+      border: 2px solid transparent;
+    }
+
+    .checklist-item:hover {
+      transform: translateX(5px);
+      border-color: #7c3aed;
+    }
+
+    .checklist-item.done {
+      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    }
+
+    .checklist-item.todo {
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    }
+
+    .checkbox {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      flex-shrink: 0;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .checkbox.done {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+    }
+
+    .checkbox.todo {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: white;
+    }
+
+    .checklist-text {
+      flex: 1;
+      font-size: 1.1rem;
+      color: #1f2937;
+      font-weight: 500;
+    }
+
+    /* インフォボックス */
+    .info-box {
+      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+      border: 3px solid #3b82f6;
+      border-radius: 16px;
+      padding: 25px;
+      margin: 25px 0;
+    }
+
+    .info-box-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #1e3a8a;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .info-box-content {
+      color: #1e40af;
+      line-height: 1.8;
+      font-size: 1rem;
+    }
+
+    /* 比較表 */
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 25px 0;
+      font-size: 1rem;
+    }
+
+    .comparison-table th {
+      background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+      color: white;
+      padding: 18px;
+      text-align: left;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .comparison-table td {
+      padding: 18px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+
+    .comparison-table tr:hover {
+      background: #f9fafb;
+    }
+
+    .comparison-table code {
+      background: #e5e7eb;
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-family: 'Monaco', monospace;
+      color: #1f2937;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2rem;
+      }
+
+      .table-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .column-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      .tabs {
+        flex-direction: column;
+      }
+
+      .tab-button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎬 絵コンテアプリ 完全データベース設計提案</h1>
+    <p class="subtitle">実装済み + これから作るテーブルの全体像</p>
+
+    <div class="version-info">
+      <strong>📅 2026年1月11日版</strong> - 現状分析と次ステップの完全ガイド
+    </div>
+
+    <!-- タブナビゲーション -->
+    <div class="tabs">
+      <button class="tab-button active" onclick="showTab('overview')">📊 全体像</button>
+      <button class="tab-button" onclick="showTab('current')">✅ 実装済み</button>
+      <button class="tab-button" onclick="showTab('next')">🚀 次の実装</button>
+      <button class="tab-button" onclick="showTab('migration')">📝 実装手順</button>
+      <button class="tab-button" onclick="showTab('security')">🔒 セキュリティ</button>
+    </div>
+
+    <!-- タブ1: 全体像 -->
+    <div id="overview" class="tab-content active">
+      <div class="card">
+        <h2 class="card-title">
+          <span class="emoji">🗺️</span>
+          データベース全体構造
+        </h2>
+
+        <div class="er-diagram">
+          <!-- 認証層 -->
+          <div class="table-card implemented" style="max-width: 600px;">
+            <div class="table-header">
+              <span><span class="table-icon">🔐</span> auth.users</span>
+              <span class="status-badge status-done">実装済み</span>
+            </div>
+            <div class="table-body">
+              <div class="column-row header">
+                <div>カラム名</div>
+                <div>型</div>
+                <div>説明</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">id <span class="pk-badge">PK</span></div>
+                <div class="column-type">UUID</div>
+                <div class="column-desc">ユーザーID</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">email</div>
+                <div class="column-type">TEXT</div>
+                <div class="column-desc">メールアドレス</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="er-relation">
+            <span class="er-relation-label">↓ 1ユーザー : 複数企画 (1:N)</span>
+          </div>
+
+          <!-- 企画層 -->
+          <div class="table-card planned" style="max-width: 600px;">
+            <div class="table-header">
+              <span><span class="table-icon">📋</span> projects</span>
+              <span class="status-badge status-next">次の実装</span>
+            </div>
+            <div class="table-body">
+              <div class="column-row header">
+                <div>カラム名</div>
+                <div>型</div>
+                <div>説明</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">id <span class="pk-badge">PK</span></div>
+                <div class="column-type">UUID</div>
+                <div class="column-desc">企画ID</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">user_id <span class="fk-badge">FK</span></div>
+                <div class="column-type">UUID</div>
+                <div class="column-desc">作成者</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">title</div>
+                <div class="column-type">TEXT</div>
+                <div class="column-desc">企画タイトル</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">channel_name</div>
+                <div class="column-type">TEXT</div>
+                <div class="column-desc">チャンネル名</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">goal</div>
+                <div class="column-type">TEXT</div>
+                <div class="column-desc">目標 (GPS)</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">plan</div>
+                <div class="column-type">TEXT</div>
+                <div class="column-desc">計画 (GPS)</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">status</div>
+                <div class="column-type">TEXT</div>
+                <div class="column-desc">進捗 (GPS)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="er-relation">
+            <span class="er-relation-label">↓ 1企画 : 複数シーン (1:N)</span>
+          </div>
+
+          <!-- シーン層 -->
+          <div class="table-card planned" style="max-width: 600px;">
+            <div class="table-header">
+              <span><span class="table-icon">🎞️</span> scenes</span>
+              <span class="status-badge status-next">次の実装</span>
+            </div>
+            <div class="table-body">
+              <div class="column-row header">
+                <div>カラム名</div>
+                <div>型</div>
+                <div>説明</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">id <span class="pk-badge">PK</span></div>
+                <div class="column-type">UUID</div>
+                <div class="column-desc">シーンID</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">project_id <span class="fk-badge">FK</span></div>
+                <div class="column-type">UUID</div>
+                <div class="column-desc">所属企画</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">number</div>
+                <div class="column-type">INTEGER</div>
+                <div class="column-desc">シーン番号</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="er-relation">
+            <span class="er-relation-label">↓ 1シーン : 複数セリフ・画像 (1:N)</span>
+          </div>
+
+          <!-- セリフ・画像層 -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; width: 100%; max-width: 1200px;">
+            <div class="table-card planned">
+              <div class="table-header">
+                <span><span class="table-icon">💬</span> dialogues</span>
+                <span class="status-badge status-next">次の実装</span>
+              </div>
+              <div class="table-body">
+                <div class="column-row header">
+                  <div>カラム名</div>
+                  <div>型</div>
+                  <div>説明</div>
+                </div>
+                <div class="column-row">
+                  <div class="column-name">id <span class="pk-badge">PK</span></div>
+                  <div class="column-type">UUID</div>
+                  <div class="column-desc">セリフID</div>
+                </div>
+                <div class="column-row">
+                  <div class="column-name">scene_id <span class="fk-badge">FK</span></div>
+                  <div class="column-type">UUID</div>
+                  <div class="column-desc">所属シーン</div>
+                </div>
+                <div class="column-row">
+                  <div class="column-name">speaker</div>
+                  <div class="column-type">TEXT</div>
+                  <div class="column-desc">話者名</div>
+                </div>
+                <div class="column-row">
+                  <div class="column-name">text</div>
+                  <div class="column-type">TEXT</div>
+                  <div class="column-desc">セリフ内容</div>
+                </div>
+                <div class="column-row">
+                  <div class="column-name">order_index</div>
+                  <div class="column-type">INTEGER</div>
+                  <div class="column-desc">順序</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="table-card planned">
+              <div class="table-header">
+                <span><span class="table-icon">🖼️</span> images</span>
+                <span class="status-badge status-next">次の実装</span>
+              </div>
+              <div class="table-body">
+                <div class="column-row header">
+                  <div>カラム名</div>
+                  <div>型</div>
+                  <div>説明</div>
+                </div>
+                <div class="column-row">
+                  <div class="column-name">id <span class="pk-badge">PK</span></div>
+                  <div class="column-type">UUID</div>
+                  <div class="column-desc">画像ID</div>
+                </div>
+                <div class="column-row">
+                  <div class="column-name">scene_id <span class="fk-badge">FK</span></div>
+                  <div class="column-type">UUID</div>
+                  <div class="column-desc">所属シーン</div>
+                </div>
+                <div class="column-row">
+                  <div class="column-name">prompt</div>
+                  <div class="column-type">TEXT</div>
+                  <div class="column-desc">生成プロンプト</div>
+                </div>
+                <div class="column-row">
+                  <div class="column-name">image_url</div>
+                  <div class="column-type">TEXT</div>
+                  <div class="column-desc">画像URL</div>
+                </div>
+                <div class="column-row">
+                  <div class="column-name">selected</div>
+                  <div class="column-type">BOOLEAN</div>
+                  <div class="column-desc">採用フラグ</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ホワイトリスト（別系統） -->
+          <div style="margin-top: 50px; padding-top: 40px; border-top: 4px dashed #9ca3af; width: 100%;">
+            <h3 style="text-align: center; color: #4b5563; margin-bottom: 25px; font-size: 1.4rem;">🔒 アクセス制御</h3>
+            <div class="table-card implemented" style="max-width: 600px; margin: 0 auto;">
+              <div class="table-header">
+                <span><span class="table-icon">✅</span> allowed_emails</span>
+                <span class="status-badge status-done">実装済み</span>
+              </div>
+              <div class="table-body">
+                <div class="column-row header">
+                  <div>カラム名</div>
+                  <div>型</div>
+                  <div>説明</div>
+                </div>
+                <div class="column-row">
+                  <div class="column-name">email <span class="pk-badge">PK</span></div>
+                  <div class="column-type">TEXT</div>
+                  <div class="column-desc">許可メールアドレス</div>
+                </div>
+                <div class="column-row">
+                  <div class="column-name">name</div>
+                  <div class="column-type">TEXT</div>
+                  <div class="column-desc">ユーザー名</div>
+                </div>
+                <div class="column-row">
+                  <div class="column-name">added_at</div>
+                  <div class="column-type">TIMESTAMPTZ</div>
+                  <div class="column-desc">追加日時</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-title">💡 設計のポイント</div>
+          <div class="info-box-content">
+            <strong>階層構造:</strong> ユーザー → 企画 → シーン → (セリフ + 画像) の4階層設計<br>
+            <strong>カスケード削除:</strong> 上位階層を削除すると下位も自動削除（データ整合性を保証）<br>
+            <strong>RLS:</strong> 各テーブルに行レベルセキュリティを設定し、自分のデータのみアクセス可能<br>
+            <strong>一意制約:</strong> 1シーンに採用画像は1つまで（UNIQUE制約）
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- タブ2: 実装済み -->
+    <div id="current" class="tab-content">
+      <div class="card">
+        <h2 class="card-title">
+          <span class="emoji">✅</span>
+          現在実装済みの機能
+        </h2>
+
+        <div class="info-box">
+          <div class="info-box-title">📌 現状サマリー</div>
+          <div class="info-box-content">
+            認証基盤とAPI連携は完成。フロントエンドはメモリ管理（JavaScript変数）で動作中。<br>
+            次フェーズでデータベーステーブルを実装し、永続化を実現します。
+          </div>
+        </div>
+
+        <h3 style="font-size: 1.5rem; margin: 30px 0 20px; color: #1f2937;">🔐 認証・アクセス制御</h3>
+
+        <div class="table-grid">
+          <div class="table-card implemented">
+            <div class="table-header">
+              <span><span class="table-icon">🔐</span> auth.users</span>
+              <span class="status-badge status-done">Supabase標準</span>
+            </div>
+            <div class="table-body">
+              <div class="column-row header">
+                <div>カラム名</div>
+                <div>型</div>
+                <div>説明</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">id <span class="pk-badge">PK</span></div>
+                <div class="column-type">UUID</div>
+                <div class="column-desc">ユーザーID</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">email</div>
+                <div class="column-type">TEXT</div>
+                <div class="column-desc">メールアドレス</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">created_at</div>
+                <div class="column-type">TIMESTAMPTZ</div>
+                <div class="column-desc">登録日時</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-card implemented">
+            <div class="table-header">
+              <span><span class="table-icon">✅</span> allowed_emails</span>
+              <span class="status-badge status-done">実装済み</span>
+            </div>
+            <div class="table-body">
+              <div class="column-row header">
+                <div>カラム名</div>
+                <div>型</div>
+                <div>説明</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">email <span class="pk-badge">PK</span></div>
+                <div class="column-type">TEXT</div>
+                <div class="column-desc">許可メールアドレス</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">name</div>
+                <div class="column-type">TEXT</div>
+                <div class="column-desc">ユーザー名</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">added_at</div>
+                <div class="column-type">TIMESTAMPTZ</div>
+                <div class="column-desc">追加日時</div>
+              </div>
+              <div class="column-row">
+                <div class="column-name">notes</div>
+                <div class="column-type">TEXT</div>
+                <div class="column-desc">メモ</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h3 style="font-size: 1.5rem; margin: 40px 0 20px; color: #1f2937;">🚀 Edge Functions（API連携）</h3>
+
+        <div class="flow-container">
+          <div class="flow-step">
+            <div class="flow-number">1</div>
+            <div class="flow-content">
+              <div class="flow-title">generate-image</div>
+              <div class="flow-desc">
+                <strong>機能:</strong> Gemini 3 Pro Image APIを使用した画像生成<br>
+                <strong>入力:</strong> <code>prompt</code> (テキスト)<br>
+                <strong>出力:</strong> Base64エンコードされた画像データ
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-number">2</div>
+            <div class="flow-content">
+              <div class="flow-title">generate-video</div>
+              <div class="flow-desc">
+                <strong>機能:</strong> Google Veo 3.1を使用した動画生成<br>
+                <strong>入力:</strong> <code>prompt</code>, <code>imageBase64</code>, <code>modelType</code><br>
+                <strong>出力:</strong> operation.name（長時間実行トークン）
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-number">3</div>
+            <div class="flow-content">
+              <div class="flow-title">check-video-status</div>
+              <div class="flow-desc">
+                <strong>機能:</strong> Veo 3.1の動画生成ステータス確認<br>
+                <strong>入力:</strong> <code>operationName</code><br>
+                <strong>出力:</strong> 進捗状況・完了時は動画データ
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sql-block">
+<span class="sql-comment">-- RLSポリシー（実装済み）</span>
+<span class="sql-keyword">ALTER TABLE</span> allowed_emails <span class="sql-keyword">ENABLE ROW LEVEL SECURITY</span>;
+
+<span class="sql-keyword">CREATE POLICY</span> <span class="sql-string">"Anyone can read allowed_emails"</span>
+  <span class="sql-keyword">ON</span> allowed_emails
+  <span class="sql-keyword">FOR SELECT</span>
+  <span class="sql-keyword">USING</span> (<span class="sql-keyword">true</span>);
+        </div>
+      </div>
+    </div>
+
+    <!-- タブ3: 次の実装 -->
+    <div id="next" class="tab-content">
+      <div class="card">
+        <h2 class="card-title">
+          <span class="emoji">🚀</span>
+          次に実装するテーブル
+        </h2>
+
+        <div class="info-box">
+          <div class="info-box-title">🎯 実装優先順位</div>
+          <div class="info-box-content">
+            <strong>Step 1:</strong> projects テーブル（企画管理の基盤）<br>
+            <strong>Step 2:</strong> scenes テーブル（シーン管理）<br>
+            <strong>Step 3:</strong> dialogues + images テーブル（同時実装可能）<br>
+            <strong>Step 4:</strong> Supabase Storage設定 + フロントエンド連携
+          </div>
+        </div>
+
+        <h3 style="font-size: 1.6rem; margin: 30px 0 20px; color: #1f2937;">📋 1. projects テーブル（企画管理）</h3>
+
+        <div class="sql-block">
+<span class="sql-keyword">CREATE TABLE</span> projects (
+  id <span class="sql-type">UUID</span> <span class="sql-keyword">PRIMARY KEY DEFAULT</span> gen_random_uuid(),
+  user_id <span class="sql-type">UUID</span> <span class="sql-keyword">REFERENCES</span> auth.users(id) <span class="sql-keyword">ON DELETE CASCADE</span>,
+  title <span class="sql-type">TEXT</span> <span class="sql-keyword">NOT NULL DEFAULT</span> <span class="sql-string">'無題の企画'</span>,
+  channel_name <span class="sql-type">TEXT</span>,
+  thumbnail_url <span class="sql-type">TEXT</span>,
+  goal <span class="sql-type">TEXT</span>,              <span class="sql-comment">-- GPS の G (Goal)</span>
+  plan <span class="sql-type">TEXT</span>,              <span class="sql-comment">-- GPS の P (Plan)</span>
+  status <span class="sql-type">TEXT</span>,            <span class="sql-comment">-- GPS の S (Status)</span>
+  created_at <span class="sql-type">TIMESTAMPTZ</span> <span class="sql-keyword">DEFAULT</span> NOW(),
+  updated_at <span class="sql-type">TIMESTAMPTZ</span> <span class="sql-keyword">DEFAULT</span> NOW()
+);
+
+<span class="sql-comment">-- インデックス作成</span>
+<span class="sql-keyword">CREATE INDEX</span> idx_projects_user_id_created
+  <span class="sql-keyword">ON</span> projects(user_id, created_at <span class="sql-keyword">DESC</span>);
+
+<span class="sql-comment">-- RLS設定</span>
+<span class="sql-keyword">ALTER TABLE</span> projects <span class="sql-keyword">ENABLE ROW LEVEL SECURITY</span>;
+
+<span class="sql-keyword">CREATE POLICY</span> <span class="sql-string">"Users can CRUD their own projects"</span>
+  <span class="sql-keyword">ON</span> projects
+  <span class="sql-keyword">USING</span> (auth.uid() = user_id)
+  <span class="sql-keyword">WITH CHECK</span> (auth.uid() = user_id);
+        </div>
+
+        <h3 style="font-size: 1.6rem; margin: 40px 0 20px; color: #1f2937;">🎞️ 2. scenes テーブル（シーン管理）</h3>
+
+        <div class="sql-block">
+<span class="sql-keyword">CREATE TABLE</span> scenes (
+  id <span class="sql-type">UUID</span> <span class="sql-keyword">PRIMARY KEY DEFAULT</span> gen_random_uuid(),
+  project_id <span class="sql-type">UUID</span> <span class="sql-keyword">REFERENCES</span> projects(id) <span class="sql-keyword">ON DELETE CASCADE</span>,
+  number <span class="sql-type">INTEGER</span> <span class="sql-keyword">NOT NULL</span>,
+  created_at <span class="sql-type">TIMESTAMPTZ</span> <span class="sql-keyword">DEFAULT</span> NOW(),
+  updated_at <span class="sql-type">TIMESTAMPTZ</span> <span class="sql-keyword">DEFAULT</span> NOW(),
+  <span class="sql-keyword">CONSTRAINT</span> unique_scene_number <span class="sql-keyword">UNIQUE</span> (project_id, number)
+);
+
+<span class="sql-comment">-- インデックス作成</span>
+<span class="sql-keyword">CREATE INDEX</span> idx_scenes_project_number
+  <span class="sql-keyword">ON</span> scenes(project_id, number);
+
+<span class="sql-comment">-- RLS設定</span>
+<span class="sql-keyword">ALTER TABLE</span> scenes <span class="sql-keyword">ENABLE ROW LEVEL SECURITY</span>;
+
+<span class="sql-keyword">CREATE POLICY</span> <span class="sql-string">"Users can CRUD scenes in their projects"</span>
+  <span class="sql-keyword">ON</span> scenes
+  <span class="sql-keyword">USING</span> (
+    <span class="sql-keyword">EXISTS</span> (
+      <span class="sql-keyword">SELECT</span> 1 <span class="sql-keyword">FROM</span> projects
+      <span class="sql-keyword">WHERE</span> projects.id = scenes.project_id
+      <span class="sql-keyword">AND</span> projects.user_id = auth.uid()
+    )
+  )
+  <span class="sql-keyword">WITH CHECK</span> (
+    <span class="sql-keyword">EXISTS</span> (
+      <span class="sql-keyword">SELECT</span> 1 <span class="sql-keyword">FROM</span> projects
+      <span class="sql-keyword">WHERE</span> projects.id = scenes.project_id
+      <span class="sql-keyword">AND</span> projects.user_id = auth.uid()
+    )
+  );
+        </div>
+
+        <h3 style="font-size: 1.6rem; margin: 40px 0 20px; color: #1f2937;">💬 3. dialogues テーブル（セリフ）</h3>
+
+        <div class="sql-block">
+<span class="sql-keyword">CREATE TABLE</span> dialogues (
+  id <span class="sql-type">UUID</span> <span class="sql-keyword">PRIMARY KEY DEFAULT</span> gen_random_uuid(),
+  scene_id <span class="sql-type">UUID</span> <span class="sql-keyword">REFERENCES</span> scenes(id) <span class="sql-keyword">ON DELETE CASCADE</span>,
+  speaker <span class="sql-type">TEXT</span> <span class="sql-keyword">NOT NULL</span>,
+  text <span class="sql-type">TEXT</span> <span class="sql-keyword">NOT NULL</span>,
+  order_index <span class="sql-type">INTEGER</span> <span class="sql-keyword">NOT NULL</span>,
+  created_at <span class="sql-type">TIMESTAMPTZ</span> <span class="sql-keyword">DEFAULT</span> NOW(),
+  updated_at <span class="sql-type">TIMESTAMPTZ</span> <span class="sql-keyword">DEFAULT</span> NOW()
+);
+
+<span class="sql-comment">-- インデックス作成</span>
+<span class="sql-keyword">CREATE INDEX</span> idx_dialogues_scene_order
+  <span class="sql-keyword">ON</span> dialogues(scene_id, order_index);
+
+<span class="sql-comment">-- RLS設定</span>
+<span class="sql-keyword">ALTER TABLE</span> dialogues <span class="sql-keyword">ENABLE ROW LEVEL SECURITY</span>;
+
+<span class="sql-keyword">CREATE POLICY</span> <span class="sql-string">"Users can CRUD dialogues in their scenes"</span>
+  <span class="sql-keyword">ON</span> dialogues
+  <span class="sql-keyword">USING</span> (
+    <span class="sql-keyword">EXISTS</span> (
+      <span class="sql-keyword">SELECT</span> 1 <span class="sql-keyword">FROM</span> scenes
+      <span class="sql-keyword">JOIN</span> projects <span class="sql-keyword">ON</span> projects.id = scenes.project_id
+      <span class="sql-keyword">WHERE</span> scenes.id = dialogues.scene_id
+      <span class="sql-keyword">AND</span> projects.user_id = auth.uid()
+    )
+  )
+  <span class="sql-keyword">WITH CHECK</span> (
+    <span class="sql-keyword">EXISTS</span> (
+      <span class="sql-keyword">SELECT</span> 1 <span class="sql-keyword">FROM</span> scenes
+      <span class="sql-keyword">JOIN</span> projects <span class="sql-keyword">ON</span> projects.id = scenes.project_id
+      <span class="sql-keyword">WHERE</span> scenes.id = dialogues.scene_id
+      <span class="sql-keyword">AND</span> projects.user_id = auth.uid()
+    )
+  );
+        </div>
+
+        <h3 style="font-size: 1.6rem; margin: 40px 0 20px; color: #1f2937;">🖼️ 4. images テーブル（画像候補）</h3>
+
+        <div class="sql-block">
+<span class="sql-keyword">CREATE TABLE</span> images (
+  id <span class="sql-type">UUID</span> <span class="sql-keyword">PRIMARY KEY DEFAULT</span> gen_random_uuid(),
+  scene_id <span class="sql-type">UUID</span> <span class="sql-keyword">REFERENCES</span> scenes(id) <span class="sql-keyword">ON DELETE CASCADE</span>,
+  prompt <span class="sql-type">TEXT</span> <span class="sql-keyword">NOT NULL</span>,
+  image_url <span class="sql-type">TEXT</span>,
+  selected <span class="sql-type">BOOLEAN</span> <span class="sql-keyword">DEFAULT</span> <span class="sql-keyword">false</span>,
+  created_at <span class="sql-type">TIMESTAMPTZ</span> <span class="sql-keyword">DEFAULT</span> NOW(),
+  <span class="sql-keyword">CONSTRAINT</span> one_selected_per_scene <span class="sql-keyword">UNIQUE</span> (scene_id, selected)
+    <span class="sql-keyword">WHERE</span> (selected = <span class="sql-keyword">true</span>)
+);
+
+<span class="sql-comment">-- インデックス作成</span>
+<span class="sql-keyword">CREATE INDEX</span> idx_images_scene_id
+  <span class="sql-keyword">ON</span> images(scene_id);
+
+<span class="sql-keyword">CREATE INDEX</span> idx_images_created
+  <span class="sql-keyword">ON</span> images(scene_id, created_at <span class="sql-keyword">DESC</span>);
+
+<span class="sql-comment">-- RLS設定</span>
+<span class="sql-keyword">ALTER TABLE</span> images <span class="sql-keyword">ENABLE ROW LEVEL SECURITY</span>;
+
+<span class="sql-keyword">CREATE POLICY</span> <span class="sql-string">"Users can CRUD images in their scenes"</span>
+  <span class="sql-keyword">ON</span> images
+  <span class="sql-keyword">USING</span> (
+    <span class="sql-keyword">EXISTS</span> (
+      <span class="sql-keyword">SELECT</span> 1 <span class="sql-keyword">FROM</span> scenes
+      <span class="sql-keyword">JOIN</span> projects <span class="sql-keyword">ON</span> projects.id = scenes.project_id
+      <span class="sql-keyword">WHERE</span> scenes.id = images.scene_id
+      <span class="sql-keyword">AND</span> projects.user_id = auth.uid()
+    )
+  )
+  <span class="sql-keyword">WITH CHECK</span> (
+    <span class="sql-keyword">EXISTS</span> (
+      <span class="sql-keyword">SELECT</span> 1 <span class="sql-keyword">FROM</span> scenes
+      <span class="sql-keyword">JOIN</span> projects <span class="sql-keyword">ON</span> projects.id = scenes.project_id
+      <span class="sql-keyword">WHERE</span> scenes.id = images.scene_id
+      <span class="sql-keyword">AND</span> projects.user_id = auth.uid()
+    )
+  );
+        </div>
+
+        <h3 style="font-size: 1.6rem; margin: 40px 0 20px; color: #1f2937;">📦 5. Supabase Storage バケット</h3>
+
+        <div class="sql-block">
+<span class="sql-comment">-- Storageバケット作成（管理画面 or SQL）</span>
+<span class="sql-keyword">INSERT INTO</span> storage.buckets (id, name, public)
+<span class="sql-keyword">VALUES</span> (<span class="sql-string">'storyboard-images'</span>, <span class="sql-string">'storyboard-images'</span>, <span class="sql-keyword">false</span>);
+
+<span class="sql-comment">-- アップロード権限</span>
+<span class="sql-keyword">CREATE POLICY</span> <span class="sql-string">"Users can upload images for their scenes"</span>
+  <span class="sql-keyword">ON</span> storage.objects <span class="sql-keyword">FOR INSERT</span>
+  <span class="sql-keyword">WITH CHECK</span> (
+    bucket_id = <span class="sql-string">'storyboard-images'</span> <span class="sql-keyword">AND</span>
+    auth.uid()::<span class="sql-type">text</span> = (storage.foldername(name))[1]
+  );
+
+<span class="sql-comment">-- 読み取り権限</span>
+<span class="sql-keyword">CREATE POLICY</span> <span class="sql-string">"Users can read their own images"</span>
+  <span class="sql-keyword">ON</span> storage.objects <span class="sql-keyword">FOR SELECT</span>
+  <span class="sql-keyword">USING</span> (
+    bucket_id = <span class="sql-string">'storyboard-images'</span> <span class="sql-keyword">AND</span>
+    auth.uid()::<span class="sql-type">text</span> = (storage.foldername(name))[1]
+  );
+
+<span class="sql-comment">-- 削除権限</span>
+<span class="sql-keyword">CREATE POLICY</span> <span class="sql-string">"Users can delete their own images"</span>
+  <span class="sql-keyword">ON</span> storage.objects <span class="sql-keyword">FOR DELETE</span>
+  <span class="sql-keyword">USING</span> (
+    bucket_id = <span class="sql-string">'storyboard-images'</span> <span class="sql-keyword">AND</span>
+    auth.uid()::<span class="sql-type">text</span> = (storage.foldername(name))[1]
+  );
+        </div>
+      </div>
+    </div>
+
+    <!-- タブ4: 実装手順 -->
+    <div id="migration" class="tab-content">
+      <div class="card">
+        <h2 class="card-title">
+          <span class="emoji">📝</span>
+          実装手順（マイグレーション）
+        </h2>
+
+        <div class="info-box">
+          <div class="info-box-title">🎯 推奨アプローチ</div>
+          <div class="info-box-content">
+            Supabaseマイグレーションファイルを順番に作成し、段階的にテーブルを追加します。<br>
+            各マイグレーションファイルは <code>supabase/migrations/</code> に配置します。
+          </div>
+        </div>
+
+        <div class="migration-step">
+          <div class="migration-step-title">
+            <span class="migration-step-number">1</span>
+            projects テーブル作成
+          </div>
+          <div class="migration-step-desc">
+            <strong>ファイル名:</strong> <code>20260111000001_create_projects.sql</code><br>
+            <strong>内容:</strong> projects テーブル + インデックス + RLSポリシー<br>
+            <strong>実行:</strong> <code>supabase db push</code> または Supabase Dashboard
+          </div>
+        </div>
+
+        <div class="migration-step">
+          <div class="migration-step-title">
+            <span class="migration-step-number">2</span>
+            scenes テーブル作成
+          </div>
+          <div class="migration-step-desc">
+            <strong>ファイル名:</strong> <code>20260111000002_create_scenes.sql</code><br>
+            <strong>内容:</strong> scenes テーブル + 一意制約 + インデックス + RLSポリシー<br>
+            <strong>依存:</strong> projects テーブルが必須（外部キー制約）
+          </div>
+        </div>
+
+        <div class="migration-step">
+          <div class="migration-step-title">
+            <span class="migration-step-number">3</span>
+            dialogues テーブル作成
+          </div>
+          <div class="migration-step-desc">
+            <strong>ファイル名:</strong> <code>20260111000003_create_dialogues.sql</code><br>
+            <strong>内容:</strong> dialogues テーブル + インデックス + RLSポリシー<br>
+            <strong>依存:</strong> scenes テーブルが必須
+          </div>
+        </div>
+
+        <div class="migration-step">
+          <div class="migration-step-title">
+            <span class="migration-step-number">4</span>
+            images テーブル作成
+          </div>
+          <div class="migration-step-desc">
+            <strong>ファイル名:</strong> <code>20260111000004_create_images.sql</code><br>
+            <strong>内容:</strong> images テーブル + 一意制約 + インデックス + RLSポリシー<br>
+            <strong>依存:</strong> scenes テーブルが必須
+          </div>
+        </div>
+
+        <div class="migration-step">
+          <div class="migration-step-title">
+            <span class="migration-step-number">5</span>
+            Storage バケット設定
+          </div>
+          <div class="migration-step-desc">
+            <strong>方法1:</strong> Supabase Dashboard → Storage → New Bucket<br>
+            <strong>方法2:</strong> SQL (<code>INSERT INTO storage.buckets</code>)<br>
+            <strong>設定:</strong> バケット名 <code>storyboard-images</code>, Public = false
+          </div>
+        </div>
+
+        <div class="migration-step">
+          <div class="migration-step-title">
+            <span class="migration-step-number">6</span>
+            Storage RLSポリシー設定
+          </div>
+          <div class="migration-step-desc">
+            <strong>ファイル名:</strong> <code>20260111000005_create_storage_policies.sql</code><br>
+            <strong>内容:</strong> INSERT/SELECT/DELETE ポリシー（ユーザーIDベース）
+          </div>
+        </div>
+
+        <div class="migration-step">
+          <div class="migration-step-title">
+            <span class="migration-step-number">7</span>
+            フロントエンド連携実装
+          </div>
+          <div class="migration-step-desc">
+            <strong>対象ファイル:</strong> <code>storyboard.html</code>, <code>projects.html</code><br>
+            <strong>変更内容:</strong> メモリ管理 → Supabaseクエリに置き換え<br>
+            <strong>機能:</strong> CRUD操作、画像アップロード、リアルタイム更新
+          </div>
+        </div>
+
+        <div class="migration-step">
+          <div class="migration-step-title">
+            <span class="migration-step-number">8</span>
+            テスト・検証
+          </div>
+          <div class="migration-step-desc">
+            <strong>確認項目:</strong> RLSが正しく動作するか、カスケード削除が機能するか<br>
+            <strong>テスト:</strong> 複数ユーザーで動作確認、権限エラーが出ないか検証
+          </div>
+        </div>
+
+        <h3 style="font-size: 1.5rem; margin: 40px 0 20px; color: #1f2937;">📋 実行コマンド例</h3>
+
+        <div class="sql-block">
+<span class="sql-comment"># 新規マイグレーションファイル作成</span>
+supabase migration new create_projects
+
+<span class="sql-comment"># マイグレーション実行（ローカル）</span>
+supabase db reset
+
+<span class="sql-comment"># マイグレーション実行（本番）</span>
+supabase db push
+
+<span class="sql-comment"># 現在のスキーマ確認</span>
+supabase db diff
+        </div>
+      </div>
+    </div>
+
+    <!-- タブ5: セキュリティ -->
+    <div id="security" class="tab-content">
+      <div class="card">
+        <h2 class="card-title">
+          <span class="emoji">🔒</span>
+          セキュリティ設計
+        </h2>
+
+        <div class="security-grid">
+          <div class="security-item high">
+            <div class="security-title">🔐 認証（Auth）</div>
+            <div class="security-desc">
+              Supabase Auth + Google OAuthで安全な認証を実現。<br>
+              パスワード管理不要、セッション管理は自動。
+            </div>
+          </div>
+
+          <div class="security-item high">
+            <div class="security-title">✅ ホワイトリスト</div>
+            <div class="security-desc">
+              allowed_emailsテーブルで許可ユーザーを制限。<br>
+              未登録ユーザーは自動ログアウト。
+            </div>
+          </div>
+
+          <div class="security-item high">
+            <div class="security-title">🛡️ RLS（行レベルセキュリティ）</div>
+            <div class="security-desc">
+              全テーブルでRLS有効化。<br>
+              ユーザーは自分のデータのみアクセス可能。
+            </div>
+          </div>
+
+          <div class="security-item high">
+            <div class="security-title">🔗 カスケード削除</div>
+            <div class="security-desc">
+              ON DELETE CASCADEで自動削除。<br>
+              孤立データを防ぎ、整合性を保証。
+            </div>
+          </div>
+
+          <div class="security-item">
+            <div class="security-title">📦 Storage権限</div>
+            <div class="security-desc">
+              ユーザーIDベースのパス制御。<br>
+              他人の画像は読み取り・削除不可。
+            </div>
+          </div>
+
+          <div class="security-item">
+            <div class="security-title">🔑 API Key管理</div>
+            <div class="security-desc">
+              Edge FunctionでAPI Keyを隠蔽。<br>
+              フロントエンドに機密情報を露出しない。
+            </div>
+          </div>
+        </div>
+
+        <h3 style="font-size: 1.5rem; margin: 40px 0 20px; color: #1f2937;">🔍 RLSポリシーの仕組み</h3>
+
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>テーブル</th>
+              <th>ポリシー内容</th>
+              <th>効果</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>projects</code></td>
+              <td><code>auth.uid() = user_id</code></td>
+              <td>自分が作成した企画のみ操作可能</td>
+            </tr>
+            <tr>
+              <td><code>scenes</code></td>
+              <td><code>EXISTS (SELECT 1 FROM projects WHERE ...)</code></td>
+              <td>自分の企画のシーンのみ操作可能</td>
+            </tr>
+            <tr>
+              <td><code>dialogues</code></td>
+              <td><code>EXISTS (SELECT 1 FROM scenes JOIN projects WHERE ...)</code></td>
+              <td>自分の企画のシーンのセリフのみ操作可能</td>
+            </tr>
+            <tr>
+              <td><code>images</code></td>
+              <td><code>EXISTS (SELECT 1 FROM scenes JOIN projects WHERE ...)</code></td>
+              <td>自分の企画のシーンの画像のみ操作可能</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="info-box">
+          <div class="info-box-title">💡 セキュリティのポイント</div>
+          <div class="info-box-content">
+            <strong>多層防御:</strong> 認証 → ホワイトリスト → RLS の3段階でアクセス制御<br>
+            <strong>最小権限:</strong> 各ユーザーは必要最小限のデータのみアクセス可能<br>
+            <strong>透過的:</strong> フロントエンドコードを変更せずセキュリティを強化<br>
+            <strong>監査可能:</strong> RLSポリシーはSQLで明示的に記述され、レビュー可能
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 最終チェックリスト -->
+    <div class="card">
+      <h2 class="card-title">
+        <span class="emoji">✓</span>
+        実装チェックリスト
+      </h2>
+
+      <div class="checklist">
+        <div class="checklist-item done">
+          <div class="checkbox done">✓</div>
+          <div class="checklist-text">allowed_emails テーブル + RLSポリシー</div>
+        </div>
+
+        <div class="checklist-item done">
+          <div class="checkbox done">✓</div>
+          <div class="checklist-text">Google OAuth認証の実装</div>
+        </div>
+
+        <div class="checklist-item done">
+          <div class="checkbox done">✓</div>
+          <div class="checklist-text">Edge Function（Gemini・Veo API連携）</div>
+        </div>
+
+        <div class="checklist-item done">
+          <div class="checkbox done">✓</div>
+          <div class="checklist-text">フロントエンドのモックUI作成</div>
+        </div>
+
+        <div class="checklist-item todo">
+          <div class="checkbox todo">◯</div>
+          <div class="checklist-text">projects テーブルの作成 + RLSポリシー</div>
+        </div>
+
+        <div class="checklist-item todo">
+          <div class="checkbox todo">◯</div>
+          <div class="checklist-text">scenes テーブルの作成 + 一意制約 + RLSポリシー</div>
+        </div>
+
+        <div class="checklist-item todo">
+          <div class="checkbox todo">◯</div>
+          <div class="checklist-text">dialogues テーブルの作成 + RLSポリシー</div>
+        </div>
+
+        <div class="checklist-item todo">
+          <div class="checkbox todo">◯</div>
+          <div class="checklist-text">images テーブルの作成 + 一意制約 + RLSポリシー</div>
+        </div>
+
+        <div class="checklist-item todo">
+          <div class="checkbox todo">◯</div>
+          <div class="checklist-text">Supabase Storage バケット作成（storyboard-images）</div>
+        </div>
+
+        <div class="checklist-item todo">
+          <div class="checkbox todo">◯</div>
+          <div class="checklist-text">Storage RLSポリシー設定（アップロード・読み取り・削除）</div>
+        </div>
+
+        <div class="checklist-item todo">
+          <div class="checkbox todo">◯</div>
+          <div class="checklist-text">フロントエンド ← → Supabase連携実装（CRUD操作）</div>
+        </div>
+
+        <div class="checklist-item todo">
+          <div class="checkbox todo">◯</div>
+          <div class="checklist-text">画像のBase64 → Storage保存処理</div>
+        </div>
+
+        <div class="checklist-item todo">
+          <div class="checkbox todo">◯</div>
+          <div class="checklist-text">動画生成の長時間実行ポーリング処理</div>
+        </div>
+
+        <div class="checklist-item todo">
+          <div class="checkbox todo">◯</div>
+          <div class="checklist-text">複数ユーザーでのテスト・検証</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function showTab(tabName) {
+      // すべてのタブを非表示
+      const contents = document.querySelectorAll('.tab-content');
+      contents.forEach(content => content.classList.remove('active'));
+
+      // すべてのボタンの active を削除
+      const buttons = document.querySelectorAll('.tab-button');
+      buttons.forEach(button => button.classList.remove('active'));
+
+      // 選択されたタブを表示
+      document.getElementById(tabName).classList.add('active');
+
+      // 選択されたボタンに active を追加
+      event.target.classList.add('active');
+    }
+  </script>
+</body>
+</html>

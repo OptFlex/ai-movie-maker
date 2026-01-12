@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StorageとURLの仕組み完全図解</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            min-width: 2000px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="w-full px-8">
+        <header class="mb-8 text-center">
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">🤔 「画像を保存せずURLだけ？」完全図解</h1>
+            <p class="text-gray-600">Storage、DB、URLの関係性を完全理解 - 2026年1月10日作成</p>
+        </header>
+
+        <!-- 疑問点 -->
+        <section class="bg-red-100 border-4 border-red-500 rounded-xl p-8 mb-8">
+            <h2 class="text-3xl font-bold text-red-800 mb-4 text-center">❓ あなたの疑問</h2>
+            <div class="grid grid-cols-2 gap-6">
+                <div class="bg-white rounded-lg p-6 border-2 border-red-400">
+                    <div class="text-6xl mb-4 text-center">🤔</div>
+                    <div class="text-xl font-bold text-center mb-3">「画像自体は保存せずURL」ってどういうこと？</div>
+                    <div class="text-gray-700 text-center">URLだけ保存して、画像はどこにあるの？</div>
+                </div>
+                <div class="bg-white rounded-lg p-6 border-2 border-red-400">
+                    <div class="text-6xl mb-4 text-center">🎬</div>
+                    <div class="text-xl font-bold text-center mb-3">動画も同じ仕組み？</div>
+                    <div class="text-gray-700 text-center">画像と動画、両方とも同じやり方なの？</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 答え: 画像はStorageに保存されている -->
+        <section class="bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-4xl font-bold mb-6 text-center">💡 答え: 画像はStorageに保存されている！</h2>
+            <div class="bg-white bg-opacity-20 rounded-lg p-6 text-center">
+                <div class="text-2xl font-bold mb-4">画像本体 = Storageに保存 📦</div>
+                <div class="text-2xl font-bold mb-4">DBに保存 = その画像へのURL（住所）📍</div>
+                <div class="mt-6 bg-yellow-400 text-gray-900 rounded p-4 text-xl font-bold">
+                    つまり、DBには「倉庫の何番棚にあるか」という情報だけ保存！
+                </div>
+            </div>
+        </section>
+
+        <!-- 具体例で理解 -->
+        <section class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-3xl font-bold text-gray-900 mb-6 text-center">📦 具体例: 画像が保存される場所</h2>
+
+            <div class="grid grid-cols-2 gap-8">
+                <!-- Storage（倉庫） -->
+                <div>
+                    <div class="bg-green-100 border-2 border-green-500 rounded-lg p-4 mb-4">
+                        <h3 class="text-2xl font-bold text-green-800 text-center">📦 Supabase Storage（倉庫）</h3>
+                        <div class="text-center text-sm text-green-700 mt-2">画像・動画の実物がここにある</div>
+                    </div>
+                    <div class="bg-green-50 border-2 border-green-300 rounded-lg p-6">
+                        <div class="font-bold mb-4 text-lg">実際のファイル構造:</div>
+                        <div class="bg-gray-900 text-green-400 p-4 rounded font-mono text-sm">
+<pre>📦 generated-images/（バケット）
+├── user_abc123/
+│   ├── 20260110_101520.png  (500KB)  🖼️
+│   ├── 20260110_101535.png  (480KB)  🖼️
+│   └── 20260110_101550.png  (520KB)  🖼️
+└── user_xyz789/
+    ├── 20260110_102030.png  (490KB)  🖼️
+    └── 20260110_102045.png  (510KB)  🖼️
+
+📦 generated-videos/（バケット）
+└── user_abc123/
+    ├── 20260110_103000.mp4  (5MB)    🎬
+    └── 20260110_103015.mp4  (4.8MB)  🎬
+</pre>
+                        </div>
+                        <div class="mt-4 bg-green-100 p-4 rounded">
+                            <div class="font-bold text-green-900 mb-2">✅ ポイント:</div>
+                            <ul class="text-sm text-green-800 space-y-1">
+                                <li>• 画像ファイル（PNG）が実際にここに保存されている</li>
+                                <li>• 動画ファイル（MP4）も実際にここに保存されている</li>
+                                <li>• ファイル名: ユーザーID/タイムスタンプ.拡張子</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Database（台帳） -->
+                <div>
+                    <div class="bg-blue-100 border-2 border-blue-500 rounded-lg p-4 mb-4">
+                        <h3 class="text-2xl font-bold text-blue-800 text-center">🗄️ Database（台帳）</h3>
+                        <div class="text-center text-sm text-blue-700 mt-2">「どこにあるか」の情報だけ</div>
+                    </div>
+                    <div class="bg-blue-50 border-2 border-blue-300 rounded-lg p-6">
+                        <div class="font-bold mb-4 text-lg">generated_images テーブル:</div>
+                        <div class="bg-white p-4 rounded font-mono text-xs overflow-x-auto">
+<pre>| id  | user_id     | prompt        | storage_path                        |
+|-----|-------------|---------------|-------------------------------------|
+| 001 | user_abc123 | カフェの外観  | user_abc123/20260110_101520.png    |
+| 002 | user_abc123 | パフェ        | user_abc123/20260110_101535.png    |
+| 003 | user_abc123 | 店内          | user_abc123/20260110_101550.png    |
+</pre>
+                        </div>
+
+                        <div class="font-bold mb-4 text-lg mt-6">generated_videos テーブル:</div>
+                        <div class="bg-white p-4 rounded font-mono text-xs overflow-x-auto">
+<pre>| id  | user_id     | prompt            | storage_path                        |
+|-----|-------------|-------------------|-------------------------------------|
+| 001 | user_abc123 | カメラズームイン  | user_abc123/20260110_103000.mp4    |
+| 002 | user_abc123 | 人物が笑顔        | user_abc123/20260110_103015.mp4    |
+</pre>
+                        </div>
+
+                        <div class="mt-4 bg-blue-100 p-4 rounded">
+                            <div class="font-bold text-blue-900 mb-2">✅ ポイント:</div>
+                            <ul class="text-sm text-blue-800 space-y-1">
+                                <li>• <strong>storage_path</strong>は「倉庫の住所」</li>
+                                <li>• 画像本体は保存していない（パスだけ）</li>
+                                <li>• 動画本体も保存していない（パスだけ）</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- URLがどうやって作られるか -->
+        <section class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-3xl font-bold text-gray-900 mb-6 text-center">🔗 URLがどうやって作られるか（画像も動画も同じ）</h2>
+
+            <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-8">
+                <div class="flex gap-6 items-center">
+                    <!-- ステップ1: DBからパスを取得 -->
+                    <div class="flex-1">
+                        <div class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-center mb-4">
+                            ステップ1: DBから取得
+                        </div>
+                        <div class="bg-white rounded-lg p-6 border-2 border-blue-500 shadow-lg">
+                            <div class="text-center mb-4">
+                                <div class="text-5xl mb-3">🗄️</div>
+                                <div class="font-bold text-lg">Database</div>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded font-mono text-xs">
+                                storage_path:<br>
+                                <span class="text-blue-700 font-bold">"user_abc123/<br>20260110_101520.png"</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 矢印 -->
+                    <div class="text-5xl text-purple-600">→</div>
+
+                    <!-- ステップ2: Storageにリクエスト -->
+                    <div class="flex-1">
+                        <div class="bg-purple-600 text-white px-4 py-2 rounded-lg font-bold text-center mb-4">
+                            ステップ2: URLを生成
+                        </div>
+                        <div class="bg-white rounded-lg p-6 border-2 border-purple-500 shadow-lg">
+                            <div class="text-center mb-4">
+                                <div class="text-5xl mb-3">⚙️</div>
+                                <div class="font-bold text-lg">Supabase API</div>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded font-mono text-xs">
+                                getPublicUrl(<br>
+                                  <span class="text-blue-700">"user_abc123/..."</span><br>
+                                )
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 矢印 -->
+                    <div class="text-5xl text-green-600">→</div>
+
+                    <!-- ステップ3: 完成したURL -->
+                    <div class="flex-1">
+                        <div class="bg-green-600 text-white px-4 py-2 rounded-lg font-bold text-center mb-4">
+                            ステップ3: URLができる
+                        </div>
+                        <div class="bg-white rounded-lg p-6 border-2 border-green-500 shadow-lg">
+                            <div class="text-center mb-4">
+                                <div class="text-5xl mb-3">🔗</div>
+                                <div class="font-bold text-lg">公開URL</div>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded font-mono text-xs break-all">
+                                https://abc.supabase.co/<br>
+                                storage/v1/object/public/<br>
+                                generated-images/<br>
+                                <span class="text-blue-700 font-bold">user_abc123/<br>
+                                20260110_101520.png</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 bg-yellow-100 border-2 border-yellow-400 rounded-lg p-6">
+                    <div class="font-bold text-yellow-900 text-xl mb-3 text-center">🔑 重要ポイント:</div>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="bg-white p-4 rounded">
+                            <div class="font-bold text-blue-800 mb-2">1. DBに保存:</div>
+                            <div class="text-sm">storage_pathだけ（軽い）</div>
+                        </div>
+                        <div class="bg-white p-4 rounded">
+                            <div class="font-bold text-purple-800 mb-2">2. URL生成:</div>
+                            <div class="text-sm">実行時に動的に作成</div>
+                        </div>
+                        <div class="bg-white p-4 rounded">
+                            <div class="font-bold text-green-800 mb-2">3. 画像取得:</div>
+                            <div class="text-sm">URLから直接ダウンロード</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 実際のブラウザでの表示 -->
+        <section class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-3xl font-bold text-gray-900 mb-6 text-center">💻 実際のブラウザでの表示（画像も動画も同じ仕組み）</h2>
+
+            <div class="bg-gradient-to-br from-blue-50 to-green-50 rounded-lg p-8">
+                <div class="grid grid-cols-2 gap-8">
+                    <!-- 画像の場合 -->
+                    <div>
+                        <div class="bg-purple-100 border-2 border-purple-500 rounded-lg p-4 mb-4">
+                            <h3 class="text-xl font-bold text-purple-800 text-center">🖼️ 画像の場合</h3>
+                        </div>
+
+                        <div class="mb-6">
+                            <div class="font-bold mb-3">1️⃣ HTMLコード:</div>
+                            <div class="bg-gray-900 text-green-400 p-4 rounded font-mono text-sm">
+<pre>&lt;img src="https://abc.supabase.co/storage/v1/object/public/generated-images/user_abc123/20260110_101520.png" /&gt;</pre>
+                            </div>
+                        </div>
+
+                        <div class="mb-6">
+                            <div class="font-bold mb-3">2️⃣ ブラウザの動作:</div>
+                            <div class="bg-white p-4 rounded border-2 border-gray-300">
+                                <div class="text-sm space-y-2">
+                                    <div>1. ブラウザがURLを見る</div>
+                                    <div>2. Supabase Storageにリクエスト送信</div>
+                                    <div>3. Storage から画像ファイル（500KB）をダウンロード</div>
+                                    <div>4. 画像を表示 🖼️</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="font-bold mb-3">3️⃣ 表示結果:</div>
+                            <div class="bg-white p-6 rounded border-2 border-gray-300 text-center">
+                                <div class="aspect-video bg-gradient-to-br from-orange-400 to-pink-500 rounded-lg flex items-center justify-center text-white text-4xl">
+                                    🖼️ カフェの外観
+                                </div>
+                                <div class="text-xs text-gray-500 mt-2">Storageから直接読み込まれた画像</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 動画の場合 -->
+                    <div>
+                        <div class="bg-green-100 border-2 border-green-500 rounded-lg p-4 mb-4">
+                            <h3 class="text-xl font-bold text-green-800 text-center">🎬 動画の場合</h3>
+                        </div>
+
+                        <div class="mb-6">
+                            <div class="font-bold mb-3">1️⃣ HTMLコード:</div>
+                            <div class="bg-gray-900 text-green-400 p-4 rounded font-mono text-sm">
+<pre>&lt;video src="https://abc.supabase.co/storage/v1/object/public/generated-videos/user_abc123/20260110_103000.mp4"&gt;&lt;/video&gt;</pre>
+                            </div>
+                        </div>
+
+                        <div class="mb-6">
+                            <div class="font-bold mb-3">2️⃣ ブラウザの動作:</div>
+                            <div class="bg-white p-4 rounded border-2 border-gray-300">
+                                <div class="text-sm space-y-2">
+                                    <div>1. ブラウザがURLを見る</div>
+                                    <div>2. Supabase Storageにリクエスト送信</div>
+                                    <div>3. Storage から動画ファイル（5MB）をダウンロード</div>
+                                    <div>4. 動画を再生 🎬</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="font-bold mb-3">3️⃣ 表示結果:</div>
+                            <div class="bg-white p-6 rounded border-2 border-gray-300 text-center">
+                                <div class="aspect-video bg-gradient-to-br from-green-400 to-blue-500 rounded-lg flex items-center justify-center text-white text-4xl">
+                                    ▶️ 動画再生中
+                                </div>
+                                <div class="text-xs text-gray-500 mt-2">Storageから直接読み込まれた動画</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 bg-blue-100 border-2 border-blue-400 rounded-lg p-6">
+                    <div class="font-bold text-blue-900 text-xl mb-3 text-center">✅ 画像も動画も完全に同じ仕組み！</div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-white p-4 rounded">
+                            <div class="font-bold text-purple-800 mb-2">🖼️ 画像:</div>
+                            <ul class="text-sm space-y-1">
+                                <li>• Storage: generated-images/</li>
+                                <li>• 拡張子: .png</li>
+                                <li>• HTMLタグ: &lt;img&gt;</li>
+                            </ul>
+                        </div>
+                        <div class="bg-white p-4 rounded">
+                            <div class="font-bold text-green-800 mb-2">🎬 動画:</div>
+                            <ul class="text-sm space-y-1">
+                                <li>• Storage: generated-videos/</li>
+                                <li>• 拡張子: .mp4</li>
+                                <li>• HTMLタグ: &lt;video&gt;</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 比較: URLだけ vs 本体を保存 -->
+        <section class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-3xl font-bold text-gray-900 mb-6 text-center">⚖️ 比較: URLだけ保存 vs 画像本体を保存</h2>
+
+            <div class="flex gap-8">
+                <!-- URLだけ保存（正解） -->
+                <div class="flex-1">
+                    <div class="bg-green-100 border-2 border-green-500 rounded-lg p-4 mb-4">
+                        <h3 class="text-2xl font-bold text-green-800 text-center">✅ URLだけ保存（推奨）</h3>
+                    </div>
+
+                    <div class="bg-green-50 border-2 border-green-300 rounded-lg p-6 space-y-4">
+                        <div>
+                            <div class="font-bold text-lg mb-3">📦 Storageの中身:</div>
+                            <div class="bg-white p-4 rounded">
+                                <div class="font-mono text-sm">
+                                    20260110_101520.png<br>
+                                    <span class="text-green-700 font-bold">(500KB)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="font-bold text-lg mb-3">🗄️ DBの中身:</div>
+                            <div class="bg-white p-4 rounded">
+                                <div class="font-mono text-sm">
+                                    storage_path: "user_abc123/..."<br>
+                                    <span class="text-green-700 font-bold">(200バイト)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-green-100 p-4 rounded">
+                            <div class="font-bold text-green-900 mb-2">✅ メリット:</div>
+                            <ul class="text-sm text-green-800 space-y-1">
+                                <li>• DBが軽い（200バイト）</li>
+                                <li>• クエリが速い</li>
+                                <li>• 画像はStorageから直接配信</li>
+                                <li>• CDNで高速</li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-white p-4 rounded border-2 border-green-500">
+                            <div class="font-bold text-center mb-2">合計サイズ:</div>
+                            <div class="text-center">
+                                <div class="text-3xl font-bold text-green-700">500KB + 200バイト</div>
+                                <div class="text-sm text-gray-600 mt-1">= 約500KB</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 画像本体を保存（NG） -->
+                <div class="flex-1">
+                    <div class="bg-red-100 border-2 border-red-500 rounded-lg p-4 mb-4">
+                        <h3 class="text-2xl font-bold text-red-800 text-center">❌ 画像本体を保存（非推奨）</h3>
+                    </div>
+
+                    <div class="bg-red-50 border-2 border-red-300 rounded-lg p-6 space-y-4">
+                        <div>
+                            <div class="font-bold text-lg mb-3">📦 Storageの中身:</div>
+                            <div class="bg-white p-4 rounded">
+                                <div class="font-mono text-sm text-gray-400">
+                                    (使わない)
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="font-bold text-lg mb-3">🗄️ DBの中身:</div>
+                            <div class="bg-white p-4 rounded">
+                                <div class="font-mono text-sm">
+                                    image_base64: "iVBORw0KG..."<br>
+                                    <span class="text-red-700 font-bold">(700KB)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-red-100 p-4 rounded">
+                            <div class="font-bold text-red-900 mb-2">❌ デメリット:</div>
+                            <ul class="text-sm text-red-800 space-y-1">
+                                <li>• DBが重い（700KB）</li>
+                                <li>• クエリが遅い</li>
+                                <li>• 画像も毎回転送される</li>
+                                <li>• CDNなし</li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-white p-4 rounded border-2 border-red-500">
+                            <div class="font-bold text-center mb-2">合計サイズ:</div>
+                            <div class="text-center">
+                                <div class="text-3xl font-bold text-red-700">700KB</div>
+                                <div class="text-sm text-gray-600 mt-1">= 約1.4倍重い</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 差の可視化 -->
+            <div class="mt-8 bg-gradient-to-r from-green-100 to-red-100 rounded-lg p-6">
+                <div class="text-center font-bold text-xl mb-4">📊 100件保存時の差</div>
+                <div class="flex gap-8 justify-center items-end">
+                    <div class="text-center">
+                        <div class="bg-green-500 rounded-t-lg" style="height: 50px; width: 100px;"></div>
+                        <div class="bg-green-200 p-3 rounded-b-lg w-100">
+                            <div class="font-bold text-green-900">20KB</div>
+                            <div class="text-xs text-green-700">URLのみ</div>
+                        </div>
+                    </div>
+                    <div class="text-4xl">vs</div>
+                    <div class="text-center">
+                        <div class="bg-red-500 rounded-t-lg" style="height: 350px; width: 100px;"></div>
+                        <div class="bg-red-200 p-3 rounded-b-lg w-100">
+                            <div class="font-bold text-red-900">70MB</div>
+                            <div class="text-xs text-red-700">Base64本体</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center mt-6 text-2xl font-bold text-purple-700">
+                    3500倍の差！
+                </div>
+            </div>
+        </section>
+
+        <!-- まとめ -->
+        <section class="bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl shadow-2xl p-8">
+            <h2 class="text-3xl font-bold mb-6 text-center">🎯 まとめ: 画像も動画も同じ仕組み</h2>
+
+            <div class="bg-white bg-opacity-20 rounded-lg p-8">
+                <div class="text-center text-3xl font-bold mb-8">
+                    画像・動画の実物 = <span class="text-green-300">Storage</span> に保存<br>
+                    DBには <span class="text-blue-300">「どこにあるか」（パス）</span> だけ保存
+                </div>
+
+                <div class="grid grid-cols-2 gap-8">
+                    <!-- 画像 -->
+                    <div class="bg-white bg-opacity-20 rounded-lg p-6">
+                        <div class="text-2xl font-bold mb-4 text-center">🖼️ 画像の場合</div>
+                        <div class="space-y-3">
+                            <div class="bg-white bg-opacity-30 rounded p-3">
+                                <div class="font-bold mb-1">Storage:</div>
+                                <div class="text-sm">user_abc123/20260110.png<br>(500KB)</div>
+                            </div>
+                            <div class="bg-white bg-opacity-30 rounded p-3">
+                                <div class="font-bold mb-1">DB:</div>
+                                <div class="text-sm">storage_path: "user_abc123/..."<br>(200バイト)</div>
+                            </div>
+                            <div class="bg-white bg-opacity-30 rounded p-3">
+                                <div class="font-bold mb-1">URL:</div>
+                                <div class="text-sm">https://...storage/.../20260110.png</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 動画 -->
+                    <div class="bg-white bg-opacity-20 rounded-lg p-6">
+                        <div class="text-2xl font-bold mb-4 text-center">🎬 動画の場合</div>
+                        <div class="space-y-3">
+                            <div class="bg-white bg-opacity-30 rounded p-3">
+                                <div class="font-bold mb-1">Storage:</div>
+                                <div class="text-sm">user_abc123/20260110.mp4<br>(5MB)</div>
+                            </div>
+                            <div class="bg-white bg-opacity-30 rounded p-3">
+                                <div class="font-bold mb-1">DB:</div>
+                                <div class="text-sm">storage_path: "user_abc123/..."<br>(200バイト)</div>
+                            </div>
+                            <div class="bg-white bg-opacity-30 rounded p-3">
+                                <div class="font-bold mb-1">URL:</div>
+                                <div class="text-sm">https://...storage/.../20260110.mp4</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 bg-yellow-400 text-gray-900 rounded-lg p-6 text-center">
+                    <div class="text-2xl font-bold mb-3">🔑 重要ポイント</div>
+                    <div class="text-lg">
+                        ブラウザは<strong>URLを見て</strong>、自動的にStorageから画像・動画をダウンロードします。<br>
+                        DBには「住所（パス）」だけ保存しておけばOK！
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- フッター -->
+        <footer class="mt-8 text-center text-gray-600 text-sm">
+            <p>AI Movie Maker プロジェクト - 2026年1月10日作成</p>
+        </footer>
+    </div>
+</body>
+</html>

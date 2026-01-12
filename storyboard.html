@@ -243,11 +243,11 @@
                     </button>
                 </div>
 
-                <!-- 画像履歴 -->
+                <!-- 画像履歴（トーク形式） -->
                 <div id="image-history">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">画像履歴</h3>
-                    <div id="image-history-list" class="space-y-3">
-                        <p class="text-sm text-gray-500">シーンを選択すると、画像履歴が表示されます</p>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">画像生成履歴</h3>
+                    <div id="image-history-list" class="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar bg-gray-50 rounded-lg p-4">
+                        <p class="text-sm text-gray-500 text-center">シーンを選択すると、画像履歴が表示されます</p>
                     </div>
                 </div>
 
@@ -492,7 +492,7 @@
                 selected: true
             });
 
-            // シーン2（画像複数）
+            // シーン2（画像複数、参照画像あり）
             addScene();
             const scene2 = scenes[1];
             scene2.dialogues.push({
@@ -500,15 +500,26 @@
                 speaker: '真子さん',
                 text: '見た目だけをわけなかろうもんで'
             });
+            // 1回目: 参照画像なし
             scene2.images.push({
                 prompt: 'Person eating parfait in cafe',
                 timestamp: '2025-12-23T06:47:30.089Z',
-                selected: false
+                selected: false,
+                referenceImageCount: 0
             });
+            // 2回目: 参照画像2枚
             scene2.images.push({
-                prompt: 'Person eating parfait in cafe, close up',
+                prompt: 'Person eating parfait in cafe, close up, anime style',
                 timestamp: '2025-12-23T06:48:15.234Z',
-                selected: true
+                selected: false,
+                referenceImageCount: 2
+            });
+            // 3回目: 参照画像3枚、採用済み
+            scene2.images.push({
+                prompt: 'Beautiful woman eating colorful parfait in modern cafe, cinematic lighting',
+                timestamp: '2025-12-23T06:50:42.567Z',
+                selected: true,
+                referenceImageCount: 3
             });
 
             // シーン3（画像なし）
@@ -629,7 +640,7 @@
             }
         }
 
-        // 右パネルを更新
+        // 右パネルを更新（トーク形式）
         function updateRightPanel() {
             const historyList = document.getElementById('image-history-list');
             const editSection = document.getElementById('image-edit-section');
@@ -637,25 +648,95 @@
             if (selectedSceneId) {
                 const scene = scenes.find(s => s.id === selectedSceneId);
 
-                // 画像履歴を表示
+                // 画像履歴をトーク形式で表示
                 if (scene.images.length > 0) {
-                    historyList.innerHTML = scene.images.map((img, index) => `
-                        <div class="border border-gray-200 rounded-lg p-3 cursor-pointer hover:bg-gray-50 transition ${img.selected ? 'bg-green-50 border-green-500' : ''}" onclick="selectImage(${scene.id}, ${index})">
-                            <div class="aspect-video bg-gray-200 rounded mb-2 flex items-center justify-center">
-                                <span class="text-gray-400 text-sm">画像 ${index + 1}</span>
+                    historyList.innerHTML = scene.images.map((img, index) => {
+                        const hasReferences = img.referenceImageCount && img.referenceImageCount > 0;
+
+                        return `
+                        <!-- ユーザーメッセージ -->
+                        <div class="flex gap-3 items-start">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold flex-shrink-0 shadow-md">
+                                👤
                             </div>
-                            <p class="text-xs text-gray-600">${img.timestamp}</p>
-                            ${img.selected ? '<p class="text-xs text-green-600 font-semibold mt-1">✓ 採用中</p>' : ''}
+                            <div class="flex-1 max-w-[80%]">
+                                <div class="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-2xl rounded-tl-sm p-4 shadow-sm">
+                                    <p class="text-sm font-semibold text-gray-900 mb-2">${img.prompt}</p>
+                                    ${hasReferences ? `
+                                        <div class="flex gap-2 mt-3">
+                                            ${Array.from({length: img.referenceImageCount}).map((_, i) => `
+                                                <div class="w-16 h-16 bg-gray-200 rounded-lg border-2 border-gray-300 flex items-center justify-center text-gray-500 text-xs">
+                                                    📷 ${i + 1}
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    ` : ''}
+                                    <p class="text-xs text-gray-500 mt-2">${formatTimestamp(img.timestamp)}</p>
+                                </div>
+                            </div>
                         </div>
-                    `).join('');
+
+                        <!-- AIメッセージ -->
+                        <div class="flex gap-3 items-start flex-row-reverse">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white font-bold flex-shrink-0 shadow-md">
+                                🤖
+                            </div>
+                            <div class="flex-1 max-w-[80%]">
+                                <div class="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-300 rounded-2xl rounded-tr-sm p-4 shadow-sm">
+                                    <div class="aspect-video bg-gradient-to-br from-gray-700 to-gray-900 rounded-lg mb-3 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-90 transition" onclick="selectImage(${scene.id}, ${index})">
+                                        <div class="text-center text-white">
+                                            <svg class="w-12 h-12 mx-auto mb-1 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                            </svg>
+                                            <p class="text-xs font-semibold">生成画像 ${index + 1}</p>
+                                            ${img.selected ? '<p class="text-xs mt-1 text-green-400 font-bold">✓ 採用済み</p>' : ''}
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button onclick="selectImage(${scene.id}, ${index}); event.stopPropagation();" class="flex-1 px-3 py-2 ${img.selected ? 'bg-green-600 text-white' : 'bg-white text-green-600 hover:bg-green-50'} border-2 border-green-600 rounded-lg text-sm font-semibold transition">
+                                            ${img.selected ? '✓ 採用済み' : '✓ 採用する'}
+                                        </button>
+                                        <button onclick="regenerateFromImage(${scene.id}, ${index}); event.stopPropagation();" class="px-3 py-2 bg-white text-orange-600 hover:bg-orange-50 border-2 border-orange-600 rounded-lg text-sm font-semibold transition">
+                                            🔄 再生成
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        `;
+                    }).join('');
                     editSection.classList.remove('hidden');
                 } else {
-                    historyList.innerHTML = '<p class="text-sm text-gray-500">まだ画像がありません</p>';
+                    historyList.innerHTML = '<p class="text-sm text-gray-500 text-center">まだ画像がありません</p>';
                     editSection.classList.add('hidden');
                 }
             } else {
-                historyList.innerHTML = '<p class="text-sm text-gray-500">シーンを選択すると、画像履歴が表示されます</p>';
+                historyList.innerHTML = '<p class="text-sm text-gray-500 text-center">シーンを選択すると、画像履歴が表示されます</p>';
                 editSection.classList.add('hidden');
+            }
+        }
+
+        // タイムスタンプをフォーマット
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp);
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${month}/${day} ${hours}:${minutes}`;
+        }
+
+        // 再生成機能（モック）
+        function regenerateFromImage(sceneId, imageIndex) {
+            const scene = scenes.find(s => s.id === sceneId);
+            if (!scene) return;
+
+            const img = scene.images[imageIndex];
+            if (!img) return;
+
+            if (confirm(`この画像を再生成しますか？\n\nプロンプト: ${img.prompt}`)) {
+                alert('画像を再生成しました（モック）\n\n実際にはGemini APIで同じプロンプトで再生成します');
+                // TODO: 実際の実装では、同じプロンプトと参照画像でGemini APIを呼び出し
             }
         }
 
