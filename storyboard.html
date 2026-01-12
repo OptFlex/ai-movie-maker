@@ -251,21 +251,21 @@
                     </div>
                 </div>
 
-                <!-- 修正指示（NANO BANANA風） -->
+                <!-- 修正指示 -->
                 <div id="image-edit-section" class="mt-8 hidden">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">修正指示（NANO BANANA）</h3>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">修正指示</h3>
 
                     <div class="mb-4">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">画像を修正したい場合は、指示を入力してください</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">新しいプロンプトを入力してください</label>
                         <textarea
                             id="edit-instruction"
-                            class="w-full h-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
-                            placeholder="例: 背景を明るく、人物をもっと大きく"
+                            class="w-full h-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 resize-none"
+                            placeholder="例: 背景を明るくして、人物をもっと大きく表示してください"
                         ></textarea>
                     </div>
 
-                    <button onclick="editImage()" class="w-full py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition">
-                        生成
+                    <button onclick="editImage()" class="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 transition">
+                        画像を生成
                     </button>
                 </div>
                 </div>
@@ -663,10 +663,10 @@
                                 <div class="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-2xl rounded-tl-sm p-4 shadow-sm">
                                     <p class="text-sm font-semibold text-gray-900 mb-2">${img.prompt}</p>
                                     ${hasReferences ? `
-                                        <div class="flex gap-2 mt-3">
+                                        <div class="grid grid-cols-6 gap-2 mt-3">
                                             ${Array.from({length: img.referenceImageCount}).map((_, i) => `
-                                                <div class="w-16 h-16 bg-gray-200 rounded-lg border-2 border-gray-300 flex items-center justify-center text-gray-500 text-xs">
-                                                    📷 ${i + 1}
+                                                <div class="w-[50px] h-[50px] bg-gray-200 rounded border border-gray-300 flex items-center justify-center text-gray-500 text-xs flex-shrink-0">
+                                                    📷
                                                 </div>
                                             `).join('')}
                                         </div>
@@ -693,11 +693,8 @@
                                         </div>
                                     </div>
                                     <div class="flex gap-2">
-                                        <button onclick="selectImage(${scene.id}, ${index}); event.stopPropagation();" class="flex-1 px-3 py-2 ${img.selected ? 'bg-green-600 text-white' : 'bg-white text-green-600 hover:bg-green-50'} border-2 border-green-600 rounded-lg text-sm font-semibold transition">
+                                        <button onclick="selectImage(${scene.id}, ${index}); event.stopPropagation();" class="w-full px-3 py-2 ${img.selected ? 'bg-green-600 text-white' : 'bg-white text-green-600 hover:bg-green-50'} border-2 border-green-600 rounded-lg text-sm font-semibold transition">
                                             ${img.selected ? '✓ 採用済み' : '✓ 採用する'}
-                                        </button>
-                                        <button onclick="regenerateFromImage(${scene.id}, ${index}); event.stopPropagation();" class="px-3 py-2 bg-white text-orange-600 hover:bg-orange-50 border-2 border-orange-600 rounded-lg text-sm font-semibold transition">
-                                            🔄 再生成
                                         </button>
                                     </div>
                                 </div>
@@ -724,20 +721,6 @@
             const hours = String(date.getHours()).padStart(2, '0');
             const minutes = String(date.getMinutes()).padStart(2, '0');
             return `${month}/${day} ${hours}:${minutes}`;
-        }
-
-        // 再生成機能（モック）
-        function regenerateFromImage(sceneId, imageIndex) {
-            const scene = scenes.find(s => s.id === sceneId);
-            if (!scene) return;
-
-            const img = scene.images[imageIndex];
-            if (!img) return;
-
-            if (confirm(`この画像を再生成しますか？\n\nプロンプト: ${img.prompt}`)) {
-                alert('画像を再生成しました（モック）\n\n実際にはGemini APIで同じプロンプトで再生成します');
-                // TODO: 実際の実装では、同じプロンプトと参照画像でGemini APIを呼び出し
-            }
         }
 
         // 画像を選択
@@ -801,16 +784,42 @@
             }
         }
 
-        // 画像編集（モック）
+        // 修正指示で画像生成（モック）
         function editImage() {
-            const instruction = document.getElementById('edit-instruction').value;
-            if (!instruction) {
-                alert('修正指示を入力してください');
+            if (!selectedSceneId) {
+                alert('シーンを選択してください');
                 return;
             }
 
-            alert('画像を編集しました（モック）: ' + instruction);
-            document.getElementById('edit-instruction').value = '';
+            const prompt = document.getElementById('edit-instruction').value;
+            if (!prompt) {
+                alert('プロンプトを入力してください');
+                return;
+            }
+
+            const scene = scenes.find(s => s.id === selectedSceneId);
+            if (scene) {
+                const now = new Date();
+                const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+
+                // 新しい画像を履歴に追加
+                scene.images.push({
+                    prompt: prompt,
+                    timestamp: timestamp,
+                    selected: false,
+                    referenceImageCount: 0  // 修正指示では参照画像なし
+                });
+
+                // TODO: Gemini API実装時
+                // const response = await fetch('/functions/v1/generate-image', {
+                //     method: 'POST',
+                //     body: JSON.stringify({ prompt: prompt })
+                // });
+
+                document.getElementById('edit-instruction').value = '';
+                updateRightPanel();
+                alert(`画像を生成しました（モック）\n\nプロンプト: ${prompt}`);
+            }
         }
 
         // シーンをレンダリング
