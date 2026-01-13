@@ -57,75 +57,126 @@
         </main>
     </div>
 
+    <!-- 新規プロジェクト作成モーダル -->
+    <div id="create-project-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">新規企画作成</h2>
+
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">企画タイトル *</label>
+                <input
+                    type="text"
+                    id="new-project-title"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="例: YouTube動画企画 #1"
+                    required
+                />
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">チャンネル名</label>
+                <input
+                    type="text"
+                    id="new-project-channel"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="例: Tech解説チャンネル"
+                />
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">説明</label>
+                <textarea
+                    id="new-project-description"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                    rows="3"
+                    placeholder="企画の説明を入力してください（任意）"
+                ></textarea>
+            </div>
+
+            <div class="flex gap-3">
+                <button
+                    id="cancel-create-btn"
+                    class="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-semibold"
+                >
+                    キャンセル
+                </button>
+                <button
+                    id="confirm-create-btn"
+                    class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold"
+                >
+                    作成
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- 共通認証チェック -->
     <script src="./auth.js"></script>
 
     <script>
 
         // ========================================
-        // モックデータ（Supabaseのprojectsテーブルと同じ構造）
-        // ========================================
-        const mockProjects = [
-            {
-                id: 1,
-                title: "YouTube動画企画 #1",
-                channel_name: "Tech解説チャンネル",
-                thumbnail_url: null,  // 後で画像URLが入る
-                thumbnail_emoji: "📋",
-                thumbnail_gradient: "from-blue-400 to-purple-500",
-                created_at: "2026-01-03T10:00:00",
-                updated_at: "2026-01-03T15:30:00",
-                user_id: "user123"
-            },
-            {
-                id: 2,
-                title: "製品紹介動画企画",
-                channel_name: "ビジネスチャンネル",
-                thumbnail_url: null,
-                thumbnail_emoji: "🎬",
-                thumbnail_gradient: "from-green-400 to-blue-500",
-                created_at: "2026-01-02T09:00:00",
-                updated_at: "2026-01-02T14:20:00",
-                user_id: "user123"
-            },
-            {
-                id: 3,
-                title: "チュートリアル動画",
-                channel_name: "Tech解説チャンネル",
-                thumbnail_url: null,
-                thumbnail_emoji: "📺",
-                thumbnail_gradient: "from-orange-400 to-pink-500",
-                created_at: "2026-01-01T11:00:00",
-                updated_at: "2026-01-01T16:45:00",
-                user_id: "user123"
-            },
-            {
-                id: 4,
-                title: "商品レビュー動画",
-                channel_name: "レビューチャンネル",
-                thumbnail_url: null,
-                thumbnail_emoji: "🎥",
-                thumbnail_gradient: "from-purple-400 to-indigo-500",
-                created_at: "2025-12-31T13:00:00",
-                updated_at: "2025-12-31T18:15:00",
-                user_id: "user123"
-            }
-        ];
-
-        // ========================================
-        // データ取得関数（後でSupabaseに置き換え）
+        // データ取得関数
         // ========================================
         async function loadProjects() {
-            // TODO: Supabase接続時は以下に置き換え
-            // const { data, error } = await supabase
-            //     .from('projects')
-            //     .select('*')
-            //     .order('updated_at', { ascending: false });
-            // if (error) throw error;
-            // return data;
+            const { data, error } = await supabaseClient
+                .from('projects')
+                .select('*')
+                .order('updated_at', { ascending: false});
 
-            // 現在はモックデータを返す
-            return mockProjects;
+            if (error) {
+                console.error('プロジェクト読み込みエラー:', error);
+                throw error;
+            }
+
+            return data || [];
+        }
+
+        // ========================================
+        // プロジェクト作成関数
+        // ========================================
+        async function createProject(title, channelName, description) {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+
+            if (!session) {
+                throw new Error('ログインが必要です');
+            }
+
+            const { data, error } = await supabaseClient
+                .from('projects')
+                .insert([
+                    {
+                        user_id: session.user.id,
+                        title: title,
+                        channel_name: channelName || null,
+                        description: description || null,
+                        thumbnail_url: null
+                    }
+                ])
+                .select()
+                .single();
+
+            if (error) {
+                console.error('プロジェクト作成エラー:', error);
+                throw error;
+            }
+
+            return data;
+        }
+
+        // ========================================
+        // モーダル制御
+        // ========================================
+        function openCreateModal() {
+            document.getElementById('create-project-modal').classList.remove('hidden');
+            // 入力欄をクリア
+            document.getElementById('new-project-title').value = '';
+            document.getElementById('new-project-channel').value = '';
+            document.getElementById('new-project-description').value = '';
+        }
+
+        function closeCreateModal() {
+            document.getElementById('create-project-modal').classList.add('hidden');
         }
 
         // ========================================
@@ -158,17 +209,20 @@
             // データから動的にHTMLを生成
             const html = projects.map(project => `
                 <div class="cursor-pointer group bg-white border-2 border-gray-200 rounded-xl p-3 shadow-md hover:shadow-xl hover:border-blue-400 transition-all"
-                     onclick="openProject(${project.id})">
+                     onclick="openProject('${project.id}')">
                     <!-- サムネイル画像 -->
-                    <div class="aspect-video bg-gradient-to-br ${project.thumbnail_gradient} rounded-lg mb-3 flex items-center justify-center text-white text-4xl overflow-hidden">
-                        ${project.thumbnail_emoji}
+                    <div class="aspect-video rounded-lg mb-3 flex items-center justify-center overflow-hidden ${project.thumbnail_url ? '' : 'bg-gray-200 border-2 border-gray-300'}">
+                        ${project.thumbnail_url
+                            ? `<img src="${project.thumbnail_url}" class="w-full h-full object-cover" alt="サムネイル">`
+                            : '<span class="text-gray-400 text-4xl">📋</span>'
+                        }
                     </div>
                     <!-- タイトル・情報 -->
                     <div>
                         <h3 class="font-semibold text-gray-900 group-hover:text-blue-600 transition line-clamp-2 text-sm mb-2">
                             ${project.title}
                         </h3>
-                        <p class="text-xs text-gray-600">${project.channel_name}</p>
+                        <p class="text-xs text-gray-600">${project.channel_name || '未設定'}</p>
                         <p class="text-xs text-gray-500">${formatDate(project.updated_at)} 更新</p>
                     </div>
                 </div>
@@ -223,11 +277,41 @@
             }
         });
 
-        // 新規企画作成
+        // 新規企画作成ボタン
         document.getElementById('create-project-btn').addEventListener('click', () => {
-            // TODO: 後でSupabaseで新規企画作成
-            // 現在は直接storyboard.htmlへ（新規作成モード）
-            window.location.href = './storyboard.html';
+            openCreateModal();
+        });
+
+        // モーダル - キャンセルボタン
+        document.getElementById('cancel-create-btn').addEventListener('click', () => {
+            closeCreateModal();
+        });
+
+        // モーダル - 作成ボタン
+        document.getElementById('confirm-create-btn').addEventListener('click', async () => {
+            const title = document.getElementById('new-project-title').value.trim();
+            const channelName = document.getElementById('new-project-channel').value.trim();
+            const description = document.getElementById('new-project-description').value.trim();
+
+            if (!title) {
+                alert('企画タイトルを入力してください');
+                return;
+            }
+
+            try {
+                // プロジェクト作成
+                const newProject = await createProject(title, channelName, description);
+                console.log('プロジェクト作成成功:', newProject);
+
+                // モーダルを閉じる
+                closeCreateModal();
+
+                // storyboard.htmlへ遷移
+                window.location.href = `./storyboard.html?project=${newProject.id}`;
+            } catch (error) {
+                console.error('プロジェクト作成エラー:', error);
+                alert('プロジェクトの作成に失敗しました: ' + error.message);
+            }
         });
 
         // ページ読み込み時に初期化
