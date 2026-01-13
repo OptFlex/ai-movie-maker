@@ -415,36 +415,120 @@
         let currentProject = null;
 
         // ========================================
-        // 企画データ取得（後でSupabaseに置き換え）
+        // 企画データ取得
         // ========================================
         async function loadProject(id) {
-            // TODO: Supabase接続時は以下に置き換え
-            // const { data, error } = await supabase
-            //     .from('projects')
-            //     .select('*')
-            //     .eq('id', id)
-            //     .single();
-            // if (error) throw error;
-            // return data;
-
-            // 現在はモックデータから検索
             if (!id) {
-                // 新規作成モード
-                return {
-                    id: null,
-                    title: "新規企画",
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                };
+                // project IDがない場合はエラー
+                throw new Error('プロジェクトIDが指定されていません');
             }
-            return mockProjects.find(p => p.id == id) || null;
+
+            const { data, error } = await supabaseClient
+                .from('projects')
+                .select('*')
+                .eq('id', id)
+                .single();
+
+            if (error) {
+                console.error('プロジェクト読み込みエラー:', error);
+                throw error;
+            }
+
+            return data;
         }
 
         // グローバル変数
         let scenes = [];
         let selectedSceneId = null;
-        let sceneIdCounter = 1;
-        let dialogueIdCounter = 1;
+
+        // ========================================
+        // シーン管理 - Supabase CRUD操作
+        // ========================================
+
+        // シーン一覧を取得
+        async function loadScenes(projectId) {
+            const { data, error } = await supabaseClient
+                .from('scenes')
+                .select('*')
+                .eq('project_id', projectId)
+                .order('scene_number', { ascending: true });
+
+            if (error) {
+                console.error('シーン読み込みエラー:', error);
+                throw error;
+            }
+
+            // データ変換: scene_number → number, 空の dialogues と images を追加
+            return (data || []).map(scene => ({
+                ...scene,
+                number: scene.scene_number,
+                dialogues: [],  // TODO: 後でdialoguesテーブルから取得
+                images: []      // TODO: 後でimagesテーブルから取得
+            }));
+        }
+
+        // シーンを作成
+        async function createScene(projectId) {
+            const nextSceneNumber = scenes.length + 1;
+            const cutNumber = `C-${String(nextSceneNumber).padStart(3, '0')}`;
+
+            const { data, error } = await supabaseClient
+                .from('scenes')
+                .insert([
+                    {
+                        project_id: projectId,
+                        scene_number: nextSceneNumber,
+                        cut_number: cutNumber,
+                        description: '',
+                        thumbnail_url: null
+                    }
+                ])
+                .select()
+                .single();
+
+            if (error) {
+                console.error('シーン作成エラー:', error);
+                throw error;
+            }
+
+            // データ変換: scene_number → number, 空の dialogues と images を追加
+            return {
+                ...data,
+                number: data.scene_number,
+                dialogues: [],
+                images: []
+            };
+        }
+
+        // シーンを削除
+        async function deleteSceneFromDB(sceneId) {
+            const { error } = await supabaseClient
+                .from('scenes')
+                .delete()
+                .eq('id', sceneId);
+
+            if (error) {
+                console.error('シーン削除エラー:', error);
+                throw error;
+            }
+        }
+
+        // シーン番号を再割り当て
+        async function reorderScenes(projectId) {
+            // 現在のシーン一覧を取得
+            const scenesToReorder = scenes.map((scene, index) => ({
+                id: scene.id,
+                scene_number: index + 1
+            }));
+
+            // 一括更新
+            for (const scene of scenesToReorder) {
+                await supabaseClient
+                    .from('scenes')
+                    .update({ scene_number: scene.scene_number })
+                    .eq('id', scene.id);
+            }
+        }
 
         // 初期シーンを追加
         window.addEventListener('DOMContentLoaded', async function() {
@@ -466,16 +550,20 @@
                     document.getElementById('thumbnail-title').textContent = currentProject.title;
                     document.getElementById('channel-name').value = currentProject.channel_name || '';
 
-                    // サムネイル画像があれば表示（モックアップでは絵文字＋グラデーション）
+                    // サムネイル画像があれば表示
+                    const thumbnailPreview = document.getElementById('thumbnail-preview');
                     if (currentProject.thumbnail_url) {
-                        const thumbnailPreview = document.getElementById('thumbnail-preview');
                         thumbnailPreview.innerHTML = `<img src="${currentProject.thumbnail_url}" class="w-full h-full object-cover" alt="サムネイル">`;
-                    } else if (currentProject.thumbnail_emoji && currentProject.thumbnail_gradient) {
-                        // モックアップ用（本番では不要）
-                        const thumbnailPreview = document.getElementById('thumbnail-preview');
-                        thumbnailPreview.className = `w-80 aspect-video bg-gradient-to-br ${currentProject.thumbnail_gradient} rounded-lg flex items-center justify-center overflow-hidden border-2 border-gray-300`;
-                        thumbnailPreview.innerHTML = `<span class="text-white text-6xl">${currentProject.thumbnail_emoji}</span>`;
+                    } else {
+                        // サムネイルなし：グレー背景
+                        thumbnailPreview.className = 'w-80 aspect-video bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden border-2 border-gray-300';
+                        thumbnailPreview.innerHTML = '<span class="text-gray-400 text-5xl">📋</span>';
                     }
+
+                    // シーン一覧を読み込む
+                    scenes = await loadScenes(projectId);
+                    console.log('シーン一覧読み込み成功:', scenes);
+                    renderScenes();
                 } else {
                     document.getElementById('project-title').value = '企画が見つかりません';
                     document.getElementById('thumbnail-title').textContent = '企画が見つかりません';
@@ -486,55 +574,6 @@
                 document.getElementById('project-title').value = '読み込みエラー';
                 document.getElementById('thumbnail-title').textContent = '読み込みエラー';
             }
-
-            // シーン1（画像あり）
-            addScene();
-            const scene1 = scenes[0];
-            scene1.dialogues.push({
-                id: dialogueIdCounter++,
-                speaker: 'ナレーター',
-                text: 'こんにちは、今日はAI動画制作ツールを紹介します'
-            });
-            scene1.images.push({
-                prompt: 'AI technology concept, futuristic interface',
-                timestamp: '2025-12-23T06:46:41.120Z',
-                selected: true
-            });
-
-            // シーン2（画像複数、参照画像あり）
-            addScene();
-            const scene2 = scenes[1];
-            scene2.dialogues.push({
-                id: dialogueIdCounter++,
-                speaker: '真子さん',
-                text: '見た目だけをわけなかろうもんで'
-            });
-            // 1回目: 参照画像なし
-            scene2.images.push({
-                prompt: 'Person eating parfait in cafe',
-                timestamp: '2025-12-23T06:47:30.089Z',
-                selected: false,
-                referenceImageCount: 0
-            });
-            // 2回目: 参照画像2枚
-            scene2.images.push({
-                prompt: 'Person eating parfait in cafe, close up, anime style',
-                timestamp: '2025-12-23T06:48:15.234Z',
-                selected: false,
-                referenceImageCount: 2
-            });
-            // 3回目: 参照画像3枚、採用済み
-            scene2.images.push({
-                prompt: 'Beautiful woman eating colorful parfait in modern cafe, cinematic lighting',
-                timestamp: '2025-12-23T06:50:42.567Z',
-                selected: true,
-                referenceImageCount: 3
-            });
-
-            // シーン3（画像なし）
-            addScene();
-
-            renderScenes();
         });
 
         // GPS編集トグル
@@ -568,30 +607,50 @@
         }
 
         // シーンを追加
-        function addScene() {
-            const sceneId = sceneIdCounter++;
-            const scene = {
-                id: sceneId,
-                number: scenes.length + 1,
-                dialogues: [],
-                images: []
-            };
-            scenes.push(scene);
-            renderScenes();
+        async function addScene() {
+            if (!projectId) {
+                alert('プロジェクトIDが見つかりません');
+                return;
+            }
+
+            try {
+                const newScene = await createScene(projectId);
+                console.log('シーン作成成功:', newScene);
+                scenes.push(newScene);
+                renderScenes();
+            } catch (error) {
+                console.error('シーン作成エラー:', error);
+                alert('シーンの作成に失敗しました');
+            }
         }
 
         // シーンを削除
-        function deleteScene(sceneId) {
-            scenes = scenes.filter(s => s.id !== sceneId);
-            // シーン番号を再割り当て
-            scenes.forEach((scene, index) => {
-                scene.number = index + 1;
-            });
-            renderScenes();
+        async function deleteScene(sceneId) {
+            if (!confirm('このシーンを削除しますか？')) {
+                return;
+            }
 
-            if (selectedSceneId === sceneId) {
-                selectedSceneId = null;
-                updateRightPanel();
+            try {
+                await deleteSceneFromDB(sceneId);
+                console.log('シーン削除成功:', sceneId);
+
+                // ローカルの配列から削除
+                scenes = scenes.filter(s => s.id !== sceneId);
+
+                // シーン番号を再割り当て
+                await reorderScenes(projectId);
+
+                // シーン一覧を再読み込み
+                scenes = await loadScenes(projectId);
+                renderScenes();
+
+                if (selectedSceneId === sceneId) {
+                    selectedSceneId = null;
+                    updateRightPanel();
+                }
+            } catch (error) {
+                console.error('シーン削除エラー:', error);
+                alert('シーンの削除に失敗しました');
             }
         }
 
