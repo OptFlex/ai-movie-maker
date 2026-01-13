@@ -193,8 +193,17 @@
                 <!-- 画像生成タブ -->
                 <div id="tab-image-content">
 
+                <!-- 未選択時のメッセージ -->
+                <div id="no-scene-selected" class="text-center py-12">
+                    <svg class="w-20 h-20 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path>
+                    </svg>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">シーンを選択してください</h3>
+                    <p class="text-sm text-gray-500">左のシーン一覧からシーンを選択すると、<br>画像生成と履歴が表示されます</p>
+                </div>
+
                 <!-- 画像生成フォーム -->
-                <div id="image-generation-form" class="mb-8">
+                <div id="image-generation-form" class="mb-8 hidden">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">新規画像生成</h3>
 
                     <!-- 参照画像アップロード -->
@@ -244,7 +253,7 @@
                 </div>
 
                 <!-- 画像履歴（トーク形式） -->
-                <div id="image-history">
+                <div id="image-history" class="hidden">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">画像生成履歴</h3>
                     <div id="image-history-list" class="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar bg-gray-50 rounded-lg p-4">
                         <p class="text-sm text-gray-500 text-center">シーンを選択すると、画像履歴が表示されます</p>
@@ -642,10 +651,18 @@
 
         // 右パネルを更新（トーク形式）
         function updateRightPanel() {
+            const noSceneSelected = document.getElementById('no-scene-selected');
+            const generationForm = document.getElementById('image-generation-form');
+            const historySection = document.getElementById('image-history');
             const historyList = document.getElementById('image-history-list');
             const editSection = document.getElementById('image-edit-section');
 
             if (selectedSceneId) {
+                // シーン選択時: 案内メッセージを非表示、フォームと履歴を表示
+                noSceneSelected.classList.add('hidden');
+                generationForm.classList.remove('hidden');
+                historySection.classList.remove('hidden');
+
                 const scene = scenes.find(s => s.id === selectedSceneId);
 
                 // 画像履歴をトーク形式で表示
@@ -708,7 +725,10 @@
                     editSection.classList.add('hidden');
                 }
             } else {
-                historyList.innerHTML = '<p class="text-sm text-gray-500 text-center">シーンを選択すると、画像履歴が表示されます</p>';
+                // 未選択時: 案内メッセージを表示、フォームと履歴を非表示
+                noSceneSelected.classList.remove('hidden');
+                generationForm.classList.add('hidden');
+                historySection.classList.add('hidden');
                 editSection.classList.add('hidden');
             }
         }
