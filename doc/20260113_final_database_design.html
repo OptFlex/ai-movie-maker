@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>絵コンテアプリ - 最終データベース設計（2026/01/13）</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f5;
+      padding: 0;
+      line-height: 1.6;
+      min-width: 1400px;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 100%);
+      color: white;
+      padding: 50px 60px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+
+    .header h1 {
+      font-size: 3.5rem;
+      margin-bottom: 15px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .header .subtitle {
+      font-size: 1.4rem;
+      opacity: 0.95;
+      margin-bottom: 20px;
+    }
+
+    .header .date {
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(10px);
+      display: inline-block;
+      padding: 12px 30px;
+      border-radius: 30px;
+      font-weight: 600;
+      border: 2px solid rgba(255,255,255,0.3);
+      font-size: 1.1rem;
+    }
+
+    .container {
+      max-width: 2300px;
+      margin: 0 auto;
+      padding: 50px 60px;
+    }
+
+    .section {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    .section h2 {
+      font-size: 2rem;
+      margin-bottom: 25px;
+      color: #1e3a8a;
+      border-bottom: 3px solid #7c3aed;
+      padding-bottom: 10px;
+    }
+
+    .section h3 {
+      font-size: 1.5rem;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      color: #7c3aed;
+    }
+
+    /* テーブル横並びレイアウト */
+    .tables-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+
+    .table-card {
+      background: white;
+      border: 3px solid #7c3aed;
+      border-radius: 16px;
+      padding: 25px;
+      box-shadow: 0 4px 15px rgba(124, 58, 237, 0.15);
+    }
+
+    .table-card h3 {
+      margin: 0 0 20px 0;
+      font-size: 1.4rem;
+      color: #7c3aed;
+      border-bottom: 2px solid #e9d5ff;
+      padding-bottom: 10px;
+    }
+
+    .field {
+      padding: 10px;
+      margin: 5px 0;
+      background: #f9fafb;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      border-left: 4px solid #e9d5ff;
+    }
+
+    .field.pk {
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      border-left-color: #f59e0b;
+      font-weight: 700;
+    }
+
+    .field.fk {
+      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+      border-left-color: #3b82f6;
+      font-weight: 600;
+    }
+
+    .field .type {
+      color: #7c3aed;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+
+    .field .desc {
+      display: block;
+      font-size: 0.85rem;
+      color: #6b7280;
+      margin-top: 3px;
+    }
+
+    /* リレーション図 */
+    .relations {
+      background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+      border-radius: 16px;
+      padding: 30px;
+      margin: 30px 0;
+    }
+
+    .relations h3 {
+      color: #5b21b6;
+      margin-top: 0;
+    }
+
+    .relation-item {
+      background: white;
+      padding: 15px 20px;
+      margin: 10px 0;
+      border-radius: 10px;
+      border-left: 5px solid #7c3aed;
+      font-size: 1.05rem;
+    }
+
+    .relation-item strong {
+      color: #7c3aed;
+    }
+
+    /* CSV インポート機能 */
+    .feature-box {
+      background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+      border: 3px solid #10b981;
+      border-radius: 16px;
+      padding: 30px;
+      margin: 30px 0;
+    }
+
+    .feature-box h3 {
+      color: #047857;
+      margin-top: 0;
+    }
+
+    .code-block {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 20px;
+      border-radius: 10px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      overflow-x: auto;
+      margin: 15px 0;
+    }
+
+    .code-block .comment {
+      color: #94a3b8;
+    }
+
+    .highlight {
+      background: #fef3c7;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .note {
+      background: #fef3c7;
+      border-left: 5px solid #f59e0b;
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+
+    .note strong {
+      color: #d97706;
+    }
+
+    ul {
+      margin-left: 25px;
+      margin-top: 10px;
+    }
+
+    li {
+      margin: 8px 0;
+      font-size: 1.05rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>絵コンテアプリ - 最終データベース設計</h1>
+    <p class="subtitle">Supabase (PostgreSQL) + Storage + Auth</p>
+    <div class="date">2026年1月13日 更新</div>
+  </div>
+
+  <div class="container">
+
+    <!-- 概要 -->
+    <div class="section">
+      <h2>📋 設計概要</h2>
+      <p style="font-size: 1.1rem; line-height: 1.8;">
+        このデータベース設計は、<strong>storyboard.html</strong>で実装された以下の機能をサポートします：
+      </p>
+      <ul>
+        <li><strong>シーン管理</strong>: カット番号、シーン説明、サムネイル画像</li>
+        <li><strong>画像生成履歴</strong>: トーク形式UIで表示される生成画像とプロンプト</li>
+        <li><strong>参照画像</strong>: 最大14枚の参照画像をJSONB配列で保存（再現性確保）</li>
+        <li><strong>動画生成</strong>: シーンから動画を生成し、Storage URLで保存</li>
+        <li><strong>プロジェクト管理</strong>: 複数のプロジェクト（絵コンテ）を管理</li>
+      </ul>
+
+      <div class="note">
+        <strong>🔑 重要:</strong> 画像/動画の実データは <span class="highlight">Supabase Storage</span> に保存され、データベースには <span class="highlight">Storage URL</span> のみを保存します。Base64は一時的なプレビューにのみ使用します。
+      </div>
+    </div>
+
+    <!-- テーブル一覧 -->
+    <div class="section">
+      <h2>🗂️ テーブル構成（全体図）</h2>
+
+      <div class="tables-grid">
+
+        <!-- Projects テーブル -->
+        <div class="table-card">
+          <h3>📁 Projects（プロジェクト）</h3>
+          <div class="field pk">
+            <strong>id</strong> <span class="type">UUID</span>
+            <span class="desc">PRIMARY KEY</span>
+          </div>
+          <div class="field fk">
+            <strong>user_id</strong> <span class="type">UUID</span>
+            <span class="desc">FK → auth.users(id)</span>
+          </div>
+          <div class="field">
+            <strong>title</strong> <span class="type">TEXT</span>
+            <span class="desc">プロジェクト名</span>
+          </div>
+          <div class="field">
+            <strong>description</strong> <span class="type">TEXT</span>
+            <span class="desc">説明（任意）</span>
+          </div>
+          <div class="field">
+            <strong>created_at</strong> <span class="type">TIMESTAMPTZ</span>
+            <span class="desc">作成日時</span>
+          </div>
+          <div class="field">
+            <strong>updated_at</strong> <span class="type">TIMESTAMPTZ</span>
+            <span class="desc">更新日時</span>
+          </div>
+        </div>
+
+        <!-- Scenes テーブル -->
+        <div class="table-card">
+          <h3>🎬 Scenes（シーン）</h3>
+          <div class="field pk">
+            <strong>id</strong> <span class="type">UUID</span>
+            <span class="desc">PRIMARY KEY</span>
+          </div>
+          <div class="field fk">
+            <strong>project_id</strong> <span class="type">UUID</span>
+            <span class="desc">FK → projects(id)</span>
+          </div>
+          <div class="field">
+            <strong>scene_number</strong> <span class="type">INTEGER</span>
+            <span class="desc">シーン番号（表示順）</span>
+          </div>
+          <div class="field">
+            <strong>cut_number</strong> <span class="type">TEXT</span>
+            <span class="desc">カット番号（例: C-001）</span>
+          </div>
+          <div class="field">
+            <strong>description</strong> <span class="type">TEXT</span>
+            <span class="desc">シーン説明</span>
+          </div>
+          <div class="field">
+            <strong>thumbnail_url</strong> <span class="type">TEXT</span>
+            <span class="desc">サムネイル画像URL（Storage）</span>
+          </div>
+          <div class="field">
+            <strong>created_at</strong> <span class="type">TIMESTAMPTZ</span>
+            <span class="desc">作成日時</span>
+          </div>
+          <div class="field">
+            <strong>updated_at</strong> <span class="type">TIMESTAMPTZ</span>
+            <span class="desc">更新日時</span>
+          </div>
+        </div>
+
+        <!-- Images テーブル -->
+        <div class="table-card">
+          <h3>🖼️ Images（生成画像）</h3>
+          <div class="field pk">
+            <strong>id</strong> <span class="type">UUID</span>
+            <span class="desc">PRIMARY KEY</span>
+          </div>
+          <div class="field fk">
+            <strong>scene_id</strong> <span class="type">UUID</span>
+            <span class="desc">FK → scenes(id)</span>
+          </div>
+          <div class="field">
+            <strong>prompt</strong> <span class="type">TEXT</span>
+            <span class="desc">生成プロンプト</span>
+          </div>
+          <div class="field">
+            <strong>image_url</strong> <span class="type">TEXT</span>
+            <span class="desc">生成画像URL（Storage）</span>
+          </div>
+          <div class="field">
+            <strong>reference_images</strong> <span class="type">JSONB</span>
+            <span class="desc">参照画像URL配列</span>
+          </div>
+          <div class="field">
+            <strong>is_selected</strong> <span class="type">BOOLEAN</span>
+            <span class="desc">採用フラグ</span>
+          </div>
+          <div class="field">
+            <strong>created_at</strong> <span class="type">TIMESTAMPTZ</span>
+            <span class="desc">生成日時</span>
+          </div>
+        </div>
+
+        <!-- Videos テーブル -->
+        <div class="table-card">
+          <h3>🎥 Videos（生成動画）</h3>
+          <div class="field pk">
+            <strong>id</strong> <span class="type">UUID</span>
+            <span class="desc">PRIMARY KEY</span>
+          </div>
+          <div class="field fk">
+            <strong>scene_id</strong> <span class="type">UUID</span>
+            <span class="desc">FK → scenes(id)</span>
+          </div>
+          <div class="field fk">
+            <strong>base_image_id</strong> <span class="type">UUID</span>
+            <span class="desc">FK → images(id)（元画像）</span>
+          </div>
+          <div class="field">
+            <strong>prompt</strong> <span class="type">TEXT</span>
+            <span class="desc">動画生成プロンプト</span>
+          </div>
+          <div class="field">
+            <strong>video_url</strong> <span class="type">TEXT</span>
+            <span class="desc">動画URL（Storage）</span>
+          </div>
+          <div class="field">
+            <strong>duration</strong> <span class="type">INTEGER</span>
+            <span class="desc">動画の長さ（秒）</span>
+          </div>
+          <div class="field">
+            <strong>is_selected</strong> <span class="type">BOOLEAN</span>
+            <span class="desc">採用フラグ</span>
+          </div>
+          <div class="field">
+            <strong>created_at</strong> <span class="type">TIMESTAMPTZ</span>
+            <span class="desc">生成日時</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- リレーション -->
+    <div class="section">
+      <h2>🔗 テーブルリレーション</h2>
+
+      <div class="relations">
+        <h3>主キー・外部キーの関係</h3>
+
+        <div class="relation-item">
+          <strong>Projects ← Scenes</strong><br>
+          1つのプロジェクトは複数のシーンを持つ（1:N）<br>
+          <code>scenes.project_id → projects.id</code> (ON DELETE CASCADE)
+        </div>
+
+        <div class="relation-item">
+          <strong>Scenes ← Images</strong><br>
+          1つのシーンは複数の生成画像を持つ（1:N）<br>
+          <code>images.scene_id → scenes.id</code> (ON DELETE CASCADE)
+        </div>
+
+        <div class="relation-item">
+          <strong>Scenes ← Videos</strong><br>
+          1つのシーンは複数の生成動画を持つ（1:N）<br>
+          <code>videos.scene_id → scenes.id</code> (ON DELETE CASCADE)
+        </div>
+
+        <div class="relation-item">
+          <strong>Images ← Videos</strong><br>
+          1つの動画は1つの元画像を参照（N:1）<br>
+          <code>videos.base_image_id → images.id</code> (ON DELETE SET NULL)
+        </div>
+
+        <div class="relation-item">
+          <strong>auth.users ← Projects</strong><br>
+          1人のユーザーは複数のプロジェクトを持つ（1:N）<br>
+          <code>projects.user_id → auth.users.id</code> (ON DELETE CASCADE)
+        </div>
+      </div>
+    </div>
+
+    <!-- 参照画像の設計 -->
+    <div class="section">
+      <h2>📷 参照画像の保存設計</h2>
+
+      <h3>Images.reference_images（JSONB型）</h3>
+      <p style="font-size: 1.05rem; line-height: 1.8;">
+        参照画像は <span class="highlight">JSONB配列</span> で保存します。これにより再現性が確保され、後から「どの参照画像を使ったか」を確認できます。
+      </p>
+
+      <div class="code-block">
+{
+  "id": "img-001",
+  "scene_id": "scene-123",
+  "prompt": "夕暮れの街並みを描いてください",
+  "image_url": "https://xxx.supabase.co/storage/v1/object/public/images/generated-001.png",
+  <strong>"reference_images": [
+    "https://xxx.supabase.co/storage/v1/object/public/references/ref-001.jpg",
+    "https://xxx.supabase.co/storage/v1/object/public/references/ref-002.jpg",
+    "https://xxx.supabase.co/storage/v1/object/public/references/ref-003.jpg"
+  ]</strong>,
+  "is_selected": false,
+  "created_at": "2026-01-13T10:00:00Z"
+}
+      </div>
+
+      <div class="note">
+        <strong>💡 設計のポイント:</strong>
+        <ul>
+          <li>参照画像は最大14枚（Geminiの制限）</li>
+          <li>画像生成APIに送信する前に、参照画像をSupabase Storageにアップロード</li>
+          <li>アップロード後のStorage URLを配列で保存</li>
+          <li>トーク形式UIで「📷 ×3」のように参照画像数を表示</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- CSV一括インポート機能 -->
+    <div class="section">
+      <h2>📥 CSV一括インポート機能の提案</h2>
+
+      <div class="feature-box">
+        <h3>✨ 機能概要</h3>
+        <p style="font-size: 1.05rem; line-height: 1.8;">
+          CSVファイルまたはテキストファイルから、<strong>シーン情報を一括でインポート</strong>できる機能です。
+          カット番号（例: C-001, C-002）やシーン説明を一気に登録できます。
+        </p>
+      </div>
+
+      <h3>CSVフォーマット例</h3>
+      <div class="code-block">
+<span class="comment"># シーン一括登録用CSV</span>
+<strong>scene_number,cut_number,description</strong>
+1,C-001,主人公が朝の街を歩いている
+2,C-002,カフェに入店、コーヒーを注文
+3,C-003,窓際の席に座り、外を眺める
+4,C-004,スマホに通知が届く
+5,C-005,驚いた表情でメッセージを読む
+6,C-006,急いで店を出る
+7,C-007,駅に向かって走る
+8,C-008,電車に飛び乗る
+      </div>
+
+      <h3>インポート処理フロー</h3>
+      <ul>
+        <li><strong>1. CSVファイルをアップロード</strong> → ファイル選択 or ドラッグ&ドロップ</li>
+        <li><strong>2. プレビュー表示</strong> → インポートされるシーン一覧を確認</li>
+        <li><strong>3. 一括登録実行</strong> → Supabase Scenesテーブルに一括INSERT</li>
+        <li><strong>4. 自動でカット番号生成</strong> → C-001, C-002... のように連番で自動採番も可能</li>
+      </ul>
+
+      <h3>実装イメージ（storyboard.html に追加）</h3>
+      <div class="code-block">
+<span class="comment">// CSV読み込み関数</span>
+function importScenesFromCSV(file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const csv = e.target.result;
+    const lines = csv.split('\n');
+    const scenes = [];
+
+    <span class="comment">// 1行目はヘッダーなのでスキップ</span>
+    for (let i = 1; i < lines.length; i++) {
+      const [scene_number, cut_number, description] = lines[i].split(',');
+      if (scene_number) {
+        scenes.push({
+          scene_number: parseInt(scene_number),
+          cut_number: cut_number.trim(),
+          description: description.trim(),
+          project_id: currentProjectId,
+          thumbnail_url: null
+        });
+      }
+    }
+
+    <span class="comment">// Supabaseに一括INSERT</span>
+    supabase.from('scenes').insert(scenes).then(() => {
+      alert(`${scenes.length}件のシーンをインポートしました`);
+      loadScenes(); <span class="comment">// 再読み込み</span>
+    });
+  };
+  reader.readAsText(file);
+}
+      </div>
+
+      <div class="note">
+        <strong>🎯 この機能のメリット:</strong>
+        <ul>
+          <li>脚本やシナリオから一気にシーンを登録できる</li>
+          <li>Excelで編集したシーンリストをそのままインポート可能</li>
+          <li>手作業で1つずつ追加する手間が省ける</li>
+          <li>大量のシーン（50〜100シーン）も一瞬で登録</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- RLS設計 -->
+    <div class="section">
+      <h2>🔒 Row Level Security (RLS) 設計</h2>
+
+      <h3>基本方針</h3>
+      <p style="font-size: 1.05rem; line-height: 1.8;">
+        全てのテーブルで <span class="highlight">RLS（行レベルセキュリティ）</span> を有効にし、
+        <strong>ログインユーザー自身のデータのみアクセス可能</strong> にします。
+      </p>
+
+      <h3>RLSポリシー例（Projects テーブル）</h3>
+      <div class="code-block">
+<span class="comment">-- 自分のプロジェクトのみ閲覧可能</span>
+CREATE POLICY "Users can view their own projects"
+  ON projects FOR SELECT
+  USING (auth.uid() = user_id);
+
+<span class="comment">-- 自分のプロジェクトのみ作成可能</span>
+CREATE POLICY "Users can create their own projects"
+  ON projects FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+<span class="comment">-- 自分のプロジェクトのみ更新可能</span>
+CREATE POLICY "Users can update their own projects"
+  ON projects FOR UPDATE
+  USING (auth.uid() = user_id);
+
+<span class="comment">-- 自分のプロジェクトのみ削除可能</span>
+CREATE POLICY "Users can delete their own projects"
+  ON projects FOR DELETE
+  USING (auth.uid() = user_id);
+      </div>
+
+      <h3>Scenes, Images, Videos テーブルの RLS</h3>
+      <p style="font-size: 1.05rem; line-height: 1.8;">
+        これらのテーブルは <code>project_id</code> または <code>scene_id</code> を通じて
+        間接的に <code>user_id</code> を参照するため、JOINを使ったポリシーが必要です。
+      </p>
+
+      <div class="code-block">
+<span class="comment">-- Scenes: 自分のプロジェクトに属するシーンのみアクセス可能</span>
+CREATE POLICY "Users can access scenes in their projects"
+  ON scenes FOR ALL
+  USING (
+    EXISTS (
+      SELECT 1 FROM projects
+      WHERE projects.id = scenes.project_id
+      AND projects.user_id = auth.uid()
+    )
+  );
+
+<span class="comment">-- Images: 自分のシーンに属する画像のみアクセス可能</span>
+CREATE POLICY "Users can access images in their scenes"
+  ON images FOR ALL
+  USING (
+    EXISTS (
+      SELECT 1 FROM scenes
+      JOIN projects ON projects.id = scenes.project_id
+      WHERE scenes.id = images.scene_id
+      AND projects.user_id = auth.uid()
+    )
+  );
+      </div>
+    </div>
+
+    <!-- まとめ -->
+    <div class="section">
+      <h2>✅ 実装ステップ</h2>
+
+      <h3>1. Supabaseプロジェクト作成</h3>
+      <ul>
+        <li>Supabase Dashboard で新規プロジェクト作成</li>
+        <li>認証（Auth）を有効化（Email/Passwordまたは Google OAuth）</li>
+      </ul>
+
+      <h3>2. テーブル作成（SQL実行）</h3>
+      <ul>
+        <li>上記のテーブル構成をSQL文で作成</li>
+        <li>外部キー制約、CASCADE削除を設定</li>
+        <li>RLSポリシーを設定</li>
+      </ul>
+
+      <h3>3. Storage バケット作成</h3>
+      <ul>
+        <li><strong>images</strong> バケット: 生成画像を保存</li>
+        <li><strong>references</strong> バケット: 参照画像を保存</li>
+        <li><strong>videos</strong> バケット: 生成動画を保存</li>
+        <li><strong>thumbnails</strong> バケット: サムネイル画像を保存</li>
+      </ul>
+
+      <h3>4. storyboard.html にSupabase接続を追加</h3>
+      <ul>
+        <li>Supabase Client SDK を読み込み</li>
+        <li>認証状態の管理（ログイン/ログアウト）</li>
+        <li>CRUD操作（Create, Read, Update, Delete）の実装</li>
+        <li>Storage へのアップロード機能の実装</li>
+      </ul>
+
+      <h3>5. CSV一括インポート機能の実装（オプション）</h3>
+      <ul>
+        <li>ファイルアップロードUIの追加</li>
+        <li>CSV解析処理の実装</li>
+        <li>プレビュー表示と一括登録処理</li>
+      </ul>
+
+      <div class="note">
+        <strong>🚀 次のステップ:</strong>
+        このデータベース設計に基づいて、Supabaseのテーブル作成SQL文を生成できます。
+        実装を開始する準備が整いました！
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

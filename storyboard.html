@@ -51,14 +51,17 @@
             <h1 class="text-2xl font-bold text-gray-900">絵コンテ作成アプリ</h1>
         </div>
         <div class="flex gap-3">
-            <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">
-                下書き保存
-            </button>
-            <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
-                保存
-            </button>
+            <!-- 自動保存のためボタン不要 -->
         </div>
     </header>
+
+    <!-- トースト通知 -->
+    <div id="toast" class="fixed top-20 right-6 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 transition-all duration-300 opacity-0 pointer-events-none transform translate-x-full z-50">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        <span id="toast-message" class="font-medium">保存しました</span>
+    </div>
 
     <!-- 3カラムレイアウト -->
     <div class="flex h-[calc(100vh-57px)]">
@@ -442,6 +445,38 @@
         let selectedSceneId = null;
 
         // ========================================
+        // トースト通知
+        // ========================================
+        function showToast(message = '保存しました') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+
+            toastMessage.textContent = message;
+
+            // 表示
+            toast.classList.remove('opacity-0', 'translate-x-full');
+            toast.classList.add('opacity-100', 'translate-x-0');
+
+            // 3秒後に非表示
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-x-0');
+                toast.classList.add('opacity-0', 'translate-x-full');
+            }, 3000);
+        }
+
+        // ========================================
+        // Debounce機能（入力停止後に保存）
+        // ========================================
+        let debounceTimers = {};
+
+        function debounce(key, func, delay = 1000) {
+            if (debounceTimers[key]) {
+                clearTimeout(debounceTimers[key]);
+            }
+            debounceTimers[key] = setTimeout(func, delay);
+        }
+
+        // ========================================
         // シーン管理 - Supabase CRUD操作
         // ========================================
 
@@ -458,13 +493,18 @@
                 throw error;
             }
 
-            // データ変換: scene_number → number, 空の dialogues と images を追加
-            return (data || []).map(scene => ({
-                ...scene,
-                number: scene.scene_number,
-                dialogues: [],  // TODO: 後でdialoguesテーブルから取得
-                images: []      // TODO: 後でimagesテーブルから取得
+            // 各シーンのセリフを読み込む
+            const scenesWithData = await Promise.all((data || []).map(async (scene) => {
+                const dialogues = await loadDialogues(scene.id);
+                return {
+                    ...scene,
+                    number: scene.scene_number,
+                    dialogues: dialogues,
+                    images: []  // TODO: 後でimagesテーブルから取得
+                };
             }));
+
+            return scenesWithData;
         }
 
         // シーンを作成
@@ -527,6 +567,85 @@
                     .from('scenes')
                     .update({ scene_number: scene.scene_number })
                     .eq('id', scene.id);
+            }
+        }
+
+        // ========================================
+        // セリフ管理 - Supabase CRUD操作
+        // ========================================
+
+        // セリフ一覧を取得
+        async function loadDialogues(sceneId) {
+            const { data, error } = await supabaseClient
+                .from('dialogues')
+                .select('*')
+                .eq('scene_id', sceneId)
+                .order('order_number', { ascending: true });
+
+            if (error) {
+                console.error('セリフ読み込みエラー:', error);
+                throw error;
+            }
+
+            return data || [];
+        }
+
+        // セリフを作成
+        async function createDialogue(sceneId, speaker = '', text = '') {
+            const scene = scenes.find(s => s.id === sceneId);
+            if (!scene) {
+                throw new Error('シーンが見つかりません');
+            }
+
+            const nextOrderNumber = scene.dialogues.length + 1;
+
+            const { data, error } = await supabaseClient
+                .from('dialogues')
+                .insert([
+                    {
+                        scene_id: sceneId,
+                        speaker: speaker,
+                        text: text,
+                        order_number: nextOrderNumber
+                    }
+                ])
+                .select()
+                .single();
+
+            if (error) {
+                console.error('セリフ作成エラー:', error);
+                throw error;
+            }
+
+            return data;
+        }
+
+        // セリフを更新
+        async function updateDialogueInDB(dialogueId, field, value) {
+            const updateData = {};
+            updateData[field] = value;
+
+            const { error } = await supabaseClient
+                .from('dialogues')
+                .update(updateData)
+                .eq('id', dialogueId);
+
+            if (error) {
+                console.error('セリフ更新エラー:', error);
+                throw error;
+            }
+        }
+
+        // セリフを削除
+        async function deleteDialogueFromDB(dialogueId) {
+            const { error } = await supabaseClient
+                .from('dialogues')
+                .delete()
+                .eq('id', dialogueId);
+
+            if (error) {
+                console.error('セリフ削除エラー:', error);
+                throw error;
             }
         }
 
@@ -618,6 +737,7 @@
                 console.log('シーン作成成功:', newScene);
                 scenes.push(newScene);
                 renderScenes();
+                showToast('シーンを追加しました');
             } catch (error) {
                 console.error('シーン作成エラー:', error);
                 alert('シーンの作成に失敗しました');
@@ -648,6 +768,8 @@
                     selectedSceneId = null;
                     updateRightPanel();
                 }
+
+                showToast('シーンを削除しました');
             } catch (error) {
                 console.error('シーン削除エラー:', error);
                 alert('シーンの削除に失敗しました');
@@ -655,29 +777,52 @@
         }
 
         // セリフを追加
-        function addDialogue(sceneId) {
-            const scene = scenes.find(s => s.id === sceneId);
-            if (scene) {
-                scene.dialogues.push({
-                    id: dialogueIdCounter++,
-                    speaker: '',
-                    text: ''
-                });
-                renderScenes();
+        async function addDialogue(sceneId) {
+            try {
+                const newDialogue = await createDialogue(sceneId);
+                console.log('セリフ作成成功:', newDialogue);
+
+                // ローカルの配列に追加
+                const scene = scenes.find(s => s.id === sceneId);
+                if (scene) {
+                    scene.dialogues.push(newDialogue);
+                    renderScenes();
+                }
+
+                showToast('セリフを追加しました');
+            } catch (error) {
+                console.error('セリフ作成エラー:', error);
+                alert('セリフの追加に失敗しました');
             }
         }
 
         // セリフを削除
-        function deleteDialogue(sceneId, dialogueId) {
-            const scene = scenes.find(s => s.id === sceneId);
-            if (scene) {
-                scene.dialogues = scene.dialogues.filter(d => d.id !== dialogueId);
-                renderScenes();
+        async function deleteDialogue(sceneId, dialogueId) {
+            if (!confirm('このセリフを削除しますか？')) {
+                return;
+            }
+
+            try {
+                await deleteDialogueFromDB(dialogueId);
+                console.log('セリフ削除成功:', dialogueId);
+
+                // ローカルの配列から削除
+                const scene = scenes.find(s => s.id === sceneId);
+                if (scene) {
+                    scene.dialogues = scene.dialogues.filter(d => d.id !== dialogueId);
+                    renderScenes();
+                }
+
+                showToast('セリフを削除しました');
+            } catch (error) {
+                console.error('セリフ削除エラー:', error);
+                alert('セリフの削除に失敗しました');
             }
         }
 
-        // セリフ更新
+        // セリフ更新（Debounce付き）
         function updateDialogue(sceneId, dialogueId, field, value) {
+            // ローカル状態を即座に更新（UI反映）
             const scene = scenes.find(s => s.id === sceneId);
             if (scene) {
                 const dialogue = scene.dialogues.find(d => d.id === dialogueId);
@@ -685,6 +830,18 @@
                     dialogue[field] = value;
                 }
             }
+
+            // 1秒後にデータベースへ保存（Debounce）
+            debounce(`dialogue-${dialogueId}-${field}`, async () => {
+                try {
+                    await updateDialogueInDB(dialogueId, field, value);
+                    console.log('セリフ更新成功:', { dialogueId, field, value });
+                    showToast('セリフを保存しました');
+                } catch (error) {
+                    console.error('セリフ更新エラー:', error);
+                    alert('セリフの保存に失敗しました');
+                }
+            }, 1000);
         }
 
         // シーンを選択
