@@ -195,12 +195,12 @@
             </div>
 
             <!-- タブコンテンツエリア -->
-            <div class="flex-1 min-h-0 px-6 pb-6">
+            <div class="flex-1 min-h-0">
                 <!-- 画像生成タブ -->
-                <div id="tab-image-content" class="flex-1 flex flex-col min-h-0">
+                <div id="tab-image-content" class="h-full flex flex-col">
 
                 <!-- 未選択時のメッセージ -->
-                <div id="no-scene-selected" class="flex-1 flex items-center justify-center">
+                <div id="no-scene-selected" class="flex-1 flex items-center justify-center px-6">
                     <div class="text-center">
                         <svg class="w-20 h-20 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path>
@@ -211,7 +211,7 @@
                 </div>
 
                 <!-- チャットコンテナ -->
-                <div id="chat-container" class="hidden flex-1 flex flex-col min-h-0">
+                <div id="chat-container" class="hidden h-full flex flex-col px-6 pb-6">
 
                     <!-- チャット履歴エリア（スクロール可能） -->
                     <div id="image-history-list" class="flex-1 space-y-4 overflow-y-auto custom-scrollbar bg-gray-50 rounded-lg p-4 mb-4 min-h-0">
@@ -286,7 +286,7 @@
                 <!-- 画像生成タブ終了 -->
 
                 <!-- 動画生成タブ -->
-                <div id="tab-video-content" class="hidden flex-1 flex flex-col min-h-0 overflow-y-auto">
+                <div id="tab-video-content" class="hidden h-full overflow-y-auto px-6 pb-6">
 
                     <!-- 動画生成フォーム -->
                     <div id="video-generation-form">
