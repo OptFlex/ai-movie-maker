@@ -195,12 +195,12 @@
             </div>
 
             <!-- タブコンテンツエリア -->
-            <div class="flex-1 min-h-0">
+            <div class="flex-1 min-h-0 flex flex-col px-6 pb-6">
                 <!-- 画像生成タブ -->
-                <div id="tab-image-content" class="h-full flex flex-col">
+                <div id="tab-image-content" class="flex-1 min-h-0 flex flex-col">
 
                 <!-- 未選択時のメッセージ -->
-                <div id="no-scene-selected" class="flex-1 flex items-center justify-center px-6">
+                <div id="no-scene-selected" class="flex-1 flex items-center justify-center">
                     <div class="text-center">
                         <svg class="w-20 h-20 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path>
@@ -211,17 +211,15 @@
                 </div>
 
                 <!-- チャットコンテナ -->
-                <div id="chat-container" class="hidden h-full flex flex-col">
+                <div id="chat-container" class="hidden flex-1 min-h-0 flex flex-col">
 
                     <!-- チャット履歴エリア（スクロール可能） -->
-                    <div class="flex-1 overflow-hidden px-6 pt-6">
-                        <div id="image-history-list" class="h-full space-y-4 overflow-y-auto custom-scrollbar bg-gray-50 rounded-lg p-4">
-                            <p class="text-sm text-gray-500 text-center">プロンプトを入力して画像を生成してください</p>
-                        </div>
+                    <div id="image-history-list" class="flex-1 min-h-0 space-y-4 overflow-y-auto custom-scrollbar bg-gray-50 rounded-lg p-4 mb-4">
+                        <p class="text-sm text-gray-500 text-center">プロンプトを入力して画像を生成してください</p>
                     </div>
 
                     <!-- 下部固定入力エリア -->
-                    <div class="flex-shrink-0 border-t border-gray-200 bg-white px-6 pb-6 pt-4">
+                    <div class="flex-shrink-0 border-t border-gray-200 bg-white pt-4">
 
                         <!-- 参照画像プレビュー -->
                         <div id="reference-images-preview" class="flex flex-wrap gap-2 mb-3 max-w-[324px]">
@@ -288,7 +286,7 @@
                 <!-- 画像生成タブ終了 -->
 
                 <!-- 動画生成タブ -->
-                <div id="tab-video-content" class="hidden h-full overflow-y-auto px-6 pb-6">
+                <div id="tab-video-content" class="hidden flex-1 min-h-0 overflow-y-auto">
 
                     <!-- 動画生成フォーム -->
                     <div id="video-generation-form">
