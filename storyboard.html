@@ -1083,9 +1083,77 @@
                     .filter(img => img.storageUrl)
                     .map(img => img.storageUrl);
 
-                // TODO: 実際の画像生成APIを呼び出す
-                // 現在はプレースホルダー画像を使用
-                const generatedImageUrl = `https://placehold.co/512x512/6366f1/ffffff?text=Generated+Image`;
+                // Edge Function経由でGemini APIを呼び出し
+                const edgeFunctionUrl = `${SUPABASE_URL}/functions/v1/generate-image`;
+
+                console.log('Edge Function呼び出し開始:', prompt);
+
+                const response = await fetch(edgeFunctionUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_ANON_KEY
+                    },
+                    body: JSON.stringify({ prompt })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Edge Function エラー:', errorData);
+                    throw new Error(errorData.error || '画像生成に失敗しました');
+                }
+
+                const data = await response.json();
+                console.log('Edge Function レスポンス:', data);
+
+                // 画像データを抽出
+                let imageBase64 = null;
+                if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
+                    for (const part of data.candidates[0].content.parts) {
+                        if (part.inlineData && part.inlineData.data) {
+                            imageBase64 = part.inlineData.data;
+                            break;
+                        }
+                    }
+                }
+
+                if (!imageBase64) {
+                    throw new Error('生成画像データが見つかりません');
+                }
+
+                // Base64をBlobに変換
+                const byteCharacters = atob(imageBase64);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: 'image/png' });
+
+                // Storageにアップロード
+                const timestamp = Date.now();
+                const fileName = `${selectedSceneId}_${timestamp}.png`;
+                const filePath = `${projectId}/${fileName}`;
+
+                const { data: uploadData, error: uploadError } = await supabaseClient.storage
+                    .from('images')
+                    .upload(filePath, blob, {
+                        cacheControl: '3600',
+                        upsert: false
+                    });
+
+                if (uploadError) {
+                    console.error('Storage アップロードエラー:', uploadError);
+                    throw uploadError;
+                }
+
+                // Storage URLを取得
+                const { data: urlData } = supabaseClient.storage
+                    .from('images')
+                    .getPublicUrl(filePath);
+
+                const generatedImageUrl = urlData.publicUrl;
+                console.log('画像をStorageにアップロード:', generatedImageUrl);
 
                 // imagesテーブルに保存
                 const newImage = await createImage(
@@ -1116,7 +1184,7 @@
                 showToast('画像を生成しました');
             } catch (error) {
                 console.error('画像生成エラー:', error);
-                alert('画像の生成に失敗しました');
+                alert(`画像の生成に失敗しました: ${error.message}`);
             }
         }
 
