@@ -493,14 +493,15 @@
                 throw error;
             }
 
-            // 各シーンのセリフを読み込む
+            // 各シーンのセリフと画像を読み込む
             const scenesWithData = await Promise.all((data || []).map(async (scene) => {
                 const dialogues = await loadDialogues(scene.id);
+                const images = await loadImages(scene.id);
                 return {
                     ...scene,
                     number: scene.scene_number,
                     dialogues: dialogues,
-                    images: []  // TODO: 後でimagesテーブルから取得
+                    images: images
                 };
             }));
 
@@ -646,6 +647,75 @@
             if (error) {
                 console.error('セリフ削除エラー:', error);
                 throw error;
+            }
+        }
+
+        // ========================================
+        // 画像管理 - Supabase CRUD操作
+        // ========================================
+
+        // シーンの画像履歴を取得
+        async function loadImages(sceneId) {
+            const { data, error } = await supabaseClient
+                .from('images')
+                .select('*')
+                .eq('scene_id', sceneId)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('画像読み込みエラー:', error);
+                throw error;
+            }
+
+            return data || [];
+        }
+
+        // 画像を作成（データベースに保存）
+        async function createImage(sceneId, prompt, imageUrl, referenceImageUrls = []) {
+            const { data, error } = await supabaseClient
+                .from('images')
+                .insert([
+                    {
+                        scene_id: sceneId,
+                        prompt: prompt,
+                        image_url: imageUrl,
+                        reference_images: referenceImageUrls,
+                        is_selected: false
+                    }
+                ])
+                .select()
+                .single();
+
+            if (error) {
+                console.error('画像作成エラー:', error);
+                throw error;
+            }
+
+            return data;
+        }
+
+        // 画像を選択（採用）
+        async function selectImageInDB(sceneId, imageId) {
+            // まず、そのシーンの全画像の選択を解除
+            const { error: unselectError } = await supabaseClient
+                .from('images')
+                .update({ is_selected: false })
+                .eq('scene_id', sceneId);
+
+            if (unselectError) {
+                console.error('画像選択解除エラー:', unselectError);
+                throw unselectError;
+            }
+
+            // 指定画像を選択
+            const { error: selectError } = await supabaseClient
+                .from('images')
+                .update({ is_selected: true })
+                .eq('id', imageId);
+
+            if (selectError) {
+                console.error('画像選択エラー:', selectError);
+                throw selectError;
             }
         }
 
@@ -848,6 +918,9 @@
         function selectScene(sceneId) {
             selectedSceneId = sceneId;
 
+            // 参照画像をクリア（シーンごとに異なる参照画像を使用）
+            clearReferenceImages();
+
             // 選択状態を更新
             document.querySelectorAll('.scene-card').forEach(card => {
                 card.classList.remove('ring-2', 'ring-blue-500', 'bg-blue-50');
@@ -884,7 +957,7 @@
                 // 画像履歴をトーク形式で表示
                 if (scene.images.length > 0) {
                     historyList.innerHTML = scene.images.map((img, index) => {
-                        const hasReferences = img.referenceImageCount && img.referenceImageCount > 0;
+                        const hasReferences = img.reference_images && img.reference_images.length > 0;
 
                         return `
                         <!-- ユーザーメッセージ -->
@@ -897,14 +970,14 @@
                                     <p class="text-sm font-semibold text-gray-900 mb-2">${img.prompt}</p>
                                     ${hasReferences ? `
                                         <div class="flex flex-wrap gap-2 mt-3 max-w-[324px]">
-                                            ${Array.from({length: img.referenceImageCount}).map((_, i) => `
-                                                <div class="w-[50px] h-[50px] bg-gray-200 rounded border border-gray-300 flex items-center justify-center text-gray-500 text-xs flex-shrink-0">
-                                                    📷
+                                            ${img.reference_images.map((refUrl) => `
+                                                <div class="w-[50px] h-[50px] flex-shrink-0">
+                                                    <img src="${refUrl}" alt="参照画像" class="w-full h-full object-cover rounded border border-gray-300">
                                                 </div>
                                             `).join('')}
                                         </div>
                                     ` : ''}
-                                    <p class="text-xs text-gray-500 mt-2">${formatTimestamp(img.timestamp)}</p>
+                                    <p class="text-xs text-gray-500 mt-2">${formatTimestamp(img.created_at)}</p>
                                 </div>
                             </div>
                         </div>
@@ -916,18 +989,13 @@
                             </div>
                             <div class="flex-1 max-w-[80%]">
                                 <div class="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-300 rounded-2xl rounded-tr-sm p-4 shadow-sm">
-                                    <div class="aspect-video bg-gradient-to-br from-gray-700 to-gray-900 rounded-lg mb-3 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-90 transition" onclick="selectImage('${scene.id}', ${index})">
-                                        <div class="text-center text-white">
-                                            <svg class="w-12 h-12 mx-auto mb-1 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                            </svg>
-                                            <p class="text-xs font-semibold">生成画像 ${index + 1}</p>
-                                            ${img.selected ? '<p class="text-xs mt-1 text-green-400 font-bold">✓ 採用済み</p>' : ''}
-                                        </div>
+                                    <div class="relative aspect-video rounded-lg mb-3 overflow-hidden cursor-pointer hover:opacity-90 transition" onclick="selectImageByIndex('${scene.id}', ${index})">
+                                        <img src="${img.image_url}" alt="生成画像" class="w-full h-full object-cover">
+                                        ${img.is_selected ? '<div class="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">✓ 採用済み</div>' : ''}
                                     </div>
                                     <div class="flex gap-2">
-                                        <button onclick="selectImage('${scene.id}', ${index}); event.stopPropagation();" class="w-full px-3 py-2 ${img.selected ? 'bg-green-600 text-white' : 'bg-white text-green-600 hover:bg-green-50'} border-2 border-green-600 rounded-lg text-sm font-semibold transition">
-                                            ${img.selected ? '✓ 採用済み' : '✓ 採用する'}
+                                        <button onclick="selectImageByIndex('${scene.id}', ${index}); event.stopPropagation();" class="w-full px-3 py-2 ${img.is_selected ? 'bg-green-600 text-white' : 'bg-white text-green-600 hover:bg-green-50'} border-2 border-green-600 rounded-lg text-sm font-semibold transition">
+                                            ${img.is_selected ? '✓ 採用済み' : '✓ 採用する'}
                                         </button>
                                     </div>
                                 </div>
@@ -960,23 +1028,41 @@
         }
 
         // 画像を選択
-        function selectImage(sceneId, imageIndex) {
-            const scene = scenes.find(s => s.id === sceneId);
-            if (scene) {
+        // 画像を選択（インデックス指定）
+        async function selectImageByIndex(sceneId, imageIndex) {
+            try {
+                const scene = scenes.find(s => s.id === sceneId);
+                if (!scene || !scene.images[imageIndex]) {
+                    alert('画像が見つかりません');
+                    return;
+                }
+
+                const imageId = scene.images[imageIndex].id;
+
+                // データベースに保存
+                await selectImageInDB(sceneId, imageId);
+
+                // ローカル状態を更新
                 scene.images.forEach((img, index) => {
-                    img.selected = index === imageIndex;
+                    img.is_selected = index === imageIndex;
                 });
+
                 updateRightPanel();
 
                 // 動画生成タブも更新（画像を採用したら動画生成可能になる）
                 if (currentTab === 'video') {
                     updateVideoImagePreview();
                 }
+
+                showToast('画像を採用しました');
+            } catch (error) {
+                console.error('画像選択エラー:', error);
+                alert('画像の選択に失敗しました');
             }
         }
 
         // 画像生成（モック）
-        function generateImage() {
+        async function generateImage() {
             if (!selectedSceneId) {
                 alert('シーンを選択してください');
                 return;
@@ -988,35 +1074,49 @@
                 return;
             }
 
-            const scene = scenes.find(s => s.id === selectedSceneId);
-            if (scene) {
-                const now = new Date();
-                const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+            try {
+                // 生成中のローディング表示
+                showToast('画像を生成中...');
 
-                scene.images.push({
-                    prompt: prompt,
-                    timestamp: timestamp,
-                    selected: scene.images.length === 0,
-                    referenceImageCount: referenceImages.length
-                });
+                // 参照画像のStorage URLを取得
+                const referenceImageUrls = referenceImages
+                    .filter(img => img.storageUrl)
+                    .map(img => img.storageUrl);
 
-                // TODO: Gemini API実装時に参照画像も送信
-                // const formData = new FormData();
-                // formData.append('prompt', prompt);
-                // referenceImages.forEach((img, index) => {
-                //     formData.append(`reference_image_${index}`, img.file);
-                // });
+                // TODO: 実際の画像生成APIを呼び出す
+                // 現在はプレースホルダー画像を使用
+                const generatedImageUrl = `https://placehold.co/512x512/6366f1/ffffff?text=Generated+Image`;
 
-                const message = referenceImages.length > 0
-                    ? `画像を生成しました（モック）\n参照画像: ${referenceImages.length}枚\nプロンプト: ${prompt}`
-                    : `画像を生成しました（モック）\nプロンプト: ${prompt}`;
+                // imagesテーブルに保存
+                const newImage = await createImage(
+                    selectedSceneId,
+                    prompt,
+                    generatedImageUrl,
+                    referenceImageUrls
+                );
 
+                console.log('画像生成成功:', newImage);
+
+                // ローカルの配列に追加
+                const scene = scenes.find(s => s.id === selectedSceneId);
+                if (scene) {
+                    scene.images.unshift(newImage); // 最新の画像を先頭に追加
+                }
+
+                // UIをリセット
                 document.getElementById('image-prompt').value = '';
-                // 参照画像をクリア
+
+                // 参照画像をクリア（Storageからは削除しない、既に保存済み）
                 referenceImages = [];
                 updateReferenceImagesPreview();
+
+                // 右パネルを更新
                 updateRightPanel();
-                alert(message);
+
+                showToast('画像を生成しました');
+            } catch (error) {
+                console.error('画像生成エラー:', error);
+                alert('画像の生成に失敗しました');
             }
         }
 
@@ -1230,32 +1330,128 @@
             event.target.value = '';
         }
 
-        // 参照画像を追加
-        function addReferenceImages(files) {
-            files.forEach(file => {
+        // 参照画像を追加（Supabase Storageにアップロード）
+        async function addReferenceImages(files) {
+            for (const file of files) {
                 // 画像ファイルかチェック
                 if (!file.type.startsWith('image/')) {
                     alert(`${file.name}は画像ファイルではありません`);
-                    return;
+                    continue;
                 }
 
-                // FileReaderで画像をプレビュー用に読み込み
-                const reader = new FileReader();
-                reader.onload = function(e) {
+                try {
+                    // FileReaderで画像をプレビュー用に読み込み
+                    const dataUrl = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(file);
+                    });
+
+                    // アップロード中の状態で追加
+                    const tempIndex = referenceImages.length;
                     referenceImages.push({
                         file: file,
-                        dataUrl: e.target.result,
-                        name: file.name
+                        dataUrl: dataUrl,
+                        name: file.name,
+                        storageUrl: null,
+                        uploading: true
                     });
                     updateReferenceImagesPreview();
-                };
-                reader.readAsDataURL(file);
-            });
+
+                    // Supabase Storageにアップロード
+                    const timestamp = Date.now();
+                    const fileName = `${timestamp}_${file.name}`;
+                    const filePath = `${projectId}/${fileName}`;
+
+                    const { data, error } = await supabaseClient.storage
+                        .from('references')
+                        .upload(filePath, file, {
+                            cacheControl: '3600',
+                            upsert: false
+                        });
+
+                    if (error) {
+                        console.error('画像アップロードエラー:', error);
+                        alert(`${file.name}のアップロードに失敗しました`);
+                        // 失敗した画像を削除
+                        referenceImages.splice(tempIndex, 1);
+                        updateReferenceImagesPreview();
+                        continue;
+                    }
+
+                    // Storage URLを取得
+                    const { data: urlData } = supabaseClient.storage
+                        .from('references')
+                        .getPublicUrl(filePath);
+
+                    // アップロード完了状態に更新
+                    referenceImages[tempIndex].storageUrl = urlData.publicUrl;
+                    referenceImages[tempIndex].storagePath = filePath;
+                    referenceImages[tempIndex].uploading = false;
+                    updateReferenceImagesPreview();
+
+                    console.log('画像アップロード成功:', fileName, urlData.publicUrl);
+                } catch (error) {
+                    console.error('画像処理エラー:', error);
+                    alert(`${file.name}の処理中にエラーが発生しました`);
+                }
+            }
+
+            showToast('参照画像をアップロードしました');
         }
 
         // 参照画像を削除
-        function removeReferenceImage(index) {
+        async function removeReferenceImage(index) {
+            const image = referenceImages[index];
+
+            // Storageからも削除
+            if (image.storagePath) {
+                try {
+                    const { error } = await supabaseClient.storage
+                        .from('references')
+                        .remove([image.storagePath]);
+
+                    if (error) {
+                        console.error('Storage削除エラー:', error);
+                    } else {
+                        console.log('Storage削除成功:', image.storagePath);
+                    }
+                } catch (error) {
+                    console.error('Storage削除処理エラー:', error);
+                }
+            }
+
+            // 配列から削除
             referenceImages.splice(index, 1);
+            updateReferenceImagesPreview();
+        }
+
+        // 参照画像をすべてクリア
+        async function clearReferenceImages() {
+            // Storageから削除
+            const storagePaths = referenceImages
+                .filter(img => img.storagePath)
+                .map(img => img.storagePath);
+
+            if (storagePaths.length > 0) {
+                try {
+                    const { error } = await supabaseClient.storage
+                        .from('references')
+                        .remove(storagePaths);
+
+                    if (error) {
+                        console.error('Storage一括削除エラー:', error);
+                    } else {
+                        console.log('Storage一括削除成功:', storagePaths.length, '件');
+                    }
+                } catch (error) {
+                    console.error('Storage一括削除処理エラー:', error);
+                }
+            }
+
+            // 配列をクリア
+            referenceImages = [];
             updateReferenceImagesPreview();
         }
 
@@ -1275,16 +1471,25 @@
 
             previewDiv.innerHTML = referenceImages.map((img, index) => `
                 <div class="relative group w-[50px] h-[50px] flex-shrink-0">
-                    <img src="${img.dataUrl}" alt="${img.name}" class="w-[50px] h-[50px] object-cover rounded border-2 border-gray-300">
-                    <button
-                        onclick="removeReferenceImage(${index})"
-                        class="absolute top-0 right-0 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition hover:bg-red-600 -mt-1 -mr-1"
-                        title="削除"
-                    >
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
+                    <img src="${img.dataUrl}" alt="${img.name}" class="w-[50px] h-[50px] object-cover rounded border-2 ${img.uploading ? 'border-yellow-400' : 'border-gray-300'}">
+                    ${img.uploading ? `
+                        <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded">
+                            <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </div>
+                    ` : `
+                        <button
+                            onclick="removeReferenceImage(${index})"
+                            class="absolute top-0 right-0 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition hover:bg-red-600 -mt-1 -mr-1"
+                            title="削除"
+                        >
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    `}
                 </div>
             `).join('');
         }
