@@ -1581,8 +1581,10 @@
             const previewDiv = document.getElementById('reference-images-preview');
             const countSpan = document.getElementById('reference-image-count');
 
-            // カウンター更新
-            countSpan.textContent = `${referenceImages.length}/14`;
+            // カウンター更新（要素が存在する場合のみ）
+            if (countSpan) {
+                countSpan.textContent = `${referenceImages.length}/14`;
+            }
 
             // プレビュー表示
             if (referenceImages.length === 0) {
