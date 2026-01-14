@@ -54,8 +54,17 @@ Deno.serve(async (req) => {
         const imageResponse = await fetch(previousImageUrl)
         if (imageResponse.ok) {
           const imageBuffer = await imageResponse.arrayBuffer()
-          const base64 = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)))
-          previousImageBase64 = base64
+          const uint8Array = new Uint8Array(imageBuffer)
+
+          // 大きな配列をbtoa()で変換するため、チャンクに分割して処理
+          let binary = ''
+          const chunkSize = 8192
+          for (let i = 0; i < uint8Array.length; i += chunkSize) {
+            const chunk = uint8Array.subarray(i, Math.min(i + chunkSize, uint8Array.length))
+            const chunkArray = Array.from(chunk) as number[]
+            binary += String.fromCharCode(...chunkArray)
+          }
+          previousImageBase64 = btoa(binary)
           console.log('前回画像のダウンロード成功')
         } else {
           console.warn('前回画像のダウンロード失敗:', imageResponse.status)
