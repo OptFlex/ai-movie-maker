@@ -181,8 +181,8 @@
         </div>
 
         <!-- 右カラム: 画像生成・動画生成（タブ切り替え） -->
-        <div class="flex-1 bg-white border-l border-gray-200 shadow-md overflow-y-auto custom-scrollbar">
-            <div class="p-6">
+        <div class="flex-1 bg-white border-l border-gray-200 shadow-md flex flex-col">
+            <div class="p-6 flex-shrink-0">
                 <!-- タブボタン -->
                 <div class="flex gap-2 mb-6">
                     <button id="tab-image-btn" onclick="switchTab('image')" class="flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition bg-purple-600 text-white">
@@ -194,7 +194,7 @@
                 </div>
 
                 <!-- 画像生成タブ -->
-                <div id="tab-image-content" class="flex flex-col h-full">
+                <div id="tab-image-content" class="flex-1 flex flex-col min-h-0">
 
                 <!-- 未選択時のメッセージ -->
                 <div id="no-scene-selected" class="flex-1 flex items-center justify-center">
@@ -208,15 +208,15 @@
                 </div>
 
                 <!-- チャットコンテナ -->
-                <div id="chat-container" class="hidden flex-1 flex flex-col">
+                <div id="chat-container" class="hidden flex-1 flex flex-col min-h-0">
 
                     <!-- チャット履歴エリア（スクロール可能） -->
-                    <div id="image-history-list" class="flex-1 space-y-4 overflow-y-auto custom-scrollbar bg-gray-50 rounded-lg p-4 mb-4">
+                    <div id="image-history-list" class="flex-1 space-y-4 overflow-y-auto custom-scrollbar bg-gray-50 rounded-lg p-4 mb-4 min-h-0">
                         <p class="text-sm text-gray-500 text-center">プロンプトを入力して画像を生成してください</p>
                     </div>
 
                     <!-- 下部固定入力エリア -->
-                    <div class="border-t border-gray-200 bg-white pt-4">
+                    <div class="flex-shrink-0 border-t border-gray-200 bg-white pt-4">
 
                         <!-- 参照画像プレビュー -->
                         <div id="reference-images-preview" class="flex flex-wrap gap-2 mb-3 max-w-[324px]">
