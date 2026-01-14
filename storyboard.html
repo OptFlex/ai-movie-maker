@@ -670,8 +670,8 @@
         }
 
         // 画像を作成（データベースに保存）
-        async function createImage(sceneId, prompt, imageUrl, referenceImageUrls = []) {
-            const { data, error } = await supabaseClient
+        async function createImage(sceneId, prompt, imageUrl, referenceImageUrls = [], parentImageId = null) {
+            const { data, error} = await supabaseClient
                 .from('images')
                 .insert([
                     {
@@ -679,6 +679,7 @@
                         prompt: prompt,
                         image_url: imageUrl,
                         reference_images: referenceImageUrls,
+                        parent_image_id: parentImageId,
                         is_selected: false
                     }
                 ])
@@ -1076,33 +1077,74 @@
         }
 
         // 画像生成（モック）
+        // ========================================
+        // チャット送信機能
+        // ========================================
+
+        // プロンプト送信（Enterキー or 送信ボタン）
+        function sendPrompt() {
+            const promptInput = document.getElementById('chat-prompt');
+            const prompt = promptInput.value.trim();
+
+            if (!prompt) {
+                alert('プロンプトを入力してください');
+                return;
+            }
+
+            // 画像生成を実行
+            generateImage();
+
+            // プロンプトをクリア
+            promptInput.value = '';
+            promptInput.style.height = 'auto'; // 高さリセット
+        }
+
+        // Enterキーでプロンプト送信
+        function handlePromptKeydown(event) {
+            // Shift+Enter: 改行（デフォルト動作）
+            // Enter: 送信
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendPrompt();
+            }
+        }
+
+        // ========================================
+        // 画像生成機能
+        // ========================================
+
         async function generateImage() {
             if (!selectedSceneId) {
                 alert('シーンを選択してください');
                 return;
             }
 
-            const prompt = document.getElementById('image-prompt').value;
+            const prompt = document.getElementById('chat-prompt').value.trim();
             if (!prompt) {
                 alert('プロンプトを入力してください');
                 return;
             }
 
             // UI要素を取得
-            const generateBtn = document.getElementById('generate-image-btn');
+            const sendBtn = document.getElementById('send-prompt-btn');
             const statusDiv = document.getElementById('generation-status');
 
             try {
                 // ローディング表示を開始
-                generateBtn.disabled = true;
-                generateBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                generateBtn.textContent = '生成中...';
+                sendBtn.disabled = true;
+                sendBtn.classList.add('opacity-50', 'cursor-not-allowed');
                 statusDiv.classList.remove('hidden');
 
                 // 参照画像のStorage URLを取得
                 const referenceImageUrls = referenceImages
                     .filter(img => img.storageUrl)
                     .map(img => img.storageUrl);
+
+                // 前回の生成画像を取得（このシーンの最新画像）
+                const scene = scenes.find(s => s.id === selectedSceneId);
+                const previousImage = scene && scene.images.length > 0
+                    ? scene.images[0] // 最新の画像（unshiftで追加しているため先頭）
+                    : null;
 
                 // Edge Function経由でGemini APIを呼び出し
                 const edgeFunctionUrl = `${SUPABASE_URL}/functions/v1/generate-image`;
@@ -1180,27 +1222,29 @@
                 console.log('参照画像:', referenceImageUrls);
 
                 // imagesテーブルに保存
+                // parent_image_idを設定（前回画像があればそのID）
+                const parentImageId = previousImage ? previousImage.id : null;
+
                 const newImage = await createImage(
                     selectedSceneId,
                     prompt,
                     generatedImageUrl,
-                    referenceImageUrls
+                    referenceImageUrls,
+                    parentImageId
                 );
 
                 console.log('画像生成成功:', newImage);
 
                 // ローカルの配列に追加
-                const scene = scenes.find(s => s.id === selectedSceneId);
                 if (scene) {
                     scene.images.unshift(newImage); // 最新の画像を先頭に追加
                 }
 
                 // UIをリセット
-                document.getElementById('image-prompt').value = '';
+                document.getElementById('chat-prompt').value = '';
 
-                // 参照画像をクリア（Storageからは削除しない、既に保存済み）
-                referenceImages = [];
-                updateReferenceImagesPreview();
+                // 参照画像をクリア（送信後は毎回クリア）
+                await clearReferenceImages();
 
                 // 右パネルを更新
                 updateRightPanel();
@@ -1208,9 +1252,8 @@
                 showToast('画像を生成しました');
 
                 // ローディング表示を終了
-                generateBtn.disabled = false;
-                generateBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                generateBtn.textContent = '画像を生成';
+                sendBtn.disabled = false;
+                sendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                 statusDiv.classList.add('hidden');
 
             } catch (error) {
@@ -1218,48 +1261,9 @@
                 alert(`画像の生成に失敗しました: ${error.message}`);
 
                 // ローディング表示を終了
-                generateBtn.disabled = false;
-                generateBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                generateBtn.textContent = '画像を生成';
+                sendBtn.disabled = false;
+                sendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                 statusDiv.classList.add('hidden');
-            }
-        }
-
-        // 修正指示で画像生成（モック）
-        function editImage() {
-            if (!selectedSceneId) {
-                alert('シーンを選択してください');
-                return;
-            }
-
-            const prompt = document.getElementById('edit-instruction').value;
-            if (!prompt) {
-                alert('プロンプトを入力してください');
-                return;
-            }
-
-            const scene = scenes.find(s => s.id === selectedSceneId);
-            if (scene) {
-                const now = new Date();
-                const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-
-                // 新しい画像を履歴に追加
-                scene.images.push({
-                    prompt: prompt,
-                    timestamp: timestamp,
-                    selected: false,
-                    referenceImageCount: 0  // 修正指示では参照画像なし
-                });
-
-                // TODO: Gemini API実装時
-                // const response = await fetch('/functions/v1/generate-image', {
-                //     method: 'POST',
-                //     body: JSON.stringify({ prompt: prompt })
-                // });
-
-                document.getElementById('edit-instruction').value = '';
-                updateRightPanel();
-                alert(`画像を生成しました（モック）\n\nプロンプト: ${prompt}`);
             }
         }
 
