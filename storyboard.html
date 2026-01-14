@@ -1105,8 +1105,8 @@
         // Enterキーでプロンプト送信
         function handlePromptKeydown(event) {
             // Shift+Enter: 改行（デフォルト動作）
-            // Enter: 送信
-            if (event.key === 'Enter' && !event.shiftKey) {
+            // Enter: 送信（ただしIME変換中は除外）
+            if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
                 event.preventDefault();
                 sendPrompt();
             }
