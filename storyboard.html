@@ -1187,15 +1187,20 @@
                     throw uploadError;
                 }
 
-                // Storage URLを取得
-                const { data: urlData } = supabaseClient.storage
+                // Signed URLを取得（有効期限1年）
+                const { data: urlData, error: signError } = await supabaseClient.storage
                     .from('images')
-                    .getPublicUrl(filePath);
+                    .createSignedUrl(filePath, 31536000); // 1年間有効（秒単位）
 
-                const generatedImageUrl = urlData.publicUrl;
+                if (signError) {
+                    console.error('Signed URL生成エラー:', signError);
+                    throw signError;
+                }
+
+                const generatedImageUrl = urlData.signedUrl;
                 console.log('=== 画像生成完了 ===');
                 console.log('Storage パス:', filePath);
-                console.log('画像URL:', generatedImageUrl);
+                console.log('画像URL（Signed）:', generatedImageUrl);
                 console.log('参照画像:', referenceImageUrls);
 
                 // imagesテーブルに保存
@@ -1504,18 +1509,26 @@
                         continue;
                     }
 
-                    // Storage URLを取得
-                    const { data: urlData } = supabaseClient.storage
+                    // Signed URLを取得（有効期限1年）
+                    const { data: urlData, error: signError } = await supabaseClient.storage
                         .from('references')
-                        .getPublicUrl(filePath);
+                        .createSignedUrl(filePath, 31536000); // 1年間有効
+
+                    if (signError) {
+                        console.error('Signed URL生成エラー:', signError);
+                        alert(`${file.name}のURL生成に失敗しました`);
+                        referenceImages.splice(tempIndex, 1);
+                        updateReferenceImagesPreview();
+                        continue;
+                    }
 
                     // アップロード完了状態に更新
-                    referenceImages[tempIndex].storageUrl = urlData.publicUrl;
+                    referenceImages[tempIndex].storageUrl = urlData.signedUrl;
                     referenceImages[tempIndex].storagePath = filePath;
                     referenceImages[tempIndex].uploading = false;
                     updateReferenceImagesPreview();
 
-                    console.log('画像アップロード成功:', fileName, urlData.publicUrl);
+                    console.log('画像アップロード成功:', fileName, urlData.signedUrl);
                 } catch (error) {
                     console.error('画像処理エラー:', error);
                     alert(`${file.name}の処理中にエラーが発生しました`);
