@@ -211,15 +211,17 @@
                 </div>
 
                 <!-- チャットコンテナ -->
-                <div id="chat-container" class="hidden h-full flex flex-col px-6 pb-6">
+                <div id="chat-container" class="hidden h-full flex flex-col">
 
                     <!-- チャット履歴エリア（スクロール可能） -->
-                    <div id="image-history-list" class="flex-1 space-y-4 overflow-y-auto custom-scrollbar bg-gray-50 rounded-lg p-4 mb-4 min-h-0">
-                        <p class="text-sm text-gray-500 text-center">プロンプトを入力して画像を生成してください</p>
+                    <div class="flex-1 overflow-hidden px-6 pt-6">
+                        <div id="image-history-list" class="h-full space-y-4 overflow-y-auto custom-scrollbar bg-gray-50 rounded-lg p-4">
+                            <p class="text-sm text-gray-500 text-center">プロンプトを入力して画像を生成してください</p>
+                        </div>
                     </div>
 
                     <!-- 下部固定入力エリア -->
-                    <div class="flex-shrink-0 border-t border-gray-200 bg-white pt-4">
+                    <div class="flex-shrink-0 border-t border-gray-200 bg-white px-6 pb-6 pt-4">
 
                         <!-- 参照画像プレビュー -->
                         <div id="reference-images-preview" class="flex flex-wrap gap-2 mb-3 max-w-[324px]">
