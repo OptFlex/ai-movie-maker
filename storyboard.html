@@ -1313,25 +1313,32 @@
                     <div class="flex gap-4">
                         <!-- 左カラム: 画像エリア -->
                         <div class="w-96 flex-shrink-0">
-                            <div class="rounded-lg overflow-hidden border-2 ${scene.images.some(img => img.selected) ? 'border-green-500' : 'border-gray-300'}">
-                                <div class="aspect-video bg-gradient-to-br ${scene.images.some(img => img.selected) ? 'from-gray-700 to-gray-900' : 'from-gray-200 to-gray-300'} flex items-center justify-center">
-                                    ${scene.images.some(img => img.selected) ? `
-                                        <div class="text-center text-white">
-                                            <svg class="w-12 h-12 mx-auto mb-1 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                            </svg>
-                                            <p class="text-xs font-semibold">採用済み</p>
+                            ${(() => {
+                                const selectedImage = scene.images.find(img => img.is_selected);
+                                if (selectedImage) {
+                                    return `
+                                        <div class="rounded-lg overflow-hidden border-2 border-green-500 relative">
+                                            <img src="${selectedImage.image_url}" alt="採用画像" class="w-full aspect-video object-cover">
+                                            <div class="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-bold shadow-lg">
+                                                ✓ 採用済み
+                                            </div>
                                         </div>
-                                    ` : `
-                                        <div class="text-center text-gray-500">
-                                            <svg class="w-12 h-12 mx-auto mb-1 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                            </svg>
-                                            <p class="text-xs font-semibold">未設定</p>
+                                    `;
+                                } else {
+                                    return `
+                                        <div class="rounded-lg overflow-hidden border-2 border-gray-300">
+                                            <div class="aspect-video bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                                                <div class="text-center text-gray-500">
+                                                    <svg class="w-12 h-12 mx-auto mb-1 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                    </svg>
+                                                    <p class="text-xs font-semibold">未設定</p>
+                                                </div>
+                                            </div>
                                         </div>
-                                    `}
-                                </div>
-                            </div>
+                                    `;
+                                }
+                            })()}
                         </div>
 
                         <!-- 右カラム: セリフリスト -->
