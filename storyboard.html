@@ -1158,6 +1158,7 @@
                 const edgeFunctionUrl = `${SUPABASE_URL}/functions/v1/generate-image`;
 
                 console.log('Edge Function呼び出し開始:', prompt);
+                console.log('前回画像:', previousImage ? previousImage.image_url : 'なし');
 
                 const response = await fetch(edgeFunctionUrl, {
                     method: 'POST',
@@ -1165,7 +1166,10 @@
                         'Content-Type': 'application/json',
                         'apikey': SUPABASE_ANON_KEY
                     },
-                    body: JSON.stringify({ prompt })
+                    body: JSON.stringify({
+                        prompt,
+                        previousImageUrl: previousImage ? previousImage.image_url : null
+                    })
                 });
 
                 if (!response.ok) {

@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
 
   try {
     // リクエストボディから必要な情報を取得
-    const { prompt } = await req.json()
+    const { prompt, previousImageUrl } = await req.json()
 
     if (!prompt) {
       return new Response(
@@ -44,6 +44,43 @@ Deno.serve(async (req) => {
     }
 
     console.log('Gemini API呼び出し開始:', prompt.substring(0, 50))
+    console.log('前回画像URL:', previousImageUrl || 'なし')
+
+    // 前回画像がある場合、画像をダウンロードしてbase64に変換
+    let previousImageBase64: string | null = null
+    if (previousImageUrl) {
+      try {
+        console.log('前回画像をダウンロード中...')
+        const imageResponse = await fetch(previousImageUrl)
+        if (imageResponse.ok) {
+          const imageBuffer = await imageResponse.arrayBuffer()
+          const base64 = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)))
+          previousImageBase64 = base64
+          console.log('前回画像のダウンロード成功')
+        } else {
+          console.warn('前回画像のダウンロード失敗:', imageResponse.status)
+        }
+      } catch (error) {
+        console.warn('前回画像の取得エラー:', error)
+        // エラーでも処理は継続（前回画像なしで生成）
+      }
+    }
+
+    // Gemini APIリクエストのparts配列を構築
+    const parts: Array<{ text?: string; inlineData?: { mimeType: string; data: string } }> = []
+
+    // 前回画像がある場合は先に追加
+    if (previousImageBase64) {
+      parts.push({
+        inlineData: {
+          mimeType: 'image/png',
+          data: previousImageBase64
+        }
+      })
+    }
+
+    // プロンプトを追加
+    parts.push({ text: prompt })
 
     // Gemini API呼び出し
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent?key=${GEMINI_API_KEY}`
@@ -55,7 +92,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         contents: [{
-          parts: [{ text: prompt }]
+          parts: parts
         }],
         generationConfig: {
           temperature: 1.0,

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>画像生成フロー図解</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 40px;
+        }
+        .flow-container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .step {
+            margin-bottom: 40px;
+            border-left: 4px solid #3b82f6;
+            padding-left: 20px;
+        }
+        .step-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #3b82f6;
+            margin-bottom: 15px;
+        }
+        .action-box {
+            background: #f0f9ff;
+            border: 2px solid #3b82f6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        .action-title {
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .action-content {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .item {
+            background: white;
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: 2px solid #bfdbfe;
+            font-size: 14px;
+        }
+        .item.reference {
+            background: #fef3c7;
+            border-color: #fbbf24;
+        }
+        .item.prompt {
+            background: #dbeafe;
+            border-color: #60a5fa;
+        }
+        .item.generated {
+            background: #d1fae5;
+            border-color: #34d399;
+        }
+        .arrow {
+            font-size: 24px;
+            color: #666;
+        }
+        .api-box {
+            background: #f0fdf4;
+            border: 2px solid #22c55e;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        .db-box {
+            background: #fef2f2;
+            border: 2px solid #ef4444;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .label {
+            display: inline-block;
+            background: #374151;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .label.user { background: #3b82f6; }
+        .label.api { background: #22c55e; }
+        .label.db { background: #ef4444; }
+        .note {
+            background: #fff7ed;
+            border-left: 4px solid #fb923c;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+        .note-title {
+            font-weight: bold;
+            color: #ea580c;
+            margin-bottom: 8px;
+        }
+        code {
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <h1>📷 画像生成フロー図解</h1>
+
+    <div class="flow-container">
+        <div class="step">
+            <div class="step-title">🎬 シーン作成</div>
+            <div class="action-box">
+                <div class="action-title">ユーザー操作</div>
+                <div class="action-content">
+                    <div class="item">「+ シーン追加」ボタンをクリック</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-title">1️⃣ 初回生成</div>
+
+            <div class="action-box">
+                <span class="label user">ユーザー操作</span>
+                <div class="action-content">
+                    <div class="item reference">📎 参照画像をアップロード<br><small>例: 猫の写真</small></div>
+                    <div class="arrow">➕</div>
+                    <div class="item prompt">💬 プロンプト入力<br><small>「この猫をアニメ風にして」</small></div>
+                    <div class="arrow">→</div>
+                    <div class="item">🚀 送信ボタン</div>
+                </div>
+            </div>
+
+            <div class="api-box">
+                <span class="label api">Gemini APIに送信</span>
+                <div class="action-content">
+                    <div class="item reference">📎 参照画像（猫の写真）</div>
+                    <div class="arrow">➕</div>
+                    <div class="item prompt">💬 プロンプト<br><small>「この猫をアニメ風にして」</small></div>
+                </div>
+            </div>
+
+            <div class="db-box">
+                <span class="label db">DBに保存（images テーブル）</span>
+                <div style="font-family: monospace; font-size: 13px; line-height: 1.8;">
+                    {<br>
+                    &nbsp;&nbsp;id: <code>"aaa-111"</code>,<br>
+                    &nbsp;&nbsp;image_url: <code>"画像A.png"</code>,<br>
+                    &nbsp;&nbsp;prompt: <code>"この猫をアニメ風にして"</code>,<br>
+                    &nbsp;&nbsp;reference_images: <code>["猫の写真.jpg"]</code>, ← ユーザーアップロード参照画像<br>
+                    &nbsp;&nbsp;parent_image_id: <code>null</code> ← 初回なので親なし<br>
+                    }
+                </div>
+            </div>
+
+            <div class="action-box" style="border-color: #22c55e; background: #f0fdf4;">
+                <div class="action-content">
+                    <div class="item generated">✅ 画像A（アニメ風の猫）が生成される</div>
+                </div>
+            </div>
+
+            <div class="note">
+                <div class="note-title">📌 重要</div>
+                送信後、📎 参照画像エリアは自動的にクリアされる
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-title">2️⃣ 修正指示（1回目）</div>
+
+            <div class="action-box">
+                <span class="label user">ユーザー操作</span>
+                <div class="action-content">
+                    <div class="item prompt">💬 プロンプト入力<br><small>「もっと明るくして」</small></div>
+                    <div class="arrow">→</div>
+                    <div class="item">🚀 送信ボタン</div>
+                </div>
+                <div class="note" style="margin-top: 15px; background: #f0f9ff; border-color: #3b82f6;">
+                    <div style="color: #1e40af; font-weight: bold;">💡 ユーザーからは見えない処理</div>
+                    システムが自動的に「画像A」を取得して、Gemini APIに送る
+                </div>
+            </div>
+
+            <div class="api-box">
+                <span class="label api">Gemini APIに送信</span>
+                <div class="action-content">
+                    <div class="item generated">🖼️ 画像A（前回生成画像）</div>
+                    <div class="arrow">➕</div>
+                    <div class="item prompt">💬 プロンプト<br><small>「もっと明るくして」</small></div>
+                </div>
+                <div class="note" style="margin-top: 15px;">
+                    <div class="note-title">🔍 仕組み</div>
+                    <code>previousImage = scene.images[scene.images.length - 1]</code><br>
+                    で画像Aを取得し、<code>previousImage.image_url</code> をAPIに送信
+                </div>
+            </div>
+
+            <div class="db-box">
+                <span class="label db">DBに保存（images テーブル）</span>
+                <div style="font-family: monospace; font-size: 13px; line-height: 1.8;">
+                    {<br>
+                    &nbsp;&nbsp;id: <code>"bbb-222"</code>,<br>
+                    &nbsp;&nbsp;image_url: <code>"画像B.png"</code>,<br>
+                    &nbsp;&nbsp;prompt: <code>"もっと明るくして"</code>,<br>
+                    &nbsp;&nbsp;reference_images: <code>[]</code>, ← 空（ユーザーアップロードなし）<br>
+                    &nbsp;&nbsp;parent_image_id: <code>"aaa-111"</code> ← 画像AのID<br>
+                    }
+                </div>
+            </div>
+
+            <div class="action-box" style="border-color: #22c55e; background: #f0fdf4;">
+                <div class="action-content">
+                    <div class="item generated">✅ 画像B（明るいアニメ風の猫）が生成される</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-title">3️⃣ 修正指示（2回目）</div>
+
+            <div class="action-box">
+                <span class="label user">ユーザー操作</span>
+                <div class="action-content">
+                    <div class="item prompt">💬 プロンプト入力<br><small>「笑顔にして」</small></div>
+                    <div class="arrow">→</div>
+                    <div class="item">🚀 送信ボタン</div>
+                </div>
+            </div>
+
+            <div class="api-box">
+                <span class="label api">Gemini APIに送信</span>
+                <div class="action-content">
+                    <div class="item generated">🖼️ 画像B（前回生成画像）← 自動取得</div>
+                    <div class="arrow">➕</div>
+                    <div class="item prompt">💬 プロンプト<br><small>「笑顔にして」</small></div>
+                </div>
+            </div>
+
+            <div class="db-box">
+                <span class="label db">DBに保存（images テーブル）</span>
+                <div style="font-family: monospace; font-size: 13px; line-height: 1.8;">
+                    {<br>
+                    &nbsp;&nbsp;id: <code>"ccc-333"</code>,<br>
+                    &nbsp;&nbsp;image_url: <code>"画像C.png"</code>,<br>
+                    &nbsp;&nbsp;prompt: <code>"笑顔にして"</code>,<br>
+                    &nbsp;&nbsp;reference_images: <code>[]</code>,<br>
+                    &nbsp;&nbsp;parent_image_id: <code>"bbb-222"</code> ← 画像BのID<br>
+                    }
+                </div>
+            </div>
+
+            <div class="action-box" style="border-color: #22c55e; background: #f0fdf4;">
+                <div class="action-content">
+                    <div class="item generated">✅ 画像C（明るく笑顔のアニメ風の猫）が生成される</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flow-container" style="background: #fffbeb; border: 3px solid #f59e0b;">
+        <h2 style="color: #d97706; margin-top: 0;">📋 まとめ</h2>
+
+        <h3 style="color: #92400e;">🔹 「Gemini APIに毎回送る」の意味</h3>
+        <ul style="line-height: 2;">
+            <li><strong>1回目:</strong> 参照画像📎 + プロンプト を Gemini に送信</li>
+            <li><strong>2回目:</strong> 画像A（前回生成） + プロンプト を Gemini に送信</li>
+            <li><strong>3回目:</strong> 画像B（前回生成） + プロンプト を Gemini に送信</li>
+        </ul>
+        <p style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #f59e0b;">
+            <strong>→ 毎回、直前の画像を修正する指示として送る</strong><br>
+            ユーザーは意識しないが、システムが自動的に前回画像を取得してAPIに含める
+        </p>
+
+        <h3 style="color: #92400e; margin-top: 30px;">🔹 DBへの保存</h3>
+        <ul style="line-height: 2;">
+            <li><code>reference_images</code>: ユーザーが📎でアップロードした参照画像のみ保存</li>
+            <li><code>parent_image_id</code>: 親子関係を記録（どの画像から派生したか）</li>
+            <li>前回生成画像は <code>reference_images</code> には入らない（重複保存しない）</li>
+        </ul>
+
+        <h3 style="color: #92400e; margin-top: 30px;">🔹 新しく生成し直したい場合</h3>
+        <p style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #f59e0b;">
+            <strong>→ 新しいシーンを作成する</strong><br>
+            そうすれば、前回画像がないので、完全に新規生成になる
+        </p>
+    </div>
+</body>
+</html>
