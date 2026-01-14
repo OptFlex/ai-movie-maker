@@ -194,102 +194,90 @@
                 </div>
 
                 <!-- 画像生成タブ -->
-                <div id="tab-image-content">
+                <div id="tab-image-content" class="flex flex-col h-full">
 
                 <!-- 未選択時のメッセージ -->
-                <div id="no-scene-selected" class="text-center py-12">
-                    <svg class="w-20 h-20 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path>
-                    </svg>
-                    <h3 class="text-xl font-semibold text-gray-700 mb-2">シーンを選択してください</h3>
-                    <p class="text-sm text-gray-500">左のシーン一覧からシーンを選択すると、<br>画像生成と履歴が表示されます</p>
+                <div id="no-scene-selected" class="flex-1 flex items-center justify-center">
+                    <div class="text-center">
+                        <svg class="w-20 h-20 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path>
+                        </svg>
+                        <h3 class="text-xl font-semibold text-gray-700 mb-2">シーンを選択してください</h3>
+                        <p class="text-sm text-gray-500">左のシーン一覧からシーンを選択すると、<br>画像生成チャットが表示されます</p>
+                    </div>
                 </div>
 
-                <!-- 画像生成フォーム -->
-                <div id="image-generation-form" class="mb-8 hidden">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">新規画像生成</h3>
+                <!-- チャットコンテナ -->
+                <div id="chat-container" class="hidden flex-1 flex flex-col">
 
-                    <!-- 参照画像アップロード -->
-                    <div class="mb-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <label class="block text-sm font-semibold text-gray-700">参照画像（最大14枚）</label>
-                            <span id="reference-image-count" class="text-xs text-gray-500">0/14</span>
-                        </div>
+                    <!-- チャット履歴エリア（スクロール可能） -->
+                    <div id="image-history-list" class="flex-1 space-y-4 overflow-y-auto custom-scrollbar bg-gray-50 rounded-lg p-4 mb-4">
+                        <p class="text-sm text-gray-500 text-center">プロンプトを入力して画像を生成してください</p>
+                    </div>
 
-                        <!-- アップロードボタン -->
-                        <label class="block w-full cursor-pointer">
-                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 hover:bg-blue-50 transition text-center">
-                                <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                </svg>
-                                <p class="text-sm text-gray-600">クリックして画像を選択</p>
-                                <p class="text-xs text-gray-500 mt-1">複数選択可能</p>
-                            </div>
-                            <input
-                                type="file"
-                                id="reference-images-input"
-                                accept="image/*"
-                                multiple
-                                class="hidden"
-                                onchange="handleReferenceImagesUpload(event)"
-                            />
-                        </label>
+                    <!-- 下部固定入力エリア -->
+                    <div class="border-t border-gray-200 bg-white pt-4">
 
-                        <!-- 画像プレビューグリッド -->
-                        <div id="reference-images-preview" class="flex flex-wrap gap-2 mt-3 max-w-[324px]">
+                        <!-- 参照画像プレビュー -->
+                        <div id="reference-images-preview" class="flex flex-wrap gap-2 mb-3 max-w-[324px]">
                             <!-- JavaScriptで動的に生成 -->
                         </div>
-                    </div>
 
-                    <div class="mb-4">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">プロンプト</label>
-                        <textarea
-                            id="image-prompt"
-                            class="w-full h-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
-                            placeholder="画像生成のプロンプトを入力..."
-                        ></textarea>
-                    </div>
+                        <!-- 入力欄 -->
+                        <div class="flex gap-2 items-end">
+                            <!-- 参照画像アップロードボタン -->
+                            <label class="cursor-pointer flex-shrink-0">
+                                <div class="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition" title="参照画像を添付">
+                                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                                    </svg>
+                                </div>
+                                <input
+                                    type="file"
+                                    id="reference-images-input"
+                                    accept="image/*"
+                                    multiple
+                                    class="hidden"
+                                    onchange="handleReferenceImagesUpload(event)"
+                                />
+                            </label>
 
-                    <button id="generate-image-btn" onclick="generateImage()" class="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 transition">
-                        画像を生成
-                    </button>
-
-                    <!-- 生成中ステータス -->
-                    <div id="generation-status" class="mt-4 hidden">
-                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center gap-3">
-                            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                            <!-- プロンプト入力 -->
                             <div class="flex-1">
-                                <p class="text-sm font-semibold text-blue-900">画像を生成中...</p>
-                                <p class="text-xs text-blue-600">通常15〜30秒かかります</p>
+                                <textarea
+                                    id="chat-prompt"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                                    placeholder="画像生成のプロンプトを入力..."
+                                    rows="1"
+                                    onkeydown="handlePromptKeydown(event)"
+                                ></textarea>
+                            </div>
+
+                            <!-- 送信ボタン -->
+                            <button
+                                id="send-prompt-btn"
+                                onclick="sendPrompt()"
+                                class="flex-shrink-0 w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition flex items-center justify-center"
+                                title="送信"
+                            >
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- 生成中ステータス -->
+                        <div id="generation-status" class="mt-3 hidden">
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center gap-3">
+                                <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-semibold text-blue-900">画像を生成中...</p>
+                                    <p class="text-xs text-blue-600">通常15〜30秒かかります</p>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- 画像履歴（トーク形式） -->
-                <div id="image-history" class="hidden">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">画像生成履歴</h3>
-                    <div id="image-history-list" class="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar bg-gray-50 rounded-lg p-4">
-                        <p class="text-sm text-gray-500 text-center">シーンを選択すると、画像履歴が表示されます</p>
-                    </div>
-                </div>
-
-                <!-- 修正指示 -->
-                <div id="image-edit-section" class="mt-8 hidden">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">修正指示</h3>
-
-                    <div class="mb-4">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">新しいプロンプトを入力してください</label>
-                        <textarea
-                            id="edit-instruction"
-                            class="w-full h-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 resize-none"
-                            placeholder="例: 背景を明るくして、人物をもっと大きく表示してください"
-                        ></textarea>
-                    </div>
-
-                    <button onclick="editImage()" class="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 transition">
-                        画像を生成
-                    </button>
                 </div>
                 </div>
                 <!-- 画像生成タブ終了 -->
@@ -952,16 +940,13 @@
         // 右パネルを更新（トーク形式）
         function updateRightPanel() {
             const noSceneSelected = document.getElementById('no-scene-selected');
-            const generationForm = document.getElementById('image-generation-form');
-            const historySection = document.getElementById('image-history');
+            const chatContainer = document.getElementById('chat-container');
             const historyList = document.getElementById('image-history-list');
-            const editSection = document.getElementById('image-edit-section');
 
             if (selectedSceneId) {
-                // シーン選択時: 案内メッセージを非表示、フォームと履歴を表示
+                // シーン選択時: チャットコンテナを表示
                 noSceneSelected.classList.add('hidden');
-                generationForm.classList.remove('hidden');
-                historySection.classList.remove('hidden');
+                chatContainer.classList.remove('hidden');
 
                 const scene = scenes.find(s => s.id === selectedSceneId);
 
@@ -1016,17 +1001,13 @@
                         </div>
                         `;
                     }).join('');
-                    editSection.classList.remove('hidden');
                 } else {
-                    historyList.innerHTML = '<p class="text-sm text-gray-500 text-center">まだ画像がありません</p>';
-                    editSection.classList.add('hidden');
+                    historyList.innerHTML = '<p class="text-sm text-gray-500 text-center">プロンプトを入力して画像を生成してください</p>';
                 }
             } else {
-                // 未選択時: 案内メッセージを表示、フォームと履歴を非表示
+                // 未選択時: 案内メッセージを表示、チャットコンテナを非表示
                 noSceneSelected.classList.remove('hidden');
-                generationForm.classList.add('hidden');
-                historySection.classList.add('hidden');
-                editSection.classList.add('hidden');
+                chatContainer.classList.add('hidden');
             }
         }
 

@@ -70,6 +70,7 @@ CREATE TABLE images (
   prompt TEXT NOT NULL,
   image_url TEXT NOT NULL,
   reference_images JSONB DEFAULT '[]'::jsonb,
+  parent_image_id UUID REFERENCES images(id) ON DELETE SET NULL,
   is_selected BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -78,6 +79,7 @@ CREATE TABLE images (
 CREATE INDEX idx_images_scene_id ON images(scene_id);
 CREATE INDEX idx_images_created_at ON images(created_at DESC);
 CREATE INDEX idx_images_is_selected ON images(scene_id, is_selected);
+CREATE INDEX idx_images_parent_id ON images(parent_image_id);
 
 -- ================================================
 -- 5. Videos テーブル（生成動画管理）
