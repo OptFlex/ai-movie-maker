@@ -182,8 +182,8 @@
 
         <!-- 右カラム: 画像生成・動画生成（タブ切り替え） -->
         <div class="flex-1 bg-white border-l border-gray-200 shadow-md flex flex-col">
-            <div class="p-6 flex-shrink-0">
-                <!-- タブボタン -->
+            <!-- タブボタン -->
+            <div class="px-6 pt-6 pb-0 flex-shrink-0">
                 <div class="flex gap-2 mb-6">
                     <button id="tab-image-btn" onclick="switchTab('image')" class="flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition bg-purple-600 text-white">
                         📷 画像生成
@@ -192,7 +192,10 @@
                         🎬 動画生成
                     </button>
                 </div>
+            </div>
 
+            <!-- タブコンテンツエリア -->
+            <div class="flex-1 min-h-0 px-6 pb-6">
                 <!-- 画像生成タブ -->
                 <div id="tab-image-content" class="flex-1 flex flex-col min-h-0">
 
@@ -283,7 +286,7 @@
                 <!-- 画像生成タブ終了 -->
 
                 <!-- 動画生成タブ -->
-                <div id="tab-video-content" class="hidden">
+                <div id="tab-video-content" class="hidden flex-1 flex flex-col min-h-0 overflow-y-auto">
 
                     <!-- 動画生成フォーム -->
                     <div id="video-generation-form">
