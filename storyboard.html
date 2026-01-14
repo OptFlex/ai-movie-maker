@@ -662,7 +662,7 @@
                 .from('images')
                 .select('*')
                 .eq('scene_id', sceneId)
-                .order('created_at', { ascending: false });
+                .order('created_at', { ascending: true }); // 古い順に並べる
 
             if (error) {
                 console.error('画像読み込みエラー:', error);
@@ -1008,6 +1008,11 @@
                 } else {
                     historyList.innerHTML = '<p class="text-sm text-gray-500 text-center">プロンプトを入力して画像を生成してください</p>';
                 }
+
+                // チャット履歴を一番下までスクロール
+                setTimeout(() => {
+                    historyList.scrollTop = historyList.scrollHeight;
+                }, 0);
             } else {
                 // 未選択時: 案内メッセージを表示、チャットコンテナを非表示
                 noSceneSelected.classList.remove('hidden');
@@ -1146,7 +1151,7 @@
                 // 前回の生成画像を取得（このシーンの最新画像）
                 const scene = scenes.find(s => s.id === selectedSceneId);
                 const previousImage = scene && scene.images.length > 0
-                    ? scene.images[0] // 最新の画像（unshiftで追加しているため先頭）
+                    ? scene.images[scene.images.length - 1] // 最新の画像（pushで追加しているため最後）
                     : null;
 
                 // Edge Function経由でGemini APIを呼び出し
@@ -1240,7 +1245,7 @@
 
                 // ローカルの配列に追加
                 if (scene) {
-                    scene.images.unshift(newImage); // 最新の画像を先頭に追加
+                    scene.images.push(newImage); // 最新の画像を最後に追加
                 }
 
                 // UIをリセット
