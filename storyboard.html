@@ -1171,6 +1171,9 @@
                 return;
             }
 
+            // 現在のシーンIDをローカル変数に保存（並行生成対応）
+            const sceneId = selectedSceneId;
+
             const prompt = document.getElementById('chat-prompt').value.trim();
             if (!prompt) {
                 alert('プロンプトを入力してください');
@@ -1193,7 +1196,7 @@
                     .map(img => img.storageUrl);
 
                 // 前回の生成画像を取得（このシーンの最新画像）
-                const scene = scenes.find(s => s.id === selectedSceneId);
+                const scene = scenes.find(s => s.id === sceneId);
                 const previousImage = scene && scene.images.length > 0
                     ? scene.images[scene.images.length - 1] // 最新の画像（pushで追加しているため最後）
                     : null;
@@ -1251,7 +1254,7 @@
 
                 // Storageにアップロード
                 const timestamp = Date.now();
-                const fileName = `${selectedSceneId}_${timestamp}.png`;
+                const fileName = `${sceneId}_${timestamp}.png`;
                 const filePath = `${projectId}/${fileName}`;
 
                 const { data: uploadData, error: uploadError } = await supabaseClient.storage
@@ -1282,7 +1285,7 @@
                 const parentImageId = previousImage ? previousImage.id : null;
 
                 const newImage = await createImage(
-                    selectedSceneId,
+                    sceneId,
                     prompt,
                     generatedImageUrl,
                     referenceImageUrls,
@@ -1296,14 +1299,17 @@
                     scene.images.push(newImage); // 最新の画像を最後に追加
                 }
 
-                // UIをリセット
-                document.getElementById('chat-prompt').value = '';
+                // UI更新（現在選択中のシーンの場合のみ）
+                if (sceneId === selectedSceneId) {
+                    // UIをリセット
+                    document.getElementById('chat-prompt').value = '';
 
-                // 参照画像をクリア（送信後は毎回クリア）
-                await clearReferenceImages();
+                    // 参照画像をクリア（送信後は毎回クリア）
+                    await clearReferenceImages();
 
-                // 右パネルを更新
-                updateRightPanel();
+                    // 右パネルを更新
+                    updateRightPanel();
+                }
 
                 showToast('画像を生成しました');
 
