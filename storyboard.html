@@ -292,55 +292,39 @@
                     <div id="video-generation-form">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">動画生成</h3>
 
-                        <!-- 2カラムレイアウト -->
-                        <div class="grid grid-cols-2 gap-6 mb-6">
-                            <!-- 左カラム: 選択中の画像 -->
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">選択中の画像</label>
-                                <div id="video-image-preview" class="aspect-video bg-gradient-to-br from-gray-700 to-gray-900 rounded-lg flex items-center justify-center overflow-hidden border-2 border-gray-300">
-                                    <div class="text-center text-white">
-                                        <svg class="w-12 h-12 mx-auto mb-2 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                        </svg>
-                                        <p class="text-xs font-semibold">採用済み画像</p>
-                                    </div>
-                                </div>
-                                <p class="text-xs text-gray-500 mt-2">💡 画像生成タブで採用した画像が自動的に選択されます</p>
-                            </div>
+                        <p class="text-sm text-gray-600 mb-6 bg-blue-50 border-l-4 border-blue-500 p-3 rounded">
+                            💡 画像生成タブで採用した画像から動画を生成します
+                        </p>
 
-                            <!-- 右カラム: プロンプト、モデル選択、生成ボタン -->
-                            <div class="flex flex-col">
-                                <!-- 動画プロンプト -->
-                                <div class="mb-4 flex-1">
-                                    <label class="block text-sm font-semibold text-gray-700 mb-2">動画生成プロンプト</label>
-                                    <textarea
-                                        id="video-prompt"
-                                        class="w-full h-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 resize-none"
-                                        placeholder="この画像から動画を生成します。カメラの動きやアクションを記述してください...
+                        <!-- 動画プロンプト -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">動画生成プロンプト</label>
+                            <textarea
+                                id="video-prompt"
+                                class="w-full h-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 resize-none"
+                                placeholder="この画像から動画を生成します。カメラの動きやアクションを記述してください...
 
 例:
 - カメラがゆっくりズームイン
 - 人物が笑顔で手を振る
 - 背景の風景が動く"
-                                    ></textarea>
-                                    <p class="text-xs text-gray-500 mt-1">💡 動きや変化を具体的に記述すると、より良い動画が生成されます</p>
-                                </div>
-
-                                <!-- モデル選択 -->
-                                <div class="mb-4">
-                                    <label class="block text-sm font-semibold text-gray-700 mb-2">モデル選択</label>
-                                    <select id="video-model" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
-                                        <option value="veo-3.1-fast-generate-preview" selected>Veo 3.1 Fast - 8秒動画: $1.20（推奨）</option>
-                                        <option value="veo-3.1-generate-preview">Veo 3.1 Standard - 8秒動画: $3.20（高品質）</option>
-                                    </select>
-                                </div>
-
-                                <!-- 生成ボタン -->
-                                <button onclick="generateVideo()" class="w-full py-3 bg-gradient-to-r from-green-600 to-blue-600 text-white font-bold rounded-lg hover:from-green-700 hover:to-blue-700 transition shadow-lg">
-                                    🎥 動画を生成（8秒・16:9）
-                                </button>
-                            </div>
+                            ></textarea>
+                            <p class="text-xs text-gray-500 mt-1">💡 動きや変化を具体的に記述すると、より良い動画が生成されます</p>
                         </div>
+
+                        <!-- モデル選択 -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">モデル選択</label>
+                            <select id="video-model" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                <option value="veo-3.1-fast-generate-preview" selected>Veo 3.1 Fast - 8秒動画: $1.20（推奨）</option>
+                                <option value="veo-3.1-generate-preview">Veo 3.1 Standard - 8秒動画: $3.20（高品質）</option>
+                            </select>
+                        </div>
+
+                        <!-- 生成ボタン -->
+                        <button onclick="generateVideo()" class="w-full py-3 bg-gradient-to-r from-green-600 to-blue-600 text-white font-bold rounded-lg hover:from-green-700 hover:to-blue-700 transition shadow-lg">
+                            🎥 動画を生成（8秒・16:9）
+                        </button>
 
                         <!-- 動画履歴 -->
                         <div id="video-history" class="mt-8">
