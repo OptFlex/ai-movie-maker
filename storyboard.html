@@ -712,6 +712,7 @@
                 throw error;
             }
 
+            console.log(`シーン ${sceneId} の動画データ:`, data);
             return data || [];
         }
 
@@ -737,6 +738,7 @@
                 throw error;
             }
 
+            console.log('動画DB保存成功:', data);
             return data;
         }
 
@@ -967,6 +969,9 @@
             // 参照画像をクリア（シーンごとに異なる参照画像を使用）
             clearReferenceImages();
 
+            // 動画プロンプトをクリア（シーンごとに異なるプロンプトを使用）
+            document.getElementById('video-prompt').value = '';
+
             // 選択状態を更新
             document.querySelectorAll('.scene-card').forEach(card => {
                 card.classList.remove('ring-2', 'ring-blue-500', 'bg-blue-50');
@@ -980,7 +985,7 @@
 
             // 動画生成タブも更新（現在動画タブが表示されている場合）
             if (currentTab === 'video') {
-                updateVideoImagePreview();
+                updateVideoHistoryList();
             }
         }
 
@@ -1548,13 +1553,19 @@
                 const scene = scenes.find(s => s.id === sceneId);
                 if (scene) {
                     scene.videos.push(newVideo);
+                    console.log(`シーン ${sceneId} のローカル動画配列に追加。現在の動画数: ${scene.videos.length}`);
+                } else {
+                    console.error(`シーン ${sceneId} がローカルのscenes配列に見つかりません`);
                 }
 
                 // UI更新（現在選択中のシーンの場合のみ）
                 if (sceneId === selectedSceneId) {
+                    console.log('現在選択中のシーンなのでUI更新します');
                     updateVideoHistoryList();
                     // プロンプトをクリア
                     document.getElementById('video-prompt').value = '';
+                } else {
+                    console.log(`シーン ${sceneId} の動画生成完了（別シーンを選択中のためUI更新なし）`);
                 }
 
                 showToast('動画を生成しました！');
@@ -1569,6 +1580,13 @@
         function updateVideoHistoryList() {
             const historyList = document.getElementById('video-history-list');
             const scene = scenes.find(s => s.id === selectedSceneId);
+
+            console.log('updateVideoHistoryList 呼び出し:', {
+                selectedSceneId,
+                scene: scene ? `ID: ${scene.id}` : 'シーンが見つかりません',
+                videosCount: scene ? scene.videos.length : 0,
+                videos: scene ? scene.videos : []
+            });
 
             if (!scene || scene.videos.length === 0) {
                 historyList.innerHTML = '<p class="text-sm text-gray-500">まだ動画が生成されていません</p>';
