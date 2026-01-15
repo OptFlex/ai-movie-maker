@@ -1344,7 +1344,10 @@
                 return;
             }
 
-            const scene = scenes.find(s => s.id === selectedSceneId);
+            // 現在のシーンIDをローカル変数に保存（並行生成対応）
+            const sceneId = selectedSceneId;
+
+            const scene = scenes.find(s => s.id === sceneId);
             if (!scene) {
                 alert('シーンが見つかりません');
                 return;
@@ -1369,7 +1372,7 @@
                 showToast('動画生成を開始しました（数分かかります）');
 
                 console.log('動画生成開始:', {
-                    sceneId: selectedSceneId,
+                    sceneId: sceneId,
                     baseImage: selectedImage.image_url,
                     prompt: prompt,
                     model: videoModel
@@ -1415,7 +1418,7 @@
 
                 if (data.name) {
                     // 操作の完了を待つ（ポーリング）
-                    await pollVideoStatus(data.name, selectedSceneId, selectedImage.id, prompt);
+                    await pollVideoStatus(data.name, sceneId, selectedImage.id, prompt);
                 } else {
                     throw new Error('操作名が取得できませんでした');
                 }
