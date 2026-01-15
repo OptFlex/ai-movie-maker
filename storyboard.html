@@ -479,15 +479,17 @@
                 throw error;
             }
 
-            // 各シーンのセリフと画像を読み込む
+            // 各シーンのセリフ、画像、動画を読み込む
             const scenesWithData = await Promise.all((data || []).map(async (scene) => {
                 const dialogues = await loadDialogues(scene.id);
                 const images = await loadImages(scene.id);
+                const videos = await loadVideos(scene.id);
                 return {
                     ...scene,
                     number: scene.scene_number,
                     dialogues: dialogues,
-                    images: images
+                    images: images,
+                    videos: videos
                 };
             }));
 
@@ -675,6 +677,51 @@
 
             if (error) {
                 console.error('画像作成エラー:', error);
+                throw error;
+            }
+
+            return data;
+        }
+
+        // ========================================
+        // 動画管理 - Supabase CRUD操作
+        // ========================================
+
+        // シーンの動画履歴を取得
+        async function loadVideos(sceneId) {
+            const { data, error } = await supabaseClient
+                .from('videos')
+                .select('*')
+                .eq('scene_id', sceneId)
+                .order('created_at', { ascending: true }); // 古い順
+
+            if (error) {
+                console.error('動画読み込みエラー:', error);
+                throw error;
+            }
+
+            return data || [];
+        }
+
+        // 動画を作成（データベースに保存）
+        async function createVideo(sceneId, baseImageId, prompt, videoUrl, duration = 8) {
+            const { data, error } = await supabaseClient
+                .from('videos')
+                .insert([
+                    {
+                        scene_id: sceneId,
+                        base_image_id: baseImageId,
+                        prompt: prompt,
+                        video_url: videoUrl,
+                        duration: duration,
+                        is_selected: false
+                    }
+                ])
+                .select()
+                .single();
+
+            if (error) {
+                console.error('動画作成エラー:', error);
                 throw error;
             }
 
@@ -1264,6 +1311,268 @@
             }
         }
 
+        // ========================================
+        // 動画生成機能
+        // ========================================
+
+        async function generateVideo() {
+            if (!selectedSceneId) {
+                alert('シーンを選択してください');
+                return;
+            }
+
+            const scene = scenes.find(s => s.id === selectedSceneId);
+            if (!scene) {
+                alert('シーンが見つかりません');
+                return;
+            }
+
+            // 採用画像を取得
+            const selectedImage = scene.images.find(img => img.is_selected);
+            if (!selectedImage) {
+                alert('画像生成タブで画像を採用してください');
+                return;
+            }
+
+            const prompt = document.getElementById('video-prompt').value.trim();
+            if (!prompt) {
+                alert('動画生成プロンプトを入力してください');
+                return;
+            }
+
+            const videoModel = document.getElementById('video-model').value;
+
+            try {
+                showToast('動画生成を開始しました（数分かかります）');
+
+                console.log('動画生成開始:', {
+                    sceneId: selectedSceneId,
+                    baseImage: selectedImage.image_url,
+                    prompt: prompt,
+                    model: videoModel
+                });
+
+                // 採用画像をStorage URLからfetchしてBase64に変換
+                const imageResponse = await fetch(selectedImage.image_url);
+                if (!imageResponse.ok) {
+                    throw new Error('採用画像の取得に失敗しました');
+                }
+
+                const imageBlob = await imageResponse.blob();
+                const imageBase64 = await blobToBase64(imageBlob);
+                const mimeType = imageBlob.type;
+
+                console.log('画像をBase64に変換しました:', mimeType);
+
+                // Edge Function経由でVeo APIを呼び出し
+                const edgeFunctionUrl = `${SUPABASE_URL}/functions/v1/generate-video`;
+
+                const response = await fetch(edgeFunctionUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_ANON_KEY
+                    },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        imageBase64: imageBase64,
+                        mimeType: mimeType,
+                        modelType: videoModel.includes('fast') ? 'fast' : 'standard'
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Edge Function エラー:', errorData);
+                    throw new Error(errorData.error || '動画生成に失敗しました');
+                }
+
+                const data = await response.json();
+                console.log('Edge Function レスポンス:', data);
+
+                if (data.name) {
+                    // 操作の完了を待つ（ポーリング）
+                    await pollVideoStatus(data.name, selectedImage.id, prompt);
+                } else {
+                    throw new Error('操作名が取得できませんでした');
+                }
+
+            } catch (error) {
+                console.error('動画生成エラー:', error);
+                alert(`動画の生成に失敗しました: ${error.message}`);
+            }
+        }
+
+        // BlobをBase64に変換
+        function blobToBase64(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        // 動画生成ステータスのポーリング
+        async function pollVideoStatus(operationName, baseImageId, prompt) {
+            const maxAttempts = 60; // 最大5分（5秒間隔×60回）
+            let attempts = 0;
+
+            const poll = async () => {
+                attempts++;
+                console.log(`動画生成ポーリング: ${attempts}/${maxAttempts}`);
+                showToast(`動画を生成中... (${attempts}/${maxAttempts})`);
+
+                try {
+                    const edgeFunctionUrl = `${SUPABASE_URL}/functions/v1/check-video-status`;
+
+                    const response = await fetch(edgeFunctionUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'apikey': SUPABASE_ANON_KEY
+                        },
+                        body: JSON.stringify({
+                            operationName: operationName
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'ステータス確認に失敗しました');
+                    }
+
+                    const data = await response.json();
+                    console.log('Operation Status:', data);
+
+                    if (data.done) {
+                        // 完了
+                        if (data.error) {
+                            throw new Error(JSON.stringify(data.error));
+                        } else if (data.videoBase64) {
+                            // 動画データを取得できた
+                            await saveVideoToStorage(data.videoBase64, baseImageId, prompt);
+                        } else {
+                            throw new Error('動画データが取得できませんでした');
+                        }
+                    } else {
+                        // まだ処理中 - 5秒後に再試行
+                        if (attempts < maxAttempts) {
+                            setTimeout(poll, 5000);
+                        } else {
+                            throw new Error('タイムアウト: 動画生成に時間がかかりすぎています');
+                        }
+                    }
+
+                } catch (error) {
+                    console.error('ポーリングエラー:', error);
+                    alert(`動画生成エラー: ${error.message}`);
+                }
+            };
+
+            poll();
+        }
+
+        // 動画をStorageに保存してDBに登録
+        async function saveVideoToStorage(videoBase64, baseImageId, prompt) {
+            try {
+                showToast('動画を保存中...');
+
+                // Base64をBlobに変換
+                const byteCharacters = atob(videoBase64);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: 'video/mp4' });
+
+                // Storageにアップロード
+                const timestamp = Date.now();
+                const fileName = `${selectedSceneId}_${timestamp}.mp4`;
+                const filePath = `${projectId}/videos/${fileName}`;
+
+                const { data: uploadData, error: uploadError } = await supabaseClient.storage
+                    .from('videos')
+                    .upload(filePath, blob, {
+                        cacheControl: '3600',
+                        upsert: false
+                    });
+
+                if (uploadError) {
+                    console.error('Storage アップロードエラー:', uploadError);
+                    throw uploadError;
+                }
+
+                // Public URLを取得
+                const { data: urlData } = supabaseClient.storage
+                    .from('videos')
+                    .getPublicUrl(filePath);
+
+                const videoUrl = urlData.publicUrl;
+                console.log('動画URL:', videoUrl);
+
+                // DBに保存
+                const newVideo = await createVideo(
+                    selectedSceneId,
+                    baseImageId,
+                    prompt,
+                    videoUrl,
+                    8 // 8秒動画
+                );
+
+                console.log('動画生成成功:', newVideo);
+
+                // ローカルの配列に追加
+                const scene = scenes.find(s => s.id === selectedSceneId);
+                if (scene) {
+                    scene.videos.push(newVideo);
+                }
+
+                // UI更新
+                updateVideoHistoryList();
+
+                showToast('動画を生成しました！');
+
+                // プロンプトをクリア
+                document.getElementById('video-prompt').value = '';
+
+            } catch (error) {
+                console.error('動画保存エラー:', error);
+                alert(`動画の保存に失敗しました: ${error.message}`);
+            }
+        }
+
+        // 動画履歴を更新
+        function updateVideoHistoryList() {
+            const historyList = document.getElementById('video-history-list');
+            const scene = scenes.find(s => s.id === selectedSceneId);
+
+            if (!scene || scene.videos.length === 0) {
+                historyList.innerHTML = '<p class="text-sm text-gray-500">まだ動画が生成されていません</p>';
+                return;
+            }
+
+            historyList.innerHTML = scene.videos.map((video, index) => `
+                <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-48">
+                            <video controls class="w-full rounded-lg">
+                                <source src="${video.video_url}" type="video/mp4">
+                            </video>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm text-gray-700 mb-2"><strong>プロンプト:</strong> ${video.prompt}</p>
+                            <p class="text-xs text-gray-500">${formatTimestamp(video.created_at)}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
         // シーンをレンダリング
         function renderScenes() {
             const list = document.getElementById('scene-list');
@@ -1635,107 +1944,11 @@
                 imageContent.classList.add('hidden');
                 videoContent.classList.remove('hidden');
 
-                // 動画生成タブに切り替えた時、選択中の画像を更新
-                updateVideoImagePreview();
+                // 動画生成タブに切り替えた時、動画履歴を更新
+                updateVideoHistoryList();
             }
         }
 
-        // ========================================
-        // 動画生成タブ: 選択中の画像プレビュー更新
-        // ========================================
-        function updateVideoImagePreview() {
-            if (!selectedSceneId) return;
-
-            const scene = scenes.find(s => s.id === selectedSceneId);
-            if (!scene) return;
-
-            // 採用されている画像を探す
-            const selectedImage = scene.images.find(img => img.selected);
-
-            const videoImagePreview = document.getElementById('video-image-preview');
-
-            if (selectedImage) {
-                // 画像が採用されている場合
-                videoImagePreview.innerHTML = `
-                    <div class="text-center text-white">
-                        <svg class="w-12 h-12 mx-auto mb-2 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
-                        <p class="text-xs font-semibold">✓ 採用済み画像</p>
-                        <p class="text-xs opacity-75 mt-1">${selectedImage.timestamp}</p>
-                    </div>
-                `;
-            } else {
-                // 画像がまだ採用されていない場合
-                videoImagePreview.innerHTML = `
-                    <div class="text-center text-white">
-                        <svg class="w-12 h-12 mx-auto mb-2 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
-                        <p class="text-xs font-semibold opacity-50">画像未採用</p>
-                        <p class="text-xs opacity-50 mt-1">画像生成タブで採用してください</p>
-                    </div>
-                `;
-            }
-        }
-
-        // ========================================
-        // 動画生成機能（モック）
-        // ========================================
-        function generateVideo() {
-            const prompt = document.getElementById('video-prompt').value;
-            const model = document.getElementById('video-model').value;
-
-            if (!prompt) {
-                alert('動画プロンプトを入力してください');
-                return;
-            }
-
-            if (!selectedSceneId) {
-                alert('シーンを選択してください');
-                return;
-            }
-
-            const scene = scenes.find(s => s.id === selectedSceneId);
-            if (!scene) return;
-
-            const selectedImage = scene.images.find(img => img.selected);
-            if (!selectedImage) {
-                alert('画像を採用してください（画像生成タブ）');
-                return;
-            }
-
-            // TODO: 実際のVeo 3.1 API呼び出し
-            alert(`動画生成を開始します（モック）\n\nシーン: #${scene.number}\nプロンプト: ${prompt}\nモデル: ${model}`);
-
-            // モックとして動画履歴に追加
-            const videoHistoryList = document.getElementById('video-history-list');
-            const now = new Date();
-            const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-
-            videoHistoryList.innerHTML = `
-                <div class="bg-white rounded-lg p-3 border border-green-200">
-                    <div class="aspect-video bg-gray-800 rounded-lg flex items-center justify-center text-white text-xs mb-2">
-                        <div class="text-center">
-                            <div class="text-2xl mb-1">▶️</div>
-                            <div>動画生成中...</div>
-                        </div>
-                    </div>
-                    <div class="text-xs text-gray-600 mb-2">
-                        <div class="font-semibold">プロンプト: ${prompt}</div>
-                        <div>${timestamp} | ${model === 'veo-3.1-fast-generate-preview' ? 'Veo 3.1 Fast' : 'Veo 3.1 Standard'} | 8秒</div>
-                    </div>
-                    <div class="flex gap-2">
-                        <button class="flex-1 px-3 py-2 bg-gray-100 text-gray-400 rounded text-xs cursor-not-allowed">
-                            ⬇️ 生成中...
-                        </button>
-                    </div>
-                </div>
-            ` + videoHistoryList.innerHTML;
-
-            // プロンプトをクリア
-            document.getElementById('video-prompt').value = '';
-        }
     </script>
 </body>
 </html>
