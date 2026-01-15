@@ -1392,7 +1392,7 @@
 
                 if (data.name) {
                     // 操作の完了を待つ（ポーリング）
-                    await pollVideoStatus(data.name, selectedImage.id, prompt);
+                    await pollVideoStatus(data.name, selectedSceneId, selectedImage.id, prompt);
                 } else {
                     throw new Error('操作名が取得できませんでした');
                 }
@@ -1417,7 +1417,7 @@
         }
 
         // 動画生成ステータスのポーリング
-        async function pollVideoStatus(operationName, baseImageId, prompt) {
+        async function pollVideoStatus(operationName, sceneId, baseImageId, prompt) {
             const maxAttempts = 60; // 最大5分（5秒間隔×60回）
             let attempts = 0;
 
@@ -1454,7 +1454,7 @@
                             throw new Error(JSON.stringify(data.error));
                         } else if (data.videoBase64) {
                             // 動画データを取得できた
-                            await saveVideoToStorage(data.videoBase64, baseImageId, prompt);
+                            await saveVideoToStorage(data.videoBase64, sceneId, baseImageId, prompt);
                         } else {
                             throw new Error('動画データが取得できませんでした');
                         }
@@ -1477,7 +1477,7 @@
         }
 
         // 動画をStorageに保存してDBに登録
-        async function saveVideoToStorage(videoBase64, baseImageId, prompt) {
+        async function saveVideoToStorage(videoBase64, sceneId, baseImageId, prompt) {
             try {
                 showToast('動画を保存中...');
 
@@ -1492,7 +1492,7 @@
 
                 // Storageにアップロード
                 const timestamp = Date.now();
-                const fileName = `${selectedSceneId}_${timestamp}.mp4`;
+                const fileName = `${sceneId}_${timestamp}.mp4`;
                 const filePath = `${projectId}/videos/${fileName}`;
 
                 const { data: uploadData, error: uploadError } = await supabaseClient.storage
@@ -1517,7 +1517,7 @@
 
                 // DBに保存
                 const newVideo = await createVideo(
-                    selectedSceneId,
+                    sceneId,
                     baseImageId,
                     prompt,
                     videoUrl,
@@ -1527,18 +1527,19 @@
                 console.log('動画生成成功:', newVideo);
 
                 // ローカルの配列に追加
-                const scene = scenes.find(s => s.id === selectedSceneId);
+                const scene = scenes.find(s => s.id === sceneId);
                 if (scene) {
                     scene.videos.push(newVideo);
                 }
 
-                // UI更新
-                updateVideoHistoryList();
+                // UI更新（現在選択中のシーンの場合のみ）
+                if (sceneId === selectedSceneId) {
+                    updateVideoHistoryList();
+                    // プロンプトをクリア
+                    document.getElementById('video-prompt').value = '';
+                }
 
                 showToast('動画を生成しました！');
-
-                // プロンプトをクリア
-                document.getElementById('video-prompt').value = '';
 
             } catch (error) {
                 console.error('動画保存エラー:', error);
