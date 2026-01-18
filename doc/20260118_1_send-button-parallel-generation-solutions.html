@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>送信ボタン並行生成対応 - 3つの解決策比較</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .problem {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .problem h2 {
+            color: #e74c3c;
+            margin-top: 0;
+        }
+        .timeline {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        .step {
+            background: #ecf0f1;
+            padding: 10px 15px;
+            border-radius: 5px;
+            flex: 1;
+            min-width: 150px;
+            text-align: center;
+            font-size: 13px;
+        }
+        .step.bad {
+            background: #ffebee;
+            border: 2px solid #e74c3c;
+        }
+        .arrow {
+            font-size: 20px;
+            color: #7f8c8d;
+        }
+        .solutions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .solution {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .solution h3 {
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #3498db;
+        }
+        .solution.recommended {
+            border: 3px solid #f39c12;
+            position: relative;
+        }
+        .solution.recommended::before {
+            content: "推奨";
+            position: absolute;
+            top: -15px;
+            right: 20px;
+            background: #f39c12;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        .keyword { color: #e74c3c; }
+        .function { color: #3498db; }
+        .string { color: #2ecc71; }
+        .comment { color: #95a5a6; font-style: italic; }
+        .pros-cons {
+            margin: 15px 0;
+        }
+        .pros-cons h4 {
+            margin: 10px 0 5px 0;
+            font-size: 14px;
+        }
+        .pros {
+            color: #27ae60;
+        }
+        .cons {
+            color: #e74c3c;
+        }
+        ul {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+        li {
+            margin: 5px 0;
+            font-size: 13px;
+        }
+        .comparison-table {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        th {
+            background: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+        tr:hover {
+            background: #f8f9fa;
+        }
+        .star {
+            color: #f39c12;
+        }
+        .diagram {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #3498db;
+        }
+        .flow {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .flow-step {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 3px solid #2ecc71;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <h1>送信ボタン並行生成対応 - 3つの解決策比較</h1>
+    <p class="subtitle">作成日: 2026-01-18</p>
+
+    <div class="problem">
+        <h2>🔴 現在の問題</h2>
+        <p><strong>送信ボタン（send-prompt-btn）がページ全体で1つしかなく、シーンをまたいで共有されている</strong></p>
+
+        <div class="timeline">
+            <div class="step">シーン1で<br>画像生成開始</div>
+            <div class="arrow">→</div>
+            <div class="step">ボタンdisabled<br>になる</div>
+            <div class="arrow">→</div>
+            <div class="step">シーン2に<br>切り替え</div>
+            <div class="arrow">→</div>
+            <div class="step bad">❌ シーン2でも<br>ボタンが押せない</div>
+            <div class="arrow">→</div>
+            <div class="step">シーン1の生成完了<br>でようやく押せる</div>
+        </div>
+
+        <div class="code-block">
+<span class="comment">// ページに1つしかない送信ボタン</span>
+<span class="keyword">const</span> sendBtn = document.<span class="function">getElementById</span>(<span class="string">'send-prompt-btn'</span>);
+
+<span class="comment">// シーン1で生成開始</span>
+sendBtn.disabled = <span class="keyword">true</span>; <span class="comment">// ← 全シーンで無効化される</span>
+
+<span class="comment">// シーン2に切り替えても、同じボタンなのでdisabledのまま</span>
+        </div>
+    </div>
+
+    <div class="solutions">
+        <!-- 解決策1 -->
+        <div class="solution">
+            <h3>解決策1: シーンごとにフラグ管理</h3>
+
+            <div class="diagram">
+                <strong>データ構造:</strong>
+                <div class="code-block">
+scene.isGeneratingImage = <span class="keyword">false</span>;
+                </div>
+            </div>
+
+            <div class="code-block">
+<span class="comment">// 開始時</span>
+scene.isGeneratingImage = <span class="keyword">true</span>;
+<span class="function">updateSendButtonState</span>();
+
+<span class="comment">// 完了時</span>
+scene.isGeneratingImage = <span class="keyword">false</span>;
+<span class="function">updateSendButtonState</span>();
+
+<span class="comment">// 新しい関数</span>
+<span class="keyword">function</span> <span class="function">updateSendButtonState</span>() {
+    <span class="keyword">const</span> scene = scenes.<span class="function">find</span>(s => s.id === selectedSceneId);
+    <span class="keyword">const</span> sendBtn = document.<span class="function">getElementById</span>(<span class="string">'send-prompt-btn'</span>);
+
+    <span class="keyword">if</span> (scene && scene.isGeneratingImage) {
+        sendBtn.disabled = <span class="keyword">true</span>;
+    } <span class="keyword">else</span> {
+        sendBtn.disabled = <span class="keyword">false</span>;
+    }
+}
+            </div>
+
+            <div class="pros-cons">
+                <h4 class="pros">✅ メリット</h4>
+                <ul>
+                    <li>シーンごとの状態が明確</li>
+                    <li>シーン切り替え時に適切なボタン状態を復元</li>
+                    <li>既存HTML構造を変更不要</li>
+                </ul>
+
+                <h4 class="cons">❌ デメリット</h4>
+                <ul>
+                    <li>シーン切り替えのたびに更新処理が必要</li>
+                    <li>複数箇所でupdateSendButtonState()を呼ぶ必要</li>
+                </ul>
+            </div>
+
+            <p><strong>実装量:</strong> 中程度（関数1つ追加、5-6箇所修正）</p>
+        </div>
+
+        <!-- 解決策2 -->
+        <div class="solution recommended">
+            <h3>解決策2: 生成中シーンIDのSet管理</h3>
+
+            <div class="diagram">
+                <strong>データ構造:</strong>
+                <div class="code-block">
+<span class="comment">// グローバル変数</span>
+<span class="keyword">const</span> generatingScenes = <span class="keyword">new</span> <span class="function">Set</span>();
+<span class="comment">// 例: Set { "scene-1-id", "scene-3-id" }</span>
+                </div>
+            </div>
+
+            <div class="code-block">
+<span class="comment">// 開始時</span>
+generatingScenes.<span class="function">add</span>(sceneId);
+<span class="function">updateSendButtonState</span>();
+
+<span class="comment">// 完了時</span>
+generatingScenes.<span class="function">delete</span>(sceneId);
+<span class="function">updateSendButtonState</span>();
+
+<span class="comment">// 新しい関数</span>
+<span class="keyword">function</span> <span class="function">updateSendButtonState</span>() {
+    <span class="keyword">const</span> sendBtn = document.<span class="function">getElementById</span>(<span class="string">'send-prompt-btn'</span>);
+    <span class="keyword">const</span> isCurrentSceneGenerating =
+        generatingScenes.<span class="function">has</span>(selectedSceneId);
+
+    sendBtn.disabled = isCurrentSceneGenerating;
+}
+            </div>
+
+            <div class="pros-cons">
+                <h4 class="pros">✅ メリット</h4>
+                <ul>
+                    <li>シンプルで理解しやすい</li>
+                    <li>シーンオブジェクトを汚さない</li>
+                    <li>デバッグしやすい（console.log(generatingScenes)で一目瞭然）</li>
+                    <li>ボタン状態の視覚的フィードバックあり</li>
+                </ul>
+
+                <h4 class="cons">❌ デメリット</h4>
+                <ul>
+                    <li>グローバル変数が1つ増える</li>
+                    <li>シーンの状態がシーンオブジェクト外にある</li>
+                </ul>
+            </div>
+
+            <p><strong>実装量:</strong> 小〜中程度（グローバル変数1つ、関数1つ追加、5-6箇所修正）</p>
+        </div>
+
+        <!-- 解決策3 -->
+        <div class="solution">
+            <h3>解決策3: ガードのみ（最もシンプル）</h3>
+
+            <div class="diagram">
+                <strong>コンセプト:</strong> ボタンは無効化せず、関数の先頭で二重実行を防ぐ
+            </div>
+
+            <div class="code-block">
+<span class="keyword">const</span> generatingScenes = <span class="keyword">new</span> <span class="function">Set</span>();
+
+<span class="keyword">async function</span> <span class="function">generateImage</span>() {
+    <span class="keyword">const</span> sceneId = selectedSceneId;
+
+    <span class="comment">// 既に生成中の場合は何もしない</span>
+    <span class="keyword">if</span> (generatingScenes.<span class="function">has</span>(sceneId)) {
+        <span class="function">showToast</span>(<span class="string">'このシーンは既に画像生成中です'</span>);
+        <span class="keyword">return</span>;
+    }
+
+    <span class="keyword">try</span> {
+        generatingScenes.<span class="function">add</span>(sceneId);
+
+        <span class="comment">// ローディング表示（ボタンは無効化しない）</span>
+        <span class="keyword">const</span> statusDiv = document.<span class="function">getElementById</span>(<span class="string">'generation-status'</span>);
+        statusDiv.classList.<span class="function">remove</span>(<span class="string">'hidden'</span>);
+
+        <span class="comment">// ... 既存の処理 ...</span>
+
+    } <span class="keyword">finally</span> {
+        generatingScenes.<span class="function">delete</span>(sceneId);
+        statusDiv.classList.<span class="function">add</span>(<span class="string">'hidden'</span>);
+    }
+}
+            </div>
+
+            <div class="pros-cons">
+                <h4 class="pros">✅ メリット</h4>
+                <ul>
+                    <li><strong>最もシンプル</strong>：ボタン状態の管理が不要</li>
+                    <li>他のシーンのボタンは常に押せる（UX向上）</li>
+                    <li>実装が簡単</li>
+                </ul>
+
+                <h4 class="cons">❌ デメリット</h4>
+                <ul>
+                    <li>ボタンが無効化されないので、ユーザーが連打できる</li>
+                    <li>「生成中」の視覚的フィードバックが弱い</li>
+                </ul>
+            </div>
+
+            <p><strong>実装量:</strong> 小（グローバル変数1つ、3-4箇所修正）</p>
+        </div>
+    </div>
+
+    <div class="comparison-table">
+        <h2>比較表</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>評価項目</th>
+                    <th>解決策1<br>シーンフラグ</th>
+                    <th>解決策2<br>Set管理 ⭐推奨</th>
+                    <th>解決策3<br>ガードのみ</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>実装の簡単さ</strong></td>
+                    <td><span class="star">★★</span>☆</td>
+                    <td><span class="star">★★★</span></td>
+                    <td><span class="star">★★★★</span></td>
+                </tr>
+                <tr>
+                    <td><strong>コードの明瞭性</strong></td>
+                    <td><span class="star">★★★</span></td>
+                    <td><span class="star">★★★★</span></td>
+                    <td><span class="star">★★★★</span></td>
+                </tr>
+                <tr>
+                    <td><strong>UX（他シーンで操作可）</strong></td>
+                    <td><span class="star">★★★★</span></td>
+                    <td><span class="star">★★★★</span></td>
+                    <td><span class="star">★★★★</span></td>
+                </tr>
+                <tr>
+                    <td><strong>視覚的フィードバック</strong></td>
+                    <td><span class="star">★★★★</span></td>
+                    <td><span class="star">★★★★</span></td>
+                    <td><span class="star">★★</span>☆</td>
+                </tr>
+                <tr>
+                    <td><strong>デバッグのしやすさ</strong></td>
+                    <td><span class="star">★★★</span></td>
+                    <td><span class="star">★★★★</span></td>
+                    <td><span class="star">★★★</span></td>
+                </tr>
+                <tr>
+                    <td><strong>保守性</strong></td>
+                    <td><span class="star">★★★</span></td>
+                    <td><span class="star">★★★★</span></td>
+                    <td><span class="star">★★★★</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="problem" style="background: #fff3cd; border-left: 5px solid #f39c12; margin-top: 30px;">
+        <h2 style="color: #f39c12;">💡 推奨理由</h2>
+        <p><strong>解決策2（生成中シーンIDのSet管理）を推奨</strong></p>
+        <ul>
+            <li>シンプルで理解しやすい実装</li>
+            <li>デバッグが容易（Setの中身を見れば一目瞭然）</li>
+            <li>ボタン状態の視覚的フィードバックあり</li>
+            <li>実装量が適度で、バランスが良い</li>
+        </ul>
+    </div>
+
+</body>
+</html>

@@ -441,6 +441,7 @@
         // グローバル変数
         let scenes = [];
         let selectedSceneId = null;
+        const generatingScenes = new Set(); // 画像生成中のシーンIDを管理
 
         // ========================================
         // トースト通知
@@ -460,6 +461,25 @@
                 toast.classList.remove('opacity-100', 'translate-x-0');
                 toast.classList.add('opacity-0', 'translate-x-full');
             }, 3000);
+        }
+
+        // ========================================
+        // 送信ボタンの状態管理
+        // ========================================
+        function updateSendButtonState() {
+            const sendBtn = document.getElementById('send-prompt-btn');
+            const statusDiv = document.getElementById('generation-status');
+            const isCurrentSceneGenerating = generatingScenes.has(selectedSceneId);
+
+            if (isCurrentSceneGenerating) {
+                sendBtn.disabled = true;
+                sendBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                statusDiv.classList.remove('hidden');
+            } else {
+                sendBtn.disabled = false;
+                sendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                statusDiv.classList.add('hidden');
+            }
         }
 
         // ========================================
@@ -983,6 +1003,9 @@
 
             updateRightPanel();
 
+            // 送信ボタンの状態を更新（生成中のシーンに切り替えた場合は無効化）
+            updateSendButtonState();
+
             // 動画生成タブも更新（現在動画タブが表示されている場合）
             if (currentTab === 'video') {
                 updateVideoHistoryList();
@@ -1185,15 +1208,10 @@
                 return;
             }
 
-            // UI要素を取得
-            const sendBtn = document.getElementById('send-prompt-btn');
-            const statusDiv = document.getElementById('generation-status');
-
             try {
-                // ローディング表示を開始
-                sendBtn.disabled = true;
-                sendBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                statusDiv.classList.remove('hidden');
+                // 生成中シーンとして登録し、ボタン状態を更新
+                generatingScenes.add(sceneId);
+                updateSendButtonState();
 
                 // 参照画像のStorage URLを取得
                 const referenceImageUrls = referenceImages
@@ -1318,19 +1336,14 @@
 
                 showToast('画像を生成しました');
 
-                // ローディング表示を終了
-                sendBtn.disabled = false;
-                sendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                statusDiv.classList.add('hidden');
-
             } catch (error) {
                 console.error('画像生成エラー:', error);
                 alert(`画像の生成に失敗しました: ${error.message}`);
 
-                // ローディング表示を終了
-                sendBtn.disabled = false;
-                sendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                statusDiv.classList.add('hidden');
+            } finally {
+                // 生成完了：シーンを登録から削除し、ボタン状態を更新
+                generatingScenes.delete(sceneId);
+                updateSendButtonState();
             }
         }
 
@@ -2003,6 +2016,9 @@
                 videoBtn.className = 'flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition bg-purple-100 text-purple-700';
                 imageContent.classList.remove('hidden');
                 videoContent.classList.add('hidden');
+
+                // 送信ボタンの状態を更新
+                updateSendButtonState();
             } else {
                 // 動画生成タブをアクティブに
                 imageBtn.className = 'flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition bg-green-100 text-green-700';
