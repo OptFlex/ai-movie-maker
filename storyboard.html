@@ -1849,21 +1849,21 @@
                         reader.readAsDataURL(file);
                     });
 
-                    // アップロード中の状態で追加
-                    const tempIndex = referenceImages.length;
-                    referenceImages.push({
+                    // アップロード中の状態で追加（参照を保持）
+                    const imageRef = {
                         file: file,
                         dataUrl: dataUrl,
                         name: file.name,
                         storageUrl: null,
                         uploading: true
-                    });
+                    };
+                    referenceImages.push(imageRef);
                     updateReferenceImagesPreview();
 
                     // Supabase Storageにアップロード
                     const timestamp = Date.now();
                     const fileName = `${timestamp}_${file.name}`;
-                    const filePath = `${projectId}/${fileName}`;
+                    const filePath = `references/${projectId}/${fileName}`;
 
                     const { data, error } = await supabaseClient.storage
                         .from('references')
@@ -1875,8 +1875,11 @@
                     if (error) {
                         console.error('画像アップロードエラー:', error);
                         alert(`${file.name}のアップロードに失敗しました`);
-                        // 失敗した画像を削除
-                        referenceImages.splice(tempIndex, 1);
+                        // 失敗した画像を削除（参照から探す）
+                        const index = referenceImages.indexOf(imageRef);
+                        if (index > -1) {
+                            referenceImages.splice(index, 1);
+                        }
                         updateReferenceImagesPreview();
                         continue;
                     }
@@ -1886,20 +1889,19 @@
                         .from('references')
                         .getPublicUrl(filePath);
 
-                    // アップロード完了状態に更新
-                    referenceImages[tempIndex].storageUrl = urlData.publicUrl;
-                    referenceImages[tempIndex].storagePath = filePath;
-                    referenceImages[tempIndex].uploading = false;
+                    // アップロード完了状態に更新（参照経由）
+                    imageRef.storageUrl = urlData.publicUrl;
+                    imageRef.storagePath = filePath;
+                    imageRef.uploading = false;
                     updateReferenceImagesPreview();
 
                     console.log('画像アップロード成功:', fileName, urlData.publicUrl);
+                    showToast(`${file.name}をアップロードしました`);
                 } catch (error) {
                     console.error('画像処理エラー:', error);
                     alert(`${file.name}の処理中にエラーが発生しました`);
                 }
             }
-
-            showToast('参照画像をアップロードしました');
         }
 
         // 参照画像を削除
