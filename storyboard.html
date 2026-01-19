@@ -1030,7 +1030,10 @@
                     console.log('画像履歴を表示:', scene.images);
                     historyList.innerHTML = scene.images.map((img, index) => {
                         console.log(`画像 ${index + 1}:`, img);
-                        const hasReferences = img.reference_images && img.reference_images.length > 0;
+                        console.log(`  - reference_images:`, img.reference_images);
+                        console.log(`  - 参照画像の型:`, typeof img.reference_images);
+                        console.log(`  - 配列かどうか:`, Array.isArray(img.reference_images));
+                        const hasReferences = img.reference_images && Array.isArray(img.reference_images) && img.reference_images.length > 0;
 
                         return `
                         <!-- ユーザーメッセージ -->
