@@ -1036,6 +1036,20 @@
                         const hasReferences = img.reference_images && Array.isArray(img.reference_images) && img.reference_images.length > 0;
                         console.log(`  - hasReferences:`, hasReferences);
 
+                        // 参照画像のHTML生成をテスト
+                        let referenceImagesHtml = '';
+                        if (hasReferences) {
+                            referenceImagesHtml = img.reference_images.map((refUrl) => {
+                                console.log(`    - 参照画像URL:`, refUrl);
+                                return `
+                                    <div class="w-[50px] h-[50px] flex-shrink-0">
+                                        <img src="${refUrl}" alt="参照画像" class="w-full h-full object-cover rounded border border-gray-300">
+                                    </div>
+                                `;
+                            }).join('');
+                            console.log(`  - 生成されたHTML長:`, referenceImagesHtml.length);
+                        }
+
                         return `
                         <!-- ユーザーメッセージ -->
                         <div class="flex gap-3 items-start">
@@ -1045,13 +1059,9 @@
                             <div class="flex-1 max-w-[80%]">
                                 <div class="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-2xl rounded-tl-sm p-4 shadow-sm">
                                     <p class="text-sm font-semibold text-gray-900 mb-2">${img.prompt}</p>
-                                    ${hasReferences ? `
+                                    ${referenceImagesHtml ? `
                                         <div class="flex flex-wrap gap-2 mt-3 max-w-[324px]">
-                                            ${img.reference_images.map((refUrl) => `
-                                                <div class="w-[50px] h-[50px] flex-shrink-0">
-                                                    <img src="${refUrl}" alt="参照画像" class="w-full h-full object-cover rounded border border-gray-300">
-                                                </div>
-                                            `).join('')}
+                                            ${referenceImagesHtml}
                                         </div>
                                     ` : ''}
                                     <p class="text-xs text-gray-500 mt-2">${formatTimestamp(img.created_at)}</p>
