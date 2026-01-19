@@ -1879,7 +1879,10 @@
                     // Supabase Storageにアップロード
                     const timestamp = Date.now();
                     const fileName = `${timestamp}_${file.name}`;
-                    const filePath = `${projectId}/${fileName}`;
+                    console.log('アップロード時のprojectId:', projectId);
+                    console.log('アップロード時のcurrentProject.id:', currentProject?.id);
+                    const filePath = `${currentProject.id}/${fileName}`;
+                    console.log('アップロードパス:', filePath);
 
                     const { data, error } = await supabaseClient.storage
                         .from('references')
